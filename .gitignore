@@ -364,3 +364,7 @@ dotnet-debug*
 # JetBrains Rider
 .idea/
 *.sln.iml
+.env*
+.flaskenv*
+!.env.project
+!.env.vault
