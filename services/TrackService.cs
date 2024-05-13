@@ -4,13 +4,39 @@ namespace tracksByPopularity.services;
 
 public static class TrackService
 {
-    public static async Task GetAllUserTracks()
+    public static async Task<IList<SavedTrack>> GetAllUserTracks()
     {
-        var config = SpotifyClientConfig.CreateDefault();
-        
-        var request = new ClientCredentialsRequest("CLIENT_ID", "CLIENT_SECRET");
-        var response = await new OAuthClient(config).RequestToken(request);
+        var firstPageTracks = await Client.Spotify.Library.GetTracks();
 
-        var spotify = new SpotifyClient(config.WithToken(response.AccessToken));
+        return await Client.Spotify.PaginateAll(firstPageTracks);
+    }
+
+    public static async Task<bool> AddTracksToPlaylist(IList<SavedTrack> tracks, string playlistId)
+    {
+        for (var i = 0; i < tracks.Count; i += 100)
+        {
+            var tracksToAdd = tracks
+                .Skip(i)
+                .Take(100)
+                .Select(track => track.Track.Uri)
+                .ToList();
+
+            var added = await Client.Spotify.Playlists.AddItems(
+                playlistId,
+                new PlaylistAddItemsRequest(tracksToAdd));
+
+            if (added.SnapshotId == string.Empty)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static Task<bool> DeleteAllTracksFromPlaylist(string playlistId)
+    {
+        // TODO: Implement this method
+        return Task.FromResult(false);
     }
 }
