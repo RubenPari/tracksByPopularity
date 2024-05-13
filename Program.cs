@@ -1,15 +1,31 @@
 using dotenv.net;
 using SpotifyAPI.Web;
+using tracksByPopularity;
+using tracksByPopularity.services;
 
 var builder = WebApplication.CreateBuilder(args);
-
 var app = builder.Build();
 
 DotEnv.Load();
 
+// ---------- CONSTANTS ----------
+
 const int tracksLessPopularity = 33;
 const int tracksMediumPopularity = 66;
-SpotifyClient spotifyClient = null!;
+
+List<string> scopes =
+[
+    Scopes.UserReadEmail,
+    Scopes.UserReadPrivate,
+    Scopes.UserLibraryRead,
+    Scopes.UserLibraryModify,
+    Scopes.PlaylistModifyPrivate,
+    Scopes.PlaylistModifyPublic
+];
+
+var clientId = Environment.GetEnvironmentVariable("CLIENT_ID")!;
+var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET")!;
+var redirectUri = Environment.GetEnvironmentVariable("REDIRECT_URI")!;
 
 var config = SpotifyClientConfig.CreateDefault();
 
@@ -18,19 +34,11 @@ var config = SpotifyClientConfig.CreateDefault();
 app.MapGet("/auth/login", () =>
 {
     var request = new LoginRequest(
-        new Uri(Environment.GetEnvironmentVariable("REDIRECT_URI")!),
-        Environment.GetEnvironmentVariable("CLIENT_ID")!,
+        new Uri(redirectUri),
+        clientId,
         LoginRequest.ResponseType.Code)
     {
-        Scope = new List<string>
-        {
-            Scopes.UserReadEmail,
-            Scopes.UserReadPrivate,
-            Scopes.UserLibraryRead,
-            Scopes.UserLibraryModify,
-            Scopes.PlaylistModifyPrivate,
-            Scopes.PlaylistModifyPublic
-        }
+        Scope = scopes
     };
 
     var uri = request.ToUri();
@@ -42,16 +50,16 @@ app.MapGet("/auth/callback", async (string code) =>
 {
     var response = await new OAuthClient().RequestToken(
         new AuthorizationCodeTokenRequest(
-            Environment.GetEnvironmentVariable("CLIENT_ID")!,
-            Environment.GetEnvironmentVariable("CLIENT_SECRET")!,
+            clientId,
+            clientSecret,
             code,
-            new Uri(Environment.GetEnvironmentVariable("REDIRECT_URI")!)
+            new Uri(redirectUri)
         )
     );
 
-    spotifyClient = new SpotifyClient(config.WithToken(response.AccessToken));
+    Client.Spotify = new SpotifyClient(config.WithToken(response.AccessToken));
 
-    var user = await spotifyClient.UserProfile.Current();
+    var user = await Client.Spotify.UserProfile.Current();
 
     return user.Id == string.Empty
         ? Results.BadRequest("Login failed, retry")
@@ -62,122 +70,62 @@ app.MapGet("/auth/callback", async (string code) =>
 
 app.MapPost("/track/less", async () =>
 {
-    var firstPageTracks = await spotifyClient.Library.GetTracks();
-    var allTracks = await spotifyClient.PaginateAll(firstPageTracks);
+    var allTracks = await TrackService.GetAllUserTracks();
 
     var trackWithPopularity = allTracks
         .Where(track => track.Track.Popularity is > 0 and <= tracksLessPopularity)
         .ToList();
 
-    // add the tracks to a playlist
-    var playlist = await spotifyClient.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!);
+    var playlist = await Client.Spotify.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!);
 
     if (playlist.Id is null)
     {
         return Results.BadRequest("Playlist not found");
     }
 
-    var trackPopularityCount = trackWithPopularity.Count;
-    
-    for (var i = 0; i < trackPopularityCount; i += 100)
-    {
-        var tracksToAdd = trackWithPopularity
-            .Skip(i)
-            .Take(100)
-            .Select(track => track.Track.Uri)
-            .ToList();
+    var added = await TrackService.AddTracksToPlaylist(trackWithPopularity, playlist.Id);
 
-        var added = await spotifyClient.Playlists.AddItems(
-            playlist.Id!,
-            new PlaylistAddItemsRequest(tracksToAdd));
-
-        if (added.SnapshotId == string.Empty)
-        {
-            return Results.BadRequest("Failed to add tracks to playlist");
-        }
-    }
-    
-    return Results.Ok("Tracks added to playlist");
+    return !added ? Results.BadRequest("Failed to add tracks to playlist") : Results.Ok("Tracks added to playlist");
 });
 
 app.MapPost("/track/medium", async () =>
 {
-    var firstPageTracks = await spotifyClient.Library.GetTracks();
-    var allTracks = await spotifyClient.PaginateAll(firstPageTracks);
+    var allTracks = await TrackService.GetAllUserTracks();
 
     var trackWithPopularity = allTracks
         .Where(track => track.Track.Popularity is > tracksLessPopularity and <= tracksMediumPopularity)
         .ToList();
 
-    // add the tracks to a playlist
-    var playlist = await spotifyClient.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!);
+    var playlist = await Client.Spotify.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!);
 
     if (playlist.Id is null)
     {
         return Results.BadRequest("Playlist not found");
     }
 
-    var trackPopularityCount = trackWithPopularity.Count;
-    
-    for (var i = 0; i < trackPopularityCount; i += 100)
-    {
-        var tracksToAdd = trackWithPopularity
-            .Skip(i)
-            .Take(100)
-            .Select(track => track.Track.Uri)
-            .ToList();
+    var added = await TrackService.AddTracksToPlaylist(trackWithPopularity, playlist.Id);
 
-        var added = await spotifyClient.Playlists.AddItems(
-            playlist.Id!,
-            new PlaylistAddItemsRequest(tracksToAdd));
-
-        if (added.SnapshotId == string.Empty)
-        {
-            return Results.BadRequest("Failed to add tracks to playlist");
-        }
-    }
-    
-    return Results.Ok("Tracks added to playlist");
+    return !added ? Results.BadRequest("Failed to add tracks to playlist") : Results.Ok("Tracks added to playlist");
 });
 
 app.MapPost("/track/more", async () =>
 {
-    var firstPageTracks = await spotifyClient.Library.GetTracks();
-    var allTracks = await spotifyClient.PaginateAll(firstPageTracks);
+    var allTracks = await TrackService.GetAllUserTracks();
 
     var trackWithPopularity = allTracks
-        .Where(track => track.Track.Popularity > tracksMediumPopularity)
+        .Where(track => track.Track.Popularity is > tracksMediumPopularity)
         .ToList();
 
-    // add the tracks to a playlist
-    var playlist = await spotifyClient.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!);
+    var playlist = await Client.Spotify.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!);
 
     if (playlist.Id is null)
     {
         return Results.BadRequest("Playlist not found");
     }
 
-    var trackPopularityCount = trackWithPopularity.Count;
-    
-    for (var i = 0; i < trackPopularityCount; i += 100)
-    {
-        var tracksToAdd = trackWithPopularity
-            .Skip(i)
-            .Take(100)
-            .Select(track => track.Track.Uri)
-            .ToList();
+    var added = await TrackService.AddTracksToPlaylist(trackWithPopularity, playlist.Id);
 
-        var added = await spotifyClient.Playlists.AddItems(
-            playlist.Id!,
-            new PlaylistAddItemsRequest(tracksToAdd));
-
-        if (added.SnapshotId == string.Empty)
-        {
-            return Results.BadRequest("Failed to add tracks to playlist");
-        }
-    }
-    
-    return Results.Ok("Tracks added to playlist");
+    return !added ? Results.BadRequest("Failed to add tracks to playlist") : Results.Ok("Tracks added to playlist");
 });
 
 app.Run();
