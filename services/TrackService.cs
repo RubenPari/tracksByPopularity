@@ -34,9 +34,35 @@ public static class TrackService
         return true;
     }
 
-    public static Task<bool> DeleteAllTracksFromPlaylist(string playlistId)
+    public static async Task<bool> DeleteAllTracksFromPlaylist(string playlistId)
     {
-        // TODO: Implement this method
-        return Task.FromResult(false);
+        for (var i = 0; i < 100; i += 100)
+        {
+            var tracksToDelete = await Client.Spotify.Playlists.GetItems(
+                playlistId,
+                new PlaylistGetItemsRequest
+                {
+                    Offset = i,
+                    Limit = 100
+                });
+
+            if (tracksToDelete.Items is { Count: 0 })
+            {
+                break;
+            }
+            
+            // TODO: implement PlaylistRemoveItemsRequest()
+            var deleted = await Client.Spotify.Playlists.RemoveItems(
+                playlistId,
+                new PlaylistRemoveItemsRequest()
+                );
+
+            if (deleted.SnapshotId == string.Empty)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

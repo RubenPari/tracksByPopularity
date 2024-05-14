@@ -27,6 +27,10 @@ var clientId = Environment.GetEnvironmentVariable("CLIENT_ID")!;
 var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET")!;
 var redirectUri = Environment.GetEnvironmentVariable("REDIRECT_URI")!;
 
+var playlistIdLess = Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!;
+var playlistIdMedium = Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!;
+var playlistIdMore = Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!;
+
 var config = SpotifyClientConfig.CreateDefault();
 
 // ---------- AUTHENTICATION ----------
@@ -70,6 +74,13 @@ app.MapGet("/auth/callback", async (string code) =>
 
 app.MapPost("/track/less", async () =>
 {
+    var deletedTracksPlaylist = await TrackService.DeleteAllTracksFromPlaylist(playlistIdLess);
+
+    if (!deletedTracksPlaylist)
+    {
+        return Results.BadRequest("Failed to delete tracks from playlist");
+    }
+
     var allTracks = await TrackService.GetAllUserTracks();
 
     var trackWithPopularity = allTracks
@@ -90,6 +101,13 @@ app.MapPost("/track/less", async () =>
 
 app.MapPost("/track/medium", async () =>
 {
+    var deletedTracksPlaylist = await TrackService.DeleteAllTracksFromPlaylist(playlistIdMedium);
+
+    if (!deletedTracksPlaylist)
+    {
+        return Results.BadRequest("Failed to delete tracks from playlist");
+    }
+
     var allTracks = await TrackService.GetAllUserTracks();
 
     var trackWithPopularity = allTracks
@@ -110,6 +128,13 @@ app.MapPost("/track/medium", async () =>
 
 app.MapPost("/track/more", async () =>
 {
+    var deletedTracksPlaylist = await TrackService.DeleteAllTracksFromPlaylist(playlistIdMore);
+
+    if (!deletedTracksPlaylist)
+    {
+        return Results.BadRequest("Failed to delete tracks from playlist");
+    }
+
     var allTracks = await TrackService.GetAllUserTracks();
 
     var trackWithPopularity = allTracks
