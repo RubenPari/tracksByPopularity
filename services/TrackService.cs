@@ -1,9 +1,14 @@
+using System.Net.Http.Headers;
+using Newtonsoft.Json;
 using SpotifyAPI.Web;
+using tracksByPopularity.models;
 
 namespace tracksByPopularity.services;
 
 public static class TrackService
 {
+    private const string PlaylistUrlTemplate = "https://api.spotify.com/v1/playlists/{0}/tracks";
+
     public static async Task<IList<SavedTrack>> GetAllUserTracks()
     {
         var firstPageTracks = await Client.Spotify.Library.GetTracks();
@@ -34,30 +39,51 @@ public static class TrackService
         return true;
     }
 
-    public static async Task<bool> DeleteAllTracksFromPlaylist(string playlistId)
+    private static async Task<List<string>> GetAllTracksFromPlaylist(string playlistId)
     {
-        for (var i = 0; i < 100; i += 100)
+        var accessToken = Client.AccessToken;
+        var httpClient = new HttpClient();
+
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var allTracksUriPlaylist = new List<string>();
+        var nextUrl = string.Format(PlaylistUrlTemplate, playlistId);
+
+        while (!string.IsNullOrEmpty(nextUrl))
         {
-            var tracksToDelete = await Client.Spotify.Playlists.GetItems(
-                playlistId,
-                new PlaylistGetItemsRequest
-                {
-                    Offset = i,
-                    Limit = 100
-                });
+            var response = await httpClient.GetAsync(nextUrl);
+            response.EnsureSuccessStatusCode();
 
-            if (tracksToDelete.Items is { Count: 0 })
-            {
-                break;
-            }
-            
-            // TODO: implement PlaylistRemoveItemsRequest()
-            var deleted = await Client.Spotify.Playlists.RemoveItems(
-                playlistId,
-                new PlaylistRemoveItemsRequest()
-                );
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var playlistResponse = JsonConvert.DeserializeObject<PlaylistResponse>(responseContent);
 
-            if (deleted.SnapshotId == string.Empty)
+            allTracksUriPlaylist.AddRange(playlistResponse!.Items.Select(item => item.Track.Uri));
+
+            nextUrl = playlistResponse.Next;
+        }
+
+        return allTracksUriPlaylist;
+    }
+
+    public static async Task<bool> RemoveTracksFromPlaylist(string playlistId)
+    {
+        var allTracks = await GetAllTracksFromPlaylist(playlistId);
+
+        for (var i = 0; i < allTracks.Count; i += 100)
+        {
+            IList<PlaylistRemoveItemsRequest.Item> tracksToRemove = allTracks
+                .Skip(i)
+                .Take(100)
+                .Select(track => new PlaylistRemoveItemsRequest.Item { Uri = track })
+                .ToList();
+
+            var removeItemsRequest = new PlaylistRemoveItemsRequest { Tracks = tracksToRemove };
+
+            var removed = await Client.Spotify.Playlists.RemoveItems(
+                playlistId,
+                removeItemsRequest);
+
+            if (removed.SnapshotId == string.Empty)
             {
                 return false;
             }

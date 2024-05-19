@@ -62,7 +62,8 @@ app.MapGet("/auth/callback", async (string code) =>
     );
 
     Client.Spotify = new SpotifyClient(config.WithToken(response.AccessToken));
-
+    Client.AccessToken = response.AccessToken;
+    
     var user = await Client.Spotify.UserProfile.Current();
 
     return user.Id == string.Empty
@@ -74,7 +75,7 @@ app.MapGet("/auth/callback", async (string code) =>
 
 app.MapPost("/track/less", async () =>
 {
-    var deletedTracksPlaylist = await TrackService.DeleteAllTracksFromPlaylist(playlistIdLess);
+    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(playlistIdLess);
 
     if (!deletedTracksPlaylist)
     {
@@ -101,7 +102,7 @@ app.MapPost("/track/less", async () =>
 
 app.MapPost("/track/medium", async () =>
 {
-    var deletedTracksPlaylist = await TrackService.DeleteAllTracksFromPlaylist(playlistIdMedium);
+    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(playlistIdMedium);
 
     if (!deletedTracksPlaylist)
     {
@@ -128,7 +129,7 @@ app.MapPost("/track/medium", async () =>
 
 app.MapPost("/track/more", async () =>
 {
-    var deletedTracksPlaylist = await TrackService.DeleteAllTracksFromPlaylist(playlistIdMore);
+    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(playlistIdMore);
 
     if (!deletedTracksPlaylist)
     {
