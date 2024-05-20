@@ -154,4 +154,26 @@ app.MapPost("/track/more", async () =>
     return !added ? Results.BadRequest("Failed to add tracks to playlist") : Results.Ok("Tracks added to playlist");
 });
 
+app.MapPost("/track/delete", async (int popularity) =>
+{
+    // check if popularity is valid
+    if (popularity is < 0 or > 100)
+    {
+        return Results.BadRequest("Invalid popularity");
+    }
+
+    // get all tracks
+    var allTracks = await TrackService.GetAllUserTracks();
+
+    // filter tracks by popularity minor or equal to the input
+    var trackWithPopularity = allTracks
+        .Where(track => track.Track.Popularity <= popularity)
+        .ToList();
+
+    // remove tracks from user library
+    var deletedTracks = await TrackService.RemoveUserTracks(trackWithPopularity);
+
+    return !deletedTracks ? Results.BadRequest("Failed to delete tracks") : Results.Ok("Tracks deleted");
+});
+
 app.Run();

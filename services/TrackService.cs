@@ -91,4 +91,27 @@ public static class TrackService
 
         return true;
     }
+
+    public static async Task<bool> RemoveUserTracks(List<SavedTrack> trackWithPopularity)
+    {
+        var tracksToRemove = trackWithPopularity.Select(track => track.Track.Uri).ToList();
+
+        for (var i = 0; i < tracksToRemove.Count; i += 100)
+        {
+            var tracks = tracksToRemove
+                .Skip(i)
+                .Take(100)
+                .ToList();
+
+            var removed = await Client.Spotify.Library.RemoveTracks(
+                new LibraryRemoveTracksRequest(tracks));
+
+            if (removed == false)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
