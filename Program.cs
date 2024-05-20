@@ -4,7 +4,28 @@ using tracksByPopularity;
 using tracksByPopularity.services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+const string titleApi = "TracksByPopularityAPI";
+
+// SWAGGER
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddOpenApiDocument(config =>
+{
+    config.DocumentName = titleApi;
+    config.Title = titleApi;
+    config.Version = "v1";
+});
+
 var app = builder.Build();
+
+app.UseOpenApi();
+app.UseSwaggerUi(config =>
+{
+    config.DocumentTitle = titleApi;
+    config.Path = "/swagger";
+    config.DocumentPath = "/swagger/{documentName}/swagger.json";
+    config.DocExpansion = "list";
+});
 
 DotEnv.Load();
 
@@ -63,7 +84,7 @@ app.MapGet("/auth/callback", async (string code) =>
 
     Client.Spotify = new SpotifyClient(config.WithToken(response.AccessToken));
     Client.AccessToken = response.AccessToken;
-    
+
     var user = await Client.Spotify.UserProfile.Current();
 
     return user.Id == string.Empty
