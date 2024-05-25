@@ -9,11 +9,16 @@ public static class TrackService
 {
     private const string PlaylistUrlTemplate = "https://api.spotify.com/v1/playlists/{0}/tracks";
 
-    public static async Task<IList<SavedTrack>> GetAllUserTracks()
+    public static async Task<IList<SavedTrack>> GetAllUserTracks(string? artistId = null)
     {
         var firstPageTracks = await Client.Spotify.Library.GetTracks();
+        var allTracks = await Client.Spotify.PaginateAll(firstPageTracks);
 
-        return await Client.Spotify.PaginateAll(firstPageTracks);
+        return artistId == null
+            ? allTracks
+            : allTracks
+                .Where(track => track.Track.Artists[0].Id == artistId)
+                .ToList();
     }
 
     public static async Task<bool> AddTracksToPlaylist(IList<SavedTrack> tracks, string playlistId)

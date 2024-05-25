@@ -1,6 +1,7 @@
 using dotenv.net;
 using SpotifyAPI.Web;
 using tracksByPopularity;
+using tracksByPopularity.models;
 using tracksByPopularity.services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -197,4 +198,71 @@ app.MapPost("/track/delete", async (int popularity) =>
     return !deletedTracks ? Results.BadRequest("Failed to delete tracks") : Results.Ok("Tracks deleted");
 });
 
+app.MapPost("/track/artist", async (string artistId, string popularType, IdPlaylists idPlaylists) =>
+{
+    if (artistId == string.Empty || popularType == string.Empty)
+    {
+        return Results.BadRequest("Invalid query params request");
+    }
+
+    var deletedTracksPlaylistLess = await TrackService.RemoveTracksFromPlaylist(idPlaylists.IdLess);
+    var deletedTracksPlaylistMedium = await TrackService.RemoveTracksFromPlaylist(idPlaylists.IdMedium);
+    var deletedTracksPlaylistMore = await TrackService.RemoveTracksFromPlaylist(idPlaylists.IdMore);
+
+    if (!deletedTracksPlaylistLess || !deletedTracksPlaylistMedium || !deletedTracksPlaylistMore)
+    {
+        return Results.BadRequest("Failed to delete tracks from playlist");
+    }
+
+    var allTracks = await TrackService.GetAllUserTracks(artistId);
+
+    var trackWithPopularity = new List<SavedTrack>();
+
+    switch (popularType)
+    {
+        case "less":
+            trackWithPopularity = allTracks
+                .Where(track => track.Track.Popularity is > 0 and <= tracksLessPopularity)
+                .ToList();
+
+            break;
+        case "medium":
+            trackWithPopularity = allTracks
+                .Where(track => track.Track.Popularity is > tracksLessPopularity and <= tracksMediumPopularity)
+                .ToList();
+
+            break;
+        case "more":
+            trackWithPopularity = allTracks
+                .Where(track => track.Track.Popularity is > tracksMediumPopularity)
+                .ToList();
+
+            break;
+    }
+
+    var addedLess = await AddTracksToPlaylist(idPlaylists.IdLess, trackWithPopularity);
+    var addedMedium = await AddTracksToPlaylist(idPlaylists.IdMedium, trackWithPopularity);
+    var addedMore = await AddTracksToPlaylist(idPlaylists.IdMore, trackWithPopularity);
+
+    if (!addedLess || !addedMedium || !addedMore)
+    {
+        return Results.BadRequest("Failed to add tracks to playlist");
+    }
+
+    return Results.Ok("Tracks added to playlist");
+});
+
 app.Run();
+return;
+
+static async Task<bool> AddTracksToPlaylist(string artistPlaylistId, IList<SavedTrack> trackWithPopularity)
+{
+    var playlist = await Client.Spotify.Playlists.Get(artistPlaylistId);
+
+    if (playlist.Id is null)
+    {
+        return false;
+    }
+
+    return await TrackService.AddTracksToPlaylist(trackWithPopularity, playlist.Id);
+}
