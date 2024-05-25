@@ -6,14 +6,11 @@ using tracksByPopularity.services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-const string titleApi = "TracksByPopularityAPI";
-
-// SWAGGER
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApiDocument(config =>
 {
-    config.DocumentName = titleApi;
-    config.Title = titleApi;
+    config.DocumentName = Costants.TitleApi;
+    config.Title = Costants.TitleApi;
     config.Version = "v1";
 });
 
@@ -22,7 +19,7 @@ var app = builder.Build();
 app.UseOpenApi();
 app.UseSwaggerUi(config =>
 {
-    config.DocumentTitle = titleApi;
+    config.DocumentTitle = Costants.TitleApi;
     config.Path = "/swagger";
     config.DocumentPath = "/swagger/{documentName}/swagger.json";
     config.DocExpansion = "list";
@@ -30,41 +27,14 @@ app.UseSwaggerUi(config =>
 
 DotEnv.Load();
 
-// ---------- CONSTANTS ----------
-
-const int tracksLessPopularity = 33;
-const int tracksMediumPopularity = 66;
-
-List<string> scopes =
-[
-    Scopes.UserReadEmail,
-    Scopes.UserReadPrivate,
-    Scopes.UserLibraryRead,
-    Scopes.UserLibraryModify,
-    Scopes.PlaylistModifyPrivate,
-    Scopes.PlaylistModifyPublic
-];
-
-var clientId = Environment.GetEnvironmentVariable("CLIENT_ID")!;
-var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET")!;
-var redirectUri = Environment.GetEnvironmentVariable("REDIRECT_URI")!;
-
-var playlistIdLess = Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!;
-var playlistIdMedium = Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!;
-var playlistIdMore = Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!;
-
-var config = SpotifyClientConfig.CreateDefault();
-
-// ---------- AUTHENTICATION ----------
-
 app.MapGet("/auth/login", () =>
 {
     var request = new LoginRequest(
-        new Uri(redirectUri),
-        clientId,
+        new Uri(Costants.RedirectUri),
+        Costants.ClientId,
         LoginRequest.ResponseType.Code)
     {
-        Scope = scopes
+        Scope = Costants.MyScopes
     };
 
     var uri = request.ToUri();
@@ -76,14 +46,14 @@ app.MapGet("/auth/callback", async (string code) =>
 {
     var response = await new OAuthClient().RequestToken(
         new AuthorizationCodeTokenRequest(
-            clientId,
-            clientSecret,
+            Costants.ClientId,
+            Costants.ClientSecret,
             code,
-            new Uri(redirectUri)
+            new Uri(Costants.RedirectUri)
         )
     );
 
-    Client.Spotify = new SpotifyClient(config.WithToken(response.AccessToken));
+    Client.Spotify = new SpotifyClient(Costants.Config.WithToken(response.AccessToken));
     Client.AccessToken = response.AccessToken;
 
     var user = await Client.Spotify.UserProfile.Current();
@@ -93,11 +63,9 @@ app.MapGet("/auth/callback", async (string code) =>
         : Results.Ok("Successfully authenticated!");
 });
 
-// ---------- TRACK ----------
-
 app.MapPost("/track/less", async () =>
 {
-    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(playlistIdLess);
+    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(Costants.PlaylistIdLess);
 
     if (!deletedTracksPlaylist)
     {
@@ -107,7 +75,7 @@ app.MapPost("/track/less", async () =>
     var allTracks = await TrackService.GetAllUserTracks();
 
     var trackWithPopularity = allTracks
-        .Where(track => track.Track.Popularity is > 0 and <= tracksLessPopularity)
+        .Where(track => track.Track.Popularity > 0 && track.Track.Popularity <= Costants.TracksLessPopularity)
         .ToList();
 
     var playlist = await Client.Spotify.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!);
@@ -124,7 +92,7 @@ app.MapPost("/track/less", async () =>
 
 app.MapPost("/track/medium", async () =>
 {
-    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(playlistIdMedium);
+    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(Costants.PlaylistIdMedium);
 
     if (!deletedTracksPlaylist)
     {
@@ -134,7 +102,8 @@ app.MapPost("/track/medium", async () =>
     var allTracks = await TrackService.GetAllUserTracks();
 
     var trackWithPopularity = allTracks
-        .Where(track => track.Track.Popularity is > tracksLessPopularity and <= tracksMediumPopularity)
+        .Where(track => track.Track.Popularity > Costants.TracksLessPopularity &&
+                        track.Track.Popularity <= Costants.TracksMediumPopularity)
         .ToList();
 
     var playlist = await Client.Spotify.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!);
@@ -151,7 +120,7 @@ app.MapPost("/track/medium", async () =>
 
 app.MapPost("/track/more", async () =>
 {
-    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(playlistIdMore);
+    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(Costants.PlaylistIdMore);
 
     if (!deletedTracksPlaylist)
     {
@@ -161,10 +130,10 @@ app.MapPost("/track/more", async () =>
     var allTracks = await TrackService.GetAllUserTracks();
 
     var trackWithPopularity = allTracks
-        .Where(track => track.Track.Popularity is > tracksMediumPopularity)
+        .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
         .ToList();
 
-    var playlist = await Client.Spotify.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!);
+    var playlist = await Client.Spotify.Playlists.Get(Costants.PlaylistIdMore);
 
     if (playlist.Id is null)
     {
@@ -222,19 +191,20 @@ app.MapPost("/track/artist", async (string artistId, string popularType, IdPlayl
     {
         case "less":
             trackWithPopularity = allTracks
-                .Where(track => track.Track.Popularity is > 0 and <= tracksLessPopularity)
+                .Where(track => track.Track.Popularity > 0 && track.Track.Popularity <= Costants.TracksLessPopularity)
                 .ToList();
 
             break;
         case "medium":
             trackWithPopularity = allTracks
-                .Where(track => track.Track.Popularity is > tracksLessPopularity and <= tracksMediumPopularity)
+                .Where(track => track.Track.Popularity > Costants.TracksLessPopularity &&
+                                track.Track.Popularity <= Costants.TracksMediumPopularity)
                 .ToList();
 
             break;
         case "more":
             trackWithPopularity = allTracks
-                .Where(track => track.Track.Popularity is > tracksMediumPopularity)
+                .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
                 .ToList();
 
             break;
