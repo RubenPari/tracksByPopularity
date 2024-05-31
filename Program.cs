@@ -186,7 +186,7 @@ app.MapPost(
 
         // check if playlists are valid
         if (
-            await PlaylistHelper.CheckValidityPlaylist(
+            !await PlaylistHelper.CheckValidityPlaylist(
                 idPlaylists.IdArtistPlaylistLess,
                 idPlaylists.IdArtistPlaylistMedium,
                 idPlaylists.IdArtistPlaylistMore
@@ -208,32 +208,32 @@ app.MapPost(
             return Results.BadRequest("Playlist is not empty, please clear it and retry");
         }
 
-        var allTracks = await TrackService.GetAllUserTracks(artistId);
+        var allTracksArtist = await TrackService.GetAllUserTracks(artistId);
 
-        var trackWithLessPopularity = allTracks
+        var trackWithLessPopularity = allTracksArtist
             .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
             .ToList();
 
-        var trackWithMediumPopularity = allTracks
+        var trackWithMediumPopularity = allTracksArtist
             .Where(track =>
                 track.Track.Popularity > Costants.TracksLessPopularity
                 && track.Track.Popularity <= Costants.TracksMediumPopularity
             )
             .ToList();
 
-        var trackWithMorePopularity = allTracks
+        var trackWithMorePopularity = allTracksArtist
             .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
             .ToList();
 
-        var addedLess = await TrackService.AddTracksToArtistPlaylists(
+        var addedLess = await TrackService.AddTracksToPlaylist(
             idPlaylists.IdArtistPlaylistLess,
             trackWithLessPopularity
         );
-        var addedMedium = await TrackService.AddTracksToArtistPlaylists(
+        var addedMedium = await TrackService.AddTracksToPlaylist(
             idPlaylists.IdArtistPlaylistMedium,
             trackWithMediumPopularity
         );
-        var addedMore = await TrackService.AddTracksToArtistPlaylists(
+        var addedMore = await TrackService.AddTracksToPlaylist(
             idPlaylists.IdArtistPlaylistMore,
             trackWithMorePopularity
         );
