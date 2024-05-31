@@ -2,7 +2,13 @@
 
 public class CheckAuthMiddleware(RequestDelegate next)
 {
-    private static readonly string[] AuthPaths = ["/auth/login", "/auth/callback", "auth/logout", "/swagger"];
+    private static readonly string[] AuthPaths =
+    [
+        "/auth/login",
+        "/auth/callback",
+        "auth/logout",
+        "/swagger"
+    ];
 
     public async Task InvokeAsync(HttpContext context)
     {

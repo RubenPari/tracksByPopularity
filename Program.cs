@@ -73,6 +73,16 @@ app.MapGet(
     }
 );
 
+app.MapGet(
+    "/auth/logout",
+    () =>
+    {
+        Client.Spotify = null;
+
+        return Results.Ok("Successfully logged out!");
+    }
+);
+
 app.MapPost(
     "/track/less",
     async () =>
