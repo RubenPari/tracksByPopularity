@@ -1,6 +1,7 @@
 using dotenv.net;
 using SpotifyAPI.Web;
 using tracksByPopularity;
+using tracksByPopularity.helpers;
 using tracksByPopularity.models;
 using tracksByPopularity.services;
 
@@ -54,7 +55,6 @@ app.MapGet("/auth/callback", async (string code) =>
     );
 
     Client.Spotify = new SpotifyClient(Costants.Config.WithToken(response.AccessToken));
-    Client.AccessToken = response.AccessToken;
 
     var user = await Client.Spotify.UserProfile.Current();
 
@@ -65,11 +65,14 @@ app.MapGet("/auth/callback", async (string code) =>
 
 app.MapPost("/track/less", async () =>
 {
-    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(Costants.PlaylistIdLess);
-
-    if (!deletedTracksPlaylist)
+    if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLess))
     {
-        return Results.BadRequest("Failed to delete tracks from playlist");
+        return Results.BadRequest("Playlist not found");
+    }
+
+    if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdLess))
+    {
+        return Results.BadRequest("Playlist is not empty, please clear it and retry");
     }
 
     var allTracks = await TrackService.GetAllUserTracks();
@@ -78,25 +81,21 @@ app.MapPost("/track/less", async () =>
         .Where(track => track.Track.Popularity > 0 && track.Track.Popularity <= Costants.TracksLessPopularity)
         .ToList();
 
-    var playlist = await Client.Spotify.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!);
+    var added = await TrackService.AddTracksToPlaylist(Costants.PlaylistIdLess, trackWithPopularity);
 
-    if (playlist.Id is null)
-    {
-        return Results.BadRequest("Playlist not found");
-    }
-
-    var added = await TrackService.AddTracksToPlaylist(trackWithPopularity, playlist.Id);
-
-    return !added ? Results.BadRequest("Failed to add tracks to playlist") : Results.Ok("Tracks added to playlist");
+    return added ? Results.Ok("Tracks added to playlist") : Results.BadRequest("Failed to add tracks to playlist");
 });
 
 app.MapPost("/track/medium", async () =>
 {
-    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(Costants.PlaylistIdMedium);
-
-    if (!deletedTracksPlaylist)
+    if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMedium))
     {
-        return Results.BadRequest("Failed to delete tracks from playlist");
+        return Results.BadRequest("Playlist not found");
+    }
+
+    if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdMedium))
+    {
+        return Results.BadRequest("Playlist is not empty, please clear it and retry");
     }
 
     var allTracks = await TrackService.GetAllUserTracks();
@@ -106,25 +105,21 @@ app.MapPost("/track/medium", async () =>
                         track.Track.Popularity <= Costants.TracksMediumPopularity)
         .ToList();
 
-    var playlist = await Client.Spotify.Playlists.Get(Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!);
+    var added = await TrackService.AddTracksToPlaylist(Costants.PlaylistIdMedium, trackWithPopularity);
 
-    if (playlist.Id is null)
-    {
-        return Results.BadRequest("Playlist not found");
-    }
-
-    var added = await TrackService.AddTracksToPlaylist(trackWithPopularity, playlist.Id);
-
-    return !added ? Results.BadRequest("Failed to add tracks to playlist") : Results.Ok("Tracks added to playlist");
+    return added ? Results.Ok("Tracks added to playlist") : Results.BadRequest("Failed to add tracks to playlist");
 });
 
 app.MapPost("/track/more", async () =>
 {
-    var deletedTracksPlaylist = await TrackService.RemoveTracksFromPlaylist(Costants.PlaylistIdMore);
-
-    if (!deletedTracksPlaylist)
+    if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMore))
     {
-        return Results.BadRequest("Failed to delete tracks from playlist");
+        return Results.BadRequest("Playlist not found");
+    }
+
+    if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdMore))
+    {
+        return Results.BadRequest("Playlist is not empty, please clear it and retry");
     }
 
     var allTracks = await TrackService.GetAllUserTracks();
@@ -133,86 +128,58 @@ app.MapPost("/track/more", async () =>
         .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
         .ToList();
 
-    var playlist = await Client.Spotify.Playlists.Get(Costants.PlaylistIdMore);
+    var added = await TrackService.AddTracksToPlaylist(Costants.PlaylistIdMore, trackWithPopularity);
 
-    if (playlist.Id is null)
-    {
-        return Results.BadRequest("Playlist not found");
-    }
-
-    var added = await TrackService.AddTracksToPlaylist(trackWithPopularity, playlist.Id);
-
-    return !added ? Results.BadRequest("Failed to add tracks to playlist") : Results.Ok("Tracks added to playlist");
+    return added ? Results.Ok("Tracks added to playlist") : Results.BadRequest("Failed to add tracks to playlist");
 });
 
-app.MapPost("/track/delete", async (int popularity) =>
+app.MapPost("/track/artist", async (string artistId, IdPlaylists idPlaylists) =>
 {
-    // check if popularity is valid
-    if (popularity is < 0 or > 100)
-    {
-        return Results.BadRequest("Invalid popularity");
-    }
-
-    // get all tracks
-    var allTracks = await TrackService.GetAllUserTracks();
-
-    // filter tracks by popularity minor or equal to the input
-    var trackWithPopularity = allTracks
-        .Where(track => track.Track.Popularity <= popularity)
-        .ToList();
-
-    // remove tracks from user library
-    var deletedTracks = await TrackService.RemoveUserTracks(trackWithPopularity);
-
-    return !deletedTracks ? Results.BadRequest("Failed to delete tracks") : Results.Ok("Tracks deleted");
-});
-
-app.MapPost("/track/artist", async (string artistId, string popularType, IdPlaylists idPlaylists) =>
-{
-    if (artistId == string.Empty || popularType == string.Empty)
+    // check if params are not empty
+    if (artistId == string.Empty ||
+        idPlaylists.IdLess == string.Empty ||
+        idPlaylists.IdMedium == string.Empty ||
+        idPlaylists.IdMore == string.Empty)
     {
         return Results.BadRequest("Invalid query params request");
     }
 
-    var deletedTracksPlaylistLess = await TrackService.RemoveTracksFromPlaylist(idPlaylists.IdLess);
-    var deletedTracksPlaylistMedium = await TrackService.RemoveTracksFromPlaylist(idPlaylists.IdMedium);
-    var deletedTracksPlaylistMore = await TrackService.RemoveTracksFromPlaylist(idPlaylists.IdMore);
-
-    if (!deletedTracksPlaylistLess || !deletedTracksPlaylistMedium || !deletedTracksPlaylistMore)
+    // check if playlists are valid
+    if (await PlaylistHelper.CheckValidityPlaylist(
+            idPlaylists.IdLess,
+            idPlaylists.IdMedium,
+            idPlaylists.IdMore))
     {
-        return Results.BadRequest("Failed to delete tracks from playlist");
+        return Results.BadRequest("Playlist not found");
+    }
+
+    // check if playlists are empty
+    if (!await PlaylistHelper.CheckIsEmptyPlaylist(
+            idPlaylists.IdLess,
+            idPlaylists.IdMedium,
+            idPlaylists.IdMore))
+    {
+        return Results.BadRequest("Playlist is not empty, please clear it and retry");
     }
 
     var allTracks = await TrackService.GetAllUserTracks(artistId);
 
-    var trackWithPopularity = new List<SavedTrack>();
+    var trackWithLessPopularity = allTracks
+        .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
+        .ToList();
 
-    switch (popularType)
-    {
-        case "less":
-            trackWithPopularity = allTracks
-                .Where(track => track.Track.Popularity > 0 && track.Track.Popularity <= Costants.TracksLessPopularity)
-                .ToList();
+    var trackWithMediumPopularity = allTracks
+        .Where(track => track.Track.Popularity > Costants.TracksLessPopularity &&
+                        track.Track.Popularity <= Costants.TracksMediumPopularity)
+        .ToList();
 
-            break;
-        case "medium":
-            trackWithPopularity = allTracks
-                .Where(track => track.Track.Popularity > Costants.TracksLessPopularity &&
-                                track.Track.Popularity <= Costants.TracksMediumPopularity)
-                .ToList();
+    var trackWithMorePopularity = allTracks
+        .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
+        .ToList();
 
-            break;
-        case "more":
-            trackWithPopularity = allTracks
-                .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
-                .ToList();
-
-            break;
-    }
-
-    var addedLess = await AddTracksToPlaylist(idPlaylists.IdLess, trackWithPopularity);
-    var addedMedium = await AddTracksToPlaylist(idPlaylists.IdMedium, trackWithPopularity);
-    var addedMore = await AddTracksToPlaylist(idPlaylists.IdMore, trackWithPopularity);
+    var addedLess = await TrackService.AddTracksToArtistPlaylists(idPlaylists.IdLess, trackWithLessPopularity);
+    var addedMedium = await TrackService.AddTracksToArtistPlaylists(idPlaylists.IdMedium, trackWithMediumPopularity);
+    var addedMore = await TrackService.AddTracksToArtistPlaylists(idPlaylists.IdMore, trackWithMorePopularity);
 
     if (!addedLess || !addedMedium || !addedMore)
     {
@@ -223,16 +190,3 @@ app.MapPost("/track/artist", async (string artistId, string popularType, IdPlayl
 });
 
 app.Run();
-return;
-
-static async Task<bool> AddTracksToPlaylist(string artistPlaylistId, IList<SavedTrack> trackWithPopularity)
-{
-    var playlist = await Client.Spotify.Playlists.Get(artistPlaylistId);
-
-    if (playlist.Id is null)
-    {
-        return false;
-    }
-
-    return await TrackService.AddTracksToPlaylist(trackWithPopularity, playlist.Id);
-}
