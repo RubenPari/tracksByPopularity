@@ -14,21 +14,6 @@ public static class TrackService
             : allTracks.Where(track => track.Track.Artists[0].Id == artistId).ToList();
     }
 
-    public static async Task<bool> AddTracksToArtistPlaylists(
-        string artistPlaylistId,
-        IList<SavedTrack> trackWithPopularity
-    )
-    {
-        var playlist = await Client.Spotify.Playlists.Get(artistPlaylistId);
-
-        if (playlist.Id is null)
-        {
-            return false;
-        }
-
-        return await AddTracksToPlaylist(playlist.Id, trackWithPopularity);
-    }
-
     public static async Task<bool> AddTracksToPlaylist(string playlistId, IList<SavedTrack> tracks)
     {
         for (var i = 0; i < tracks.Count; i += 100)
