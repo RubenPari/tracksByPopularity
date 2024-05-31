@@ -2,6 +2,7 @@ using dotenv.net;
 using SpotifyAPI.Web;
 using tracksByPopularity;
 using tracksByPopularity.helpers;
+using tracksByPopularity.middlewares;
 using tracksByPopularity.models;
 using tracksByPopularity.services;
 
@@ -16,6 +17,8 @@ builder.Services.AddOpenApiDocument(config =>
 });
 
 var app = builder.Build();
+
+app.UseMiddleware<CheckAuthMiddleware>();
 
 app.UseOpenApi();
 app.UseSwaggerUi(config =>
