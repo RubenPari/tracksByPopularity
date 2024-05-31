@@ -4,12 +4,13 @@ namespace tracksByPopularity
 {
     using System.Collections.Generic;
 
-    public class Costants
+    public abstract class Costants
     {
         public static SpotifyClientConfig Config { get; } = SpotifyClientConfig.CreateDefault();
-        public static string TitleApi { get; } = "TracksByPopularityAPI";
-        public static int TracksLessPopularity { get; } = 33;
-        public static int TracksMediumPopularity { get; } = 66;
+        public static string TitleApi => "TracksByPopularityAPI";
+        public static int TracksLessPopularity => 33;
+        public static int TracksMediumPopularity => 66;
+
         public static List<string> MyScopes { get; } =
         [
             Scopes.UserReadEmail,
@@ -19,6 +20,7 @@ namespace tracksByPopularity
             Scopes.PlaylistModifyPrivate,
             Scopes.PlaylistModifyPublic
         ];
+
         public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;
         public static string ClientSecret { get; } = Environment.GetEnvironmentVariable("CLIENT_SECRET")!;
         public static string RedirectUri { get; } = Environment.GetEnvironmentVariable("REDIRECT_URI")!;
