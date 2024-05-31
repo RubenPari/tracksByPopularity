@@ -12,20 +12,25 @@ namespace tracksByPopularity
         public static int TracksMediumPopularity => 66;
 
         public static List<string> MyScopes { get; } =
-        [
-            Scopes.UserReadEmail,
-            Scopes.UserReadPrivate,
-            Scopes.UserLibraryRead,
-            Scopes.UserLibraryModify,
-            Scopes.PlaylistModifyPrivate,
-            Scopes.PlaylistModifyPublic
-        ];
+            [
+                Scopes.UserReadEmail,
+                Scopes.UserReadPrivate,
+                Scopes.UserLibraryRead,
+                Scopes.UserLibraryModify,
+                Scopes.PlaylistModifyPrivate,
+                Scopes.PlaylistModifyPublic
+            ];
 
         public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;
-        public static string ClientSecret { get; } = Environment.GetEnvironmentVariable("CLIENT_SECRET")!;
-        public static string RedirectUri { get; } = Environment.GetEnvironmentVariable("REDIRECT_URI")!;
-        public static string PlaylistIdLess { get; } = Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!;
-        public static string PlaylistIdMedium { get; } = Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!;
-        public static string PlaylistIdMore { get; } = Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!;
+        public static string ClientSecret { get; } =
+            Environment.GetEnvironmentVariable("CLIENT_SECRET")!;
+        public static string RedirectUri { get; } =
+            Environment.GetEnvironmentVariable("REDIRECT_URI")!;
+        public static string PlaylistIdLess { get; } =
+            Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!;
+        public static string PlaylistIdMedium { get; } =
+            Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!;
+        public static string PlaylistIdMore { get; } =
+            Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!;
     }
 }

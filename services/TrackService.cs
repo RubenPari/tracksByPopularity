@@ -11,14 +11,13 @@ public static class TrackService
 
         return artistId == null
             ? allTracks
-            : allTracks
-                .Where(track => track.Track.Artists[0].Id == artistId)
-                .ToList();
+            : allTracks.Where(track => track.Track.Artists[0].Id == artistId).ToList();
     }
 
     public static async Task<bool> AddTracksToArtistPlaylists(
         string artistPlaylistId,
-        IList<SavedTrack> trackWithPopularity)
+        IList<SavedTrack> trackWithPopularity
+    )
     {
         var playlist = await Client.Spotify.Playlists.Get(artistPlaylistId);
 
@@ -30,21 +29,16 @@ public static class TrackService
         return await AddTracksToPlaylist(playlist.Id, trackWithPopularity);
     }
 
-    public static async Task<bool> AddTracksToPlaylist(
-        string playlistId,
-        IList<SavedTrack> tracks)
+    public static async Task<bool> AddTracksToPlaylist(string playlistId, IList<SavedTrack> tracks)
     {
         for (var i = 0; i < tracks.Count; i += 100)
         {
-            var tracksToAdd = tracks
-                .Skip(i)
-                .Take(100)
-                .Select(track => track.Track.Uri)
-                .ToList();
+            var tracksToAdd = tracks.Skip(i).Take(100).Select(track => track.Track.Uri).ToList();
 
             var added = await Client.Spotify.Playlists.AddItems(
                 playlistId,
-                new PlaylistAddItemsRequest(tracksToAdd));
+                new PlaylistAddItemsRequest(tracksToAdd)
+            );
 
             if (added.SnapshotId == string.Empty)
             {

@@ -28,165 +28,223 @@ app.UseSwaggerUi(config =>
 
 DotEnv.Load();
 
-app.MapGet("/auth/login", () =>
-{
-    var request = new LoginRequest(
-        new Uri(Costants.RedirectUri),
-        Costants.ClientId,
-        LoginRequest.ResponseType.Code)
+app.MapGet(
+    "/auth/login",
+    () =>
     {
-        Scope = Costants.MyScopes
-    };
-
-    var uri = request.ToUri();
-
-    return Results.Redirect(uri.ToString());
-});
-
-app.MapGet("/auth/callback", async (string code) =>
-{
-    var response = await new OAuthClient().RequestToken(
-        new AuthorizationCodeTokenRequest(
+        var request = new LoginRequest(
+            new Uri(Costants.RedirectUri),
             Costants.ClientId,
-            Costants.ClientSecret,
-            code,
-            new Uri(Costants.RedirectUri)
+            LoginRequest.ResponseType.Code
         )
-    );
+        {
+            Scope = Costants.MyScopes
+        };
 
-    Client.Spotify = new SpotifyClient(Costants.Config.WithToken(response.AccessToken));
+        var uri = request.ToUri();
 
-    var user = await Client.Spotify.UserProfile.Current();
-
-    return user.Id == string.Empty
-        ? Results.BadRequest("Login failed, retry")
-        : Results.Ok("Successfully authenticated!");
-});
-
-app.MapPost("/track/less", async () =>
-{
-    if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLess))
-    {
-        return Results.BadRequest("Playlist not found");
+        return Results.Redirect(uri.ToString());
     }
+);
 
-    if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdLess))
+app.MapGet(
+    "/auth/callback",
+    async (string code) =>
     {
-        return Results.BadRequest("Playlist is not empty, please clear it and retry");
+        var response = await new OAuthClient().RequestToken(
+            new AuthorizationCodeTokenRequest(
+                Costants.ClientId,
+                Costants.ClientSecret,
+                code,
+                new Uri(Costants.RedirectUri)
+            )
+        );
+
+        Client.Spotify = new SpotifyClient(Costants.Config.WithToken(response.AccessToken));
+
+        var user = await Client.Spotify.UserProfile.Current();
+
+        return user.Id == string.Empty
+            ? Results.BadRequest("Login failed, retry")
+            : Results.Ok("Successfully authenticated!");
     }
+);
 
-    var allTracks = await TrackService.GetAllUserTracks();
-
-    var trackWithPopularity = allTracks
-        .Where(track => track.Track.Popularity > 0 && track.Track.Popularity <= Costants.TracksLessPopularity)
-        .ToList();
-
-    var added = await TrackService.AddTracksToPlaylist(Costants.PlaylistIdLess, trackWithPopularity);
-
-    return added ? Results.Ok("Tracks added to playlist") : Results.BadRequest("Failed to add tracks to playlist");
-});
-
-app.MapPost("/track/medium", async () =>
-{
-    if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMedium))
+app.MapPost(
+    "/track/less",
+    async () =>
     {
-        return Results.BadRequest("Playlist not found");
-    }
+        if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLess))
+        {
+            return Results.BadRequest("Playlist not found");
+        }
 
-    if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdMedium))
+        if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdLess))
+        {
+            return Results.BadRequest("Playlist is not empty, please clear it and retry");
+        }
+
+        var allTracks = await TrackService.GetAllUserTracks();
+
+        var trackWithPopularity = allTracks
+            .Where(track =>
+                track.Track.Popularity > 0
+                && track.Track.Popularity <= Costants.TracksLessPopularity
+            )
+            .ToList();
+
+        var added = await TrackService.AddTracksToPlaylist(
+            Costants.PlaylistIdLess,
+            trackWithPopularity
+        );
+
+        return added
+            ? Results.Ok("Tracks added to playlist")
+            : Results.BadRequest("Failed to add tracks to playlist");
+    }
+);
+
+app.MapPost(
+    "/track/medium",
+    async () =>
     {
-        return Results.BadRequest("Playlist is not empty, please clear it and retry");
+        if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMedium))
+        {
+            return Results.BadRequest("Playlist not found");
+        }
+
+        if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdMedium))
+        {
+            return Results.BadRequest("Playlist is not empty, please clear it and retry");
+        }
+
+        var allTracks = await TrackService.GetAllUserTracks();
+
+        var trackWithPopularity = allTracks
+            .Where(track =>
+                track.Track.Popularity > Costants.TracksLessPopularity
+                && track.Track.Popularity <= Costants.TracksMediumPopularity
+            )
+            .ToList();
+
+        var added = await TrackService.AddTracksToPlaylist(
+            Costants.PlaylistIdMedium,
+            trackWithPopularity
+        );
+
+        return added
+            ? Results.Ok("Tracks added to playlist")
+            : Results.BadRequest("Failed to add tracks to playlist");
     }
+);
 
-    var allTracks = await TrackService.GetAllUserTracks();
-
-    var trackWithPopularity = allTracks
-        .Where(track => track.Track.Popularity > Costants.TracksLessPopularity &&
-                        track.Track.Popularity <= Costants.TracksMediumPopularity)
-        .ToList();
-
-    var added = await TrackService.AddTracksToPlaylist(Costants.PlaylistIdMedium, trackWithPopularity);
-
-    return added ? Results.Ok("Tracks added to playlist") : Results.BadRequest("Failed to add tracks to playlist");
-});
-
-app.MapPost("/track/more", async () =>
-{
-    if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMore))
+app.MapPost(
+    "/track/more",
+    async () =>
     {
-        return Results.BadRequest("Playlist not found");
-    }
+        if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMore))
+        {
+            return Results.BadRequest("Playlist not found");
+        }
 
-    if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdMore))
+        if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdMore))
+        {
+            return Results.BadRequest("Playlist is not empty, please clear it and retry");
+        }
+
+        var allTracks = await TrackService.GetAllUserTracks();
+
+        var trackWithPopularity = allTracks
+            .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
+            .ToList();
+
+        var added = await TrackService.AddTracksToPlaylist(
+            Costants.PlaylistIdMore,
+            trackWithPopularity
+        );
+
+        return added
+            ? Results.Ok("Tracks added to playlist")
+            : Results.BadRequest("Failed to add tracks to playlist");
+    }
+);
+
+app.MapPost(
+    "/track/artist",
+    async (string artistId, IdArtistPlaylists idPlaylists) =>
     {
-        return Results.BadRequest("Playlist is not empty, please clear it and retry");
+        // check if params are not empty
+        if (
+            artistId == string.Empty
+            || idPlaylists.IdArtistPlaylistLess == string.Empty
+            || idPlaylists.IdArtistPlaylistMedium == string.Empty
+            || idPlaylists.IdArtistPlaylistMore == string.Empty
+        )
+        {
+            return Results.BadRequest("Invalid query params request");
+        }
+
+        // check if playlists are valid
+        if (
+            await PlaylistHelper.CheckValidityPlaylist(
+                idPlaylists.IdArtistPlaylistLess,
+                idPlaylists.IdArtistPlaylistMedium,
+                idPlaylists.IdArtistPlaylistMore
+            )
+        )
+        {
+            return Results.BadRequest("Playlist not found");
+        }
+
+        // check if playlists are empty
+        if (
+            !await PlaylistHelper.CheckIsEmptyPlaylist(
+                idPlaylists.IdArtistPlaylistLess,
+                idPlaylists.IdArtistPlaylistMedium,
+                idPlaylists.IdArtistPlaylistMore
+            )
+        )
+        {
+            return Results.BadRequest("Playlist is not empty, please clear it and retry");
+        }
+
+        var allTracks = await TrackService.GetAllUserTracks(artistId);
+
+        var trackWithLessPopularity = allTracks
+            .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
+            .ToList();
+
+        var trackWithMediumPopularity = allTracks
+            .Where(track =>
+                track.Track.Popularity > Costants.TracksLessPopularity
+                && track.Track.Popularity <= Costants.TracksMediumPopularity
+            )
+            .ToList();
+
+        var trackWithMorePopularity = allTracks
+            .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
+            .ToList();
+
+        var addedLess = await TrackService.AddTracksToArtistPlaylists(
+            idPlaylists.IdArtistPlaylistLess,
+            trackWithLessPopularity
+        );
+        var addedMedium = await TrackService.AddTracksToArtistPlaylists(
+            idPlaylists.IdArtistPlaylistMedium,
+            trackWithMediumPopularity
+        );
+        var addedMore = await TrackService.AddTracksToArtistPlaylists(
+            idPlaylists.IdArtistPlaylistMore,
+            trackWithMorePopularity
+        );
+
+        if (!addedLess || !addedMedium || !addedMore)
+        {
+            return Results.BadRequest("Failed to add tracks to playlist");
+        }
+
+        return Results.Ok("Tracks added to playlist");
     }
-
-    var allTracks = await TrackService.GetAllUserTracks();
-
-    var trackWithPopularity = allTracks
-        .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
-        .ToList();
-
-    var added = await TrackService.AddTracksToPlaylist(Costants.PlaylistIdMore, trackWithPopularity);
-
-    return added ? Results.Ok("Tracks added to playlist") : Results.BadRequest("Failed to add tracks to playlist");
-});
-
-app.MapPost("/track/artist", async (string artistId, IdPlaylists idPlaylists) =>
-{
-    // check if params are not empty
-    if (artistId == string.Empty ||
-        idPlaylists.IdLess == string.Empty ||
-        idPlaylists.IdMedium == string.Empty ||
-        idPlaylists.IdMore == string.Empty)
-    {
-        return Results.BadRequest("Invalid query params request");
-    }
-
-    // check if playlists are valid
-    if (await PlaylistHelper.CheckValidityPlaylist(
-            idPlaylists.IdLess,
-            idPlaylists.IdMedium,
-            idPlaylists.IdMore))
-    {
-        return Results.BadRequest("Playlist not found");
-    }
-
-    // check if playlists are empty
-    if (!await PlaylistHelper.CheckIsEmptyPlaylist(
-            idPlaylists.IdLess,
-            idPlaylists.IdMedium,
-            idPlaylists.IdMore))
-    {
-        return Results.BadRequest("Playlist is not empty, please clear it and retry");
-    }
-
-    var allTracks = await TrackService.GetAllUserTracks(artistId);
-
-    var trackWithLessPopularity = allTracks
-        .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
-        .ToList();
-
-    var trackWithMediumPopularity = allTracks
-        .Where(track => track.Track.Popularity > Costants.TracksLessPopularity &&
-                        track.Track.Popularity <= Costants.TracksMediumPopularity)
-        .ToList();
-
-    var trackWithMorePopularity = allTracks
-        .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
-        .ToList();
-
-    var addedLess = await TrackService.AddTracksToArtistPlaylists(idPlaylists.IdLess, trackWithLessPopularity);
-    var addedMedium = await TrackService.AddTracksToArtistPlaylists(idPlaylists.IdMedium, trackWithMediumPopularity);
-    var addedMore = await TrackService.AddTracksToArtistPlaylists(idPlaylists.IdMore, trackWithMorePopularity);
-
-    if (!addedLess || !addedMedium || !addedMore)
-    {
-        return Results.BadRequest("Failed to add tracks to playlist");
-    }
-
-    return Results.Ok("Tracks added to playlist");
-});
+);
 
 app.Run();
