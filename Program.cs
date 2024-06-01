@@ -1,4 +1,3 @@
-using dotenv.net;
 using SpotifyAPI.Web;
 using tracksByPopularity;
 using tracksByPopularity.helpers;
@@ -28,8 +27,6 @@ app.UseSwaggerUi(config =>
     config.DocumentPath = "/swagger/{documentName}/swagger.json";
     config.DocExpansion = "list";
 });
-
-DotEnv.Load();
 
 app.MapGet(
     "/auth/login",
