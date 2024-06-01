@@ -6,7 +6,7 @@ public static class TrackService
 {
     public static async Task<IList<SavedTrack>> GetAllUserTracks(string? artistId = null)
     {
-        var firstPageTracks = await Client.Spotify.Library.GetTracks();
+        var firstPageTracks = await Client.Spotify!.Library.GetTracks();
         var allTracks = await Client.Spotify.PaginateAll(firstPageTracks);
 
         return artistId == null
@@ -20,7 +20,7 @@ public static class TrackService
         {
             var tracksToAdd = tracks.Skip(i).Take(100).Select(track => track.Track.Uri).ToList();
 
-            var added = await Client.Spotify.Playlists.AddItems(
+            var added = await Client.Spotify!.Playlists.AddItems(
                 playlistId,
                 new PlaylistAddItemsRequest(tracksToAdd)
             );

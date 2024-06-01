@@ -6,7 +6,7 @@ public static class PlaylistHelper
     {
         foreach (var playlistId in playlistIds)
         {
-            var playlist = await Client.Spotify.Playlists.Get(playlistId);
+            var playlist = await Client.Spotify!.Playlists.Get(playlistId);
             if (playlist.Id is null)
             {
                 return false;
@@ -20,7 +20,7 @@ public static class PlaylistHelper
     {
         foreach (var playlistId in playlistIds)
         {
-            var playlist = await Client.Spotify.Playlists.Get(playlistId);
+            var playlist = await Client.Spotify!.Playlists.Get(playlistId);
             if (playlist.Tracks!.Items!.Count > 0)
             {
                 return false;

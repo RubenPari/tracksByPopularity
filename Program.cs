@@ -87,7 +87,7 @@ app.MapPost(
     "/track/less",
     async () =>
     {
-        if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLess))
+        if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLess))
         {
             return Results.BadRequest("Playlist not found");
         }
@@ -121,7 +121,7 @@ app.MapPost(
     "/track/medium",
     async () =>
     {
-        if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMedium))
+        if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMedium))
         {
             return Results.BadRequest("Playlist not found");
         }
@@ -155,7 +155,7 @@ app.MapPost(
     "/track/more",
     async () =>
     {
-        if (await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMore))
+        if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMore))
         {
             return Results.BadRequest("Playlist not found");
         }
