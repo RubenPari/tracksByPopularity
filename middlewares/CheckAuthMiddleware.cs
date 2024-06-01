@@ -6,21 +6,33 @@ public class CheckAuthMiddleware(RequestDelegate next)
     [
         "/auth/login",
         "/auth/callback",
-        "auth/logout",
-        "/swagger"
+        "/auth/logout"
     ];
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (AuthPaths.Contains(context.Request.Path))
+        // exclude swagger from auth check
+        if (context.Request.Path.StartsWithSegments("/swagger"))
         {
             await next(context);
             return;
         }
 
-        var userProfile = await Client.Spotify.UserProfile.Current();
+        // redirect to swagger if root
+        if (context.Request.Path.Value == "/")
+        {
+            context.Response.Redirect("/swagger");
+            return;
+        }
 
-        if (string.IsNullOrEmpty(userProfile.Id))
+        // exclude auth paths from auth check
+        if (AuthPaths.Contains(context.Request.Path.Value))
+        {
+            await next(context);
+            return;
+        }
+
+        if (Client.Spotify == null)
         {
             context.Response.StatusCode = 401;
             await context.Response.WriteAsync("Unauthorized");
