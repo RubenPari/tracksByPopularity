@@ -84,7 +84,7 @@ app.MapGet(
 );
 
 app.MapPost(
-    "/track/less",
+    "/track/33",
     async () =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLess))
@@ -118,7 +118,7 @@ app.MapPost(
 );
 
 app.MapPost(
-    "/track/medium",
+    "/track/66",
     async () =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMedium))
@@ -152,7 +152,7 @@ app.MapPost(
 );
 
 app.MapPost(
-    "/track/more",
+    "/track/100",
     async () =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMore))
@@ -184,14 +184,15 @@ app.MapPost(
 
 app.MapPost(
     "/track/artist",
-    async (string artistId, IdArtistPlaylists idPlaylists) =>
+    async (string artistId, IdArtistPlaylistsBody idArtistPlaylistsBody) =>
     {
         // check if params are not empty
         if (
             artistId == string.Empty
-            || idPlaylists.IdArtistPlaylistLess == string.Empty
-            || idPlaylists.IdArtistPlaylistMedium == string.Empty
-            || idPlaylists.IdArtistPlaylistMore == string.Empty
+            || idArtistPlaylistsBody.Less == string.Empty
+            || idArtistPlaylistsBody.LessMedium == string.Empty
+            || idArtistPlaylistsBody.MoreMedium == string.Empty
+            || idArtistPlaylistsBody.More == string.Empty
         )
         {
             return Results.BadRequest("Invalid query params request");
@@ -200,9 +201,10 @@ app.MapPost(
         // check if playlists are valid
         if (
             !await PlaylistHelper.CheckValidityPlaylist(
-                idPlaylists.IdArtistPlaylistLess,
-                idPlaylists.IdArtistPlaylistMedium,
-                idPlaylists.IdArtistPlaylistMore
+                idArtistPlaylistsBody.Less,
+                idArtistPlaylistsBody.LessMedium,
+                idArtistPlaylistsBody.MoreMedium,
+                idArtistPlaylistsBody.More
             )
         )
         {
@@ -212,9 +214,10 @@ app.MapPost(
         // check if playlists are empty
         if (
             !await PlaylistHelper.CheckIsEmptyPlaylist(
-                idPlaylists.IdArtistPlaylistLess,
-                idPlaylists.IdArtistPlaylistMedium,
-                idPlaylists.IdArtistPlaylistMore
+                idArtistPlaylistsBody.Less,
+                idArtistPlaylistsBody.LessMedium,
+                idArtistPlaylistsBody.MoreMedium,
+                idArtistPlaylistsBody.More
             )
         )
         {
@@ -224,34 +227,48 @@ app.MapPost(
         var allTracksArtist = await TrackService.GetAllUserTracks(artistId);
 
         var trackWithLessPopularity = allTracksArtist
-            .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
+            .Where(track => track.Track.Popularity <= Costants.TracksLessArtistPopularity)
             .ToList();
 
-        var trackWithMediumPopularity = allTracksArtist
+        var trackWithLessMediumPopularity = allTracksArtist
             .Where(track =>
-                track.Track.Popularity > Costants.TracksLessPopularity
-                && track.Track.Popularity <= Costants.TracksMediumPopularity
+                track.Track.Popularity > Costants.TracksLessArtistPopularity
+                && track.Track.Popularity <= Costants.TracksLessMediumArtistPopularity
+            )
+            .ToList();
+
+        var trackWithMoreMediumPopularity = allTracksArtist
+            .Where(track =>
+                track.Track.Popularity > Costants.TracksLessMediumArtistPopularity
+                && track.Track.Popularity <= Costants.TracksMoreMediumArtistPopularity
             )
             .ToList();
 
         var trackWithMorePopularity = allTracksArtist
-            .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
+            .Where(track => track.Track.Popularity > Costants.TracksMoreMediumArtistPopularity)
             .ToList();
 
         var addedLess = await TrackService.AddTracksToPlaylist(
-            idPlaylists.IdArtistPlaylistLess,
+            idArtistPlaylistsBody.Less,
             trackWithLessPopularity
         );
-        var addedMedium = await TrackService.AddTracksToPlaylist(
-            idPlaylists.IdArtistPlaylistMedium,
-            trackWithMediumPopularity
+
+        var addedLessMedium = await TrackService.AddTracksToPlaylist(
+            idArtistPlaylistsBody.LessMedium,
+            trackWithLessMediumPopularity
         );
+
+        var addedMoreMedium = await TrackService.AddTracksToPlaylist(
+            idArtistPlaylistsBody.MoreMedium,
+            trackWithMoreMediumPopularity
+        );
+
         var addedMore = await TrackService.AddTracksToPlaylist(
-            idPlaylists.IdArtistPlaylistMore,
+            idArtistPlaylistsBody.More,
             trackWithMorePopularity
         );
 
-        if (!addedLess || !addedMedium || !addedMore)
+        if (!addedLess || !addedLessMedium || !addedMoreMedium || !addedMore)
         {
             return Results.BadRequest("Failed to add tracks to playlist");
         }
