@@ -100,10 +100,7 @@ app.MapPost(
         var allTracks = await TrackService.GetAllUserTracks();
 
         var trackWithPopularity = allTracks
-            .Where(track =>
-                track.Track.Popularity > 0
-                && track.Track.Popularity <= Costants.TracksLessPopularity
-            )
+            .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
             .ToList();
 
         var added = await TrackService.AddTracksToPlaylist(
