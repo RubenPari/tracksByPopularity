@@ -84,7 +84,7 @@ app.MapGet(
 );
 
 app.MapPost(
-    "/track/33",
+    "/track/less",
     async () =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLess))
@@ -115,15 +115,15 @@ app.MapPost(
 );
 
 app.MapPost(
-    "/track/66",
+    "/track/less-medium",
     async () =>
     {
-        if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMedium))
+        if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLessMedium))
         {
             return Results.BadRequest("Playlist not found");
         }
 
-        if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdMedium))
+        if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdLessMedium))
         {
             return Results.BadRequest("Playlist is not empty, please clear it and retry");
         }
@@ -133,12 +133,12 @@ app.MapPost(
         var trackWithPopularity = allTracks
             .Where(track =>
                 track.Track.Popularity > Costants.TracksLessPopularity
-                && track.Track.Popularity <= Costants.TracksMediumPopularity
+                && track.Track.Popularity <= Costants.TracksLessMediumPopularity
             )
             .ToList();
 
         var added = await TrackService.AddTracksToPlaylist(
-            Costants.PlaylistIdMedium,
+            Costants.PlaylistIdLessMedium,
             trackWithPopularity
         );
 
@@ -149,7 +149,41 @@ app.MapPost(
 );
 
 app.MapPost(
-    "/track/100",
+    "/track/more-medium",
+    async () =>
+    {
+        if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMoreMedium))
+        {
+            return Results.BadRequest("Playlist not found");
+        }
+
+        if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdMoreMedium))
+        {
+            return Results.BadRequest("Playlist is not empty, please clear it and retry");
+        }
+
+        var allTracks = await TrackService.GetAllUserTracks();
+
+        var trackWithPopularity = allTracks
+            .Where(track =>
+                track.Track.Popularity > Costants.TracksLessMediumPopularity
+                && track.Track.Popularity <= Costants.TracksMoreMediumPopularity
+            )
+            .ToList();
+
+        var added = await TrackService.AddTracksToPlaylist(
+            Costants.PlaylistIdMoreMedium,
+            trackWithPopularity
+        );
+
+        return added
+            ? Results.Ok("Tracks added to playlist")
+            : Results.BadRequest("Failed to add tracks to playlist");
+    }
+);
+
+app.MapPost(
+    "/track/more",
     async () =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMore))
@@ -165,7 +199,7 @@ app.MapPost(
         var allTracks = await TrackService.GetAllUserTracks();
 
         var trackWithPopularity = allTracks
-            .Where(track => track.Track.Popularity > Costants.TracksMediumPopularity)
+            .Where(track => track.Track.Popularity > Costants.TracksMoreMediumPopularity)
             .ToList();
 
         var added = await TrackService.AddTracksToPlaylist(
@@ -224,25 +258,25 @@ app.MapPost(
         var allTracksArtist = await TrackService.GetAllUserTracks(artistId);
 
         var trackWithLessPopularity = allTracksArtist
-            .Where(track => track.Track.Popularity <= Costants.TracksLessArtistPopularity)
+            .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
             .ToList();
 
         var trackWithLessMediumPopularity = allTracksArtist
             .Where(track =>
-                track.Track.Popularity > Costants.TracksLessArtistPopularity
-                && track.Track.Popularity <= Costants.TracksLessMediumArtistPopularity
+                track.Track.Popularity > Costants.TracksLessPopularity
+                && track.Track.Popularity <= Costants.TracksLessMediumPopularity
             )
             .ToList();
 
         var trackWithMoreMediumPopularity = allTracksArtist
             .Where(track =>
-                track.Track.Popularity > Costants.TracksLessMediumArtistPopularity
-                && track.Track.Popularity <= Costants.TracksMoreMediumArtistPopularity
+                track.Track.Popularity > Costants.TracksLessMediumPopularity
+                && track.Track.Popularity <= Costants.TracksMoreMediumPopularity
             )
             .ToList();
 
         var trackWithMorePopularity = allTracksArtist
-            .Where(track => track.Track.Popularity > Costants.TracksMoreMediumArtistPopularity)
+            .Where(track => track.Track.Popularity > Costants.TracksMoreMediumPopularity)
             .ToList();
 
         var addedLess = await TrackService.AddTracksToPlaylist(

@@ -8,21 +8,19 @@ namespace tracksByPopularity
     {
         public static SpotifyClientConfig Config { get; } = SpotifyClientConfig.CreateDefault();
         public static string TitleApi => "TracksByPopularityAPI";
-        public static int TracksLessArtistPopularity => 25;
-        public static int TracksLessMediumArtistPopularity => 50;
-        public static int TracksMoreMediumArtistPopularity => 75;
-        public static int TracksLessPopularity => 33;
-        public static int TracksMediumPopularity => 66;
+        public static int TracksLessPopularity => 25;
+        public static int TracksLessMediumPopularity => 50;
+        public static int TracksMoreMediumPopularity => 75;
 
         public static List<string> MyScopes { get; } =
-            [
-                Scopes.UserReadEmail,
-                Scopes.UserReadPrivate,
-                Scopes.UserLibraryRead,
-                Scopes.UserLibraryModify,
-                Scopes.PlaylistModifyPrivate,
-                Scopes.PlaylistModifyPublic
-            ];
+        [
+            Scopes.UserReadEmail,
+            Scopes.UserReadPrivate,
+            Scopes.UserLibraryRead,
+            Scopes.UserLibraryModify,
+            Scopes.PlaylistModifyPrivate,
+            Scopes.PlaylistModifyPublic
+        ];
 
         public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;
 
@@ -35,8 +33,11 @@ namespace tracksByPopularity
         public static string PlaylistIdLess { get; } =
             Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!;
 
-        public static string PlaylistIdMedium { get; } =
-            Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!;
+        public static string PlaylistIdLessMedium { get; } =
+            Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS_MEDIUM")!;
+
+        public static string PlaylistIdMoreMedium { get; } =
+            Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE_MEDIUM")!;
 
         public static string PlaylistIdMore { get; } =
             Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!;
