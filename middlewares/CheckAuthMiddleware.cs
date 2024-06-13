@@ -13,13 +13,6 @@ public class CheckAuthMiddleware(RequestDelegate next)
             return;
         }
 
-        // redirect to swagger if root
-        if (context.Request.Path.Value == "/")
-        {
-            context.Response.Redirect("/swagger");
-            return;
-        }
-
         // exclude auth paths from auth check
         if (AuthPaths.Contains(context.Request.Path.Value))
         {
