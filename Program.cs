@@ -17,8 +17,8 @@ builder.Services.AddOpenApiDocument(config =>
 
 var app = builder.Build();
 
-app.UseMiddleware<CheckAuthMiddleware>();
 app.UseMiddleware<RedirectHomeMiddleware>();
+app.UseMiddleware<CheckAuthMiddleware>();
 
 app.UseOpenApi();
 app.UseSwaggerUi(config =>
