@@ -4,14 +4,10 @@ namespace tracksByPopularity.services;
 
 public static class TrackService
 {
-    public static async Task<IList<SavedTrack>> GetAllUserTracks(string? artistId = null)
+    public static async Task<IList<SavedTrack>> GetAllUserTracks()
     {
         var firstPageTracks = await Client.Spotify!.Library.GetTracks();
-        var allTracks = await Client.Spotify.PaginateAll(firstPageTracks);
-
-        return artistId == null
-            ? allTracks
-            : allTracks.Where(track => track.Track.Artists[0].Id == artistId).ToList();
+        return await Client.Spotify.PaginateAll(firstPageTracks);
     }
 
     public static async Task<bool> AddTracksToPlaylist(string playlistId, IList<SavedTrack> tracks)
