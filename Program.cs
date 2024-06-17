@@ -116,7 +116,9 @@ app.MapPost(
             cacheRedis.StringSet("allTracks", JsonConvert.SerializeObject(allTracks));
         }
 
-        allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(cacheRedis.StringGet("allTracks")!)!;
+        allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(
+            cacheRedis.StringGet("allTracks")!
+        )!;
 
         var trackWithPopularity = allTracks
             .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
@@ -156,7 +158,9 @@ app.MapPost(
             cacheRedis.StringSet("allTracks", JsonConvert.SerializeObject(allTracks));
         }
 
-        allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(cacheRedis.StringGet("allTracks")!)!;
+        allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(
+            cacheRedis.StringGet("allTracks")!
+        )!;
 
         var trackWithPopularity = allTracks
             .Where(track =>
@@ -199,7 +203,9 @@ app.MapPost(
             cacheRedis.StringSet("allTracks", JsonConvert.SerializeObject(allTracks));
         }
 
-        allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(cacheRedis.StringGet("allTracks")!)!;
+        allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(
+            cacheRedis.StringGet("allTracks")!
+        )!;
 
         var trackWithPopularity = allTracks
             .Where(track =>
@@ -242,7 +248,9 @@ app.MapPost(
             cacheRedis.StringSet("allTracks", JsonConvert.SerializeObject(allTracks));
         }
 
-        allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(cacheRedis.StringGet("allTracks")!)!;
+        allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(
+            cacheRedis.StringGet("allTracks")!
+        )!;
 
         var trackWithPopularity = allTracks
             .Where(track => track.Track.Popularity > Costants.TracksMoreMediumPopularity)
@@ -261,11 +269,7 @@ app.MapPost(
 
 app.MapPost(
     "/track/artist",
-    async (
-        string artistId,
-        IdArtistPlaylistsBody idArtistPlaylistsBody,
-        IDatabase cacheRedis
-    ) =>
+    async (string artistId, IdArtistPlaylistsBody idArtistPlaylistsBody, IDatabase cacheRedis) =>
     {
         // check if params are not empty
         if (
@@ -314,7 +318,9 @@ app.MapPost(
             cacheRedis.StringSet("allTracks", JsonConvert.SerializeObject(allTracks));
         }
 
-        allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(cacheRedis.StringGet("allTracks")!)!;
+        allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(
+            cacheRedis.StringGet("allTracks")!
+        )!;
 
         var allTracksArtist = allTracks
             .Where(track => track.Track.Artists.Any(artist => artist.Id == artistId))
