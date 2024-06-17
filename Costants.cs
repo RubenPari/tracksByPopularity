@@ -41,5 +41,8 @@ namespace tracksByPopularity
 
         public static string PlaylistIdMore { get; } =
             Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!;
+
+        public static string RedisConnectionString { get; } =
+            Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")!;
     }
 }
