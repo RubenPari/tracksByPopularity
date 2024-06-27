@@ -19,10 +19,14 @@ builder.Services.AddOpenApiDocument(config =>
     config.Version = "v1";
 });
 
-builder.Services.AddSingleton<IDatabase>(_ =>
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
-    var configuration = ConfigurationOptions.Parse(Costants.RedisConnectionString, true);
-    return ConnectionMultiplexer.Connect(configuration).GetDatabase();
+    var configuration = ConfigurationOptions.Parse(Costants.RedisConnectionString);
+
+    configuration.AllowAdmin = true;
+    configuration.AbortOnConnectFail = false;
+
+    return ConnectionMultiplexer.Connect(configuration);
 });
 
 var app = builder.Build();
@@ -95,7 +99,7 @@ app.MapGet(
 
 app.MapPost(
     "/track/less",
-    async (IDatabase cacheRedis) =>
+    async (IConnectionMultiplexer cacheRedisConnection) =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLess))
         {
@@ -109,15 +113,17 @@ app.MapPost(
 
         IList<SavedTrack> allTracks;
 
-        if (cacheRedis.StringGet("allTracks") == RedisValue.Null)
+        var cacheRedis = cacheRedisConnection.GetDatabase();
+
+        if (await cacheRedis.StringGetAsync("allTracks") == RedisValue.Null)
         {
             allTracks = await TrackService.GetAllUserTracks();
 
-            cacheRedis.StringSet("allTracks", JsonConvert.SerializeObject(allTracks));
+            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
         }
 
         allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(
-            cacheRedis.StringGet("allTracks")!
+            (await cacheRedis.StringGetAsync("allTracks"))!
         )!;
 
         var trackWithPopularity = allTracks
@@ -137,7 +143,7 @@ app.MapPost(
 
 app.MapPost(
     "/track/less-medium",
-    async (IDatabase cacheRedis) =>
+    async (IConnectionMultiplexer cacheRedisConnection) =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLessMedium))
         {
@@ -151,15 +157,17 @@ app.MapPost(
 
         IList<SavedTrack> allTracks;
 
-        if (cacheRedis.StringGet("allTracks") == RedisValue.Null)
+        var cacheRedis = cacheRedisConnection.GetDatabase();
+
+        if (await cacheRedis.StringGetAsync("allTracks") == RedisValue.Null)
         {
             allTracks = await TrackService.GetAllUserTracks();
 
-            cacheRedis.StringSet("allTracks", JsonConvert.SerializeObject(allTracks));
+            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
         }
 
         allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(
-            cacheRedis.StringGet("allTracks")!
+            (await cacheRedis.StringGetAsync("allTracks"))!
         )!;
 
         var trackWithPopularity = allTracks
@@ -182,7 +190,7 @@ app.MapPost(
 
 app.MapPost(
     "/track/more-medium",
-    async (IDatabase cacheRedis) =>
+    async (IConnectionMultiplexer cacheRedisConnection) =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMoreMedium))
         {
@@ -196,15 +204,17 @@ app.MapPost(
 
         IList<SavedTrack> allTracks;
 
-        if (cacheRedis.StringGet("allTracks") == RedisValue.Null)
+        var cacheRedis = cacheRedisConnection.GetDatabase();
+
+        if (await cacheRedis.StringGetAsync("allTracks") == RedisValue.Null)
         {
             allTracks = await TrackService.GetAllUserTracks();
 
-            cacheRedis.StringSet("allTracks", JsonConvert.SerializeObject(allTracks));
+            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
         }
 
         allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(
-            cacheRedis.StringGet("allTracks")!
+            (await cacheRedis.StringGetAsync("allTracks"))!
         )!;
 
         var trackWithPopularity = allTracks
@@ -227,7 +237,7 @@ app.MapPost(
 
 app.MapPost(
     "/track/more",
-    async (IDatabase cacheRedis) =>
+    async (IConnectionMultiplexer cacheRedisConnection) =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMore))
         {
@@ -241,15 +251,17 @@ app.MapPost(
 
         IList<SavedTrack> allTracks;
 
-        if (cacheRedis.StringGet("allTracks") == RedisValue.Null)
+        var cacheRedis = cacheRedisConnection.GetDatabase();
+
+        if (await cacheRedis.StringGetAsync("allTracks") == RedisValue.Null)
         {
             allTracks = await TrackService.GetAllUserTracks();
 
-            cacheRedis.StringSet("allTracks", JsonConvert.SerializeObject(allTracks));
+            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
         }
 
         allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(
-            cacheRedis.StringGet("allTracks")!
+            (await cacheRedis.StringGetAsync("allTracks"))!
         )!;
 
         var trackWithPopularity = allTracks
@@ -269,7 +281,11 @@ app.MapPost(
 
 app.MapPost(
     "/track/artist",
-    async (string artistId, IdArtistPlaylistsBody idArtistPlaylistsBody, IDatabase cacheRedis) =>
+    async (
+        string artistId,
+        IdArtistPlaylistsBody idArtistPlaylistsBody,
+        IConnectionMultiplexer cacheRedisConnection
+    ) =>
     {
         // check if params are not empty
         if (
@@ -311,15 +327,17 @@ app.MapPost(
 
         IList<SavedTrack> allTracks;
 
-        if (cacheRedis.StringGet("allTracks") == RedisValue.Null)
+        var cacheRedis = cacheRedisConnection.GetDatabase();
+
+        if (await cacheRedis.StringGetAsync("allTracks") == RedisValue.Null)
         {
             allTracks = await TrackService.GetAllUserTracks();
 
-            cacheRedis.StringSet("allTracks", JsonConvert.SerializeObject(allTracks));
+            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
         }
 
         allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(
-            cacheRedis.StringGet("allTracks")!
+            (await cacheRedis.StringGetAsync("allTracks"))!
         )!;
 
         var allTracksArtist = allTracks
