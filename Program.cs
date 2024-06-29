@@ -299,18 +299,6 @@ app.MapPost(
         IConnectionMultiplexer cacheRedisConnection
     ) =>
     {
-        // check if params are not empty
-        if (
-            artistId == string.Empty
-            || idArtistPlaylistsBody.Less == string.Empty
-            || idArtistPlaylistsBody.LessMedium == string.Empty
-            || idArtistPlaylistsBody.MoreMedium == string.Empty
-            || idArtistPlaylistsBody.More == string.Empty
-        )
-        {
-            return Results.BadRequest("Invalid query params request");
-        }
-
         // check if playlists are valid
         if (
             !await PlaylistHelper.CheckValidityPlaylist(
