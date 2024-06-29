@@ -101,6 +101,23 @@ app.MapGet(
     }
 );
 
+app.MapPost("/track/top", (HttpContext httpContext) =>
+{
+    // get timeRange from query string
+    var timeRangeString = httpContext.Request.Query["timeRange"].FirstOrDefault();
+    
+    if (string.IsNullOrEmpty(timeRangeString))
+    {
+        return Results.BadRequest("Time range is required");
+    }
+    
+    // convert timeRange from string to enum
+    var timeRange = timeRangeString.ToEnum<TimeRangeEnum>();
+    
+    // TODO: complete the implementation
+    return timeRange == null ? Results.BadRequest("Invalid time range") : Results.Ok($"Top tracks for time range: {timeRange}");
+});
+
 app.MapPost(
     "/track/less",
     async (IConnectionMultiplexer cacheRedisConnection) =>
