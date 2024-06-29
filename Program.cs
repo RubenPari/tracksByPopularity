@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using SpotifyAPI.Web;
 using StackExchange.Redis;
 using tracksByPopularity;
+using tracksByPopularity.background;
 using tracksByPopularity.helpers;
 using tracksByPopularity.middlewares;
 using tracksByPopularity.models;
@@ -11,7 +12,6 @@ using tracksByPopularity.services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddOpenApiDocument(config =>
 {
     config.DocumentName = Costants.TitleApi;
@@ -19,6 +19,7 @@ builder.Services.AddOpenApiDocument(config =>
     config.Version = "v1";
 });
 
+// Service that set Redis cache
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
     var configuration = ConfigurationOptions.Parse(Costants.RedisConnectionString);
@@ -28,12 +29,15 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 
     return ConnectionMultiplexer.Connect(configuration);
 });
+builder.Services.AddHostedService<RedisCacheResetService>();
 
 var app = builder.Build();
 
+// Add middlewares
 app.UseMiddleware<RedirectHomeMiddleware>();
 app.UseMiddleware<CheckAuthMiddleware>();
 
+// Add services to use OpenApi and Swagger UI
 app.UseOpenApi();
 app.UseSwaggerUi(config =>
 {
