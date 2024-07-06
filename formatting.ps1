@@ -1,1 +1,1 @@
-dotnet csharpier .
+dotnet-csharpier .
