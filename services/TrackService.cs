@@ -1,4 +1,5 @@
 using SpotifyAPI.Web;
+using tracksByPopularity.models;
 
 namespace tracksByPopularity.services;
 
@@ -28,5 +29,22 @@ public static class TrackService
         }
 
         return true;
+    }
+
+    public static async Task<IList<FullTrack>> GetTopTracks(TimeRangeEnum timeRange)
+    {
+        var timeRangeParam = timeRange switch
+        {
+            TimeRangeEnum.LongTerm => PersonalizationTopRequest.TimeRange.LongTerm,
+            TimeRangeEnum.MediumTerm => PersonalizationTopRequest.TimeRange.MediumTerm,
+            TimeRangeEnum.ShortTerm => PersonalizationTopRequest.TimeRange.ShortTerm,
+            _ => throw new NotImplementedException()
+        };
+
+        var topTracks = await Client.Spotify!.Personalization.GetTopTracks(
+            new PersonalizationTopRequest { TimeRangeParam = timeRangeParam, Limit = 50 }
+        );
+
+        return topTracks.Items!;
     }
 }
