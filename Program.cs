@@ -101,22 +101,60 @@ app.MapGet(
     }
 );
 
-app.MapPost("/track/top", (HttpContext httpContext) =>
-{
-    // get timeRange from query string
-    var timeRangeString = httpContext.Request.Query["timeRange"].FirstOrDefault();
-    
-    if (string.IsNullOrEmpty(timeRangeString))
+app.MapPost(
+    "/track/top",
+    async (HttpContext httpContext) =>
     {
-        return Results.BadRequest("Time range is required");
+        var timeRangeString = httpContext.Request.Query["timeRange"].FirstOrDefault();
+
+        if (string.IsNullOrEmpty(timeRangeString))
+        {
+            return Results.BadRequest("Time range is required");
+        }
+
+        // convert timeRange from string to enum
+        var timeRangeEnum = timeRangeString.ToEnum<TimeRangeEnum>();
+
+        if (timeRangeEnum == null)
+        {
+            return Results.BadRequest("Invalid time range");
+        }
+
+        var topTracks = await TrackService.GetTopTracks(timeRangeEnum.Value);
+
+        // convert list of FullTrack to SavedTrack
+        var tracks = topTracks.Select(track => new SavedTrack { Track = track }).ToList();
+
+        // added tracks to playlist based on time range
+        bool addedToPlaylist = false;
+
+        switch (timeRangeEnum)
+        {
+            case TimeRangeEnum.ShortTerm:
+                addedToPlaylist = await TrackService.AddTracksToPlaylist(
+                    Costants.PlaylistIdTopShort,
+                    tracks!
+                );
+                break;
+            case TimeRangeEnum.MediumTerm:
+                addedToPlaylist = await TrackService.AddTracksToPlaylist(
+                    Costants.PlaylistIdTopMedium,
+                    tracks!
+                );
+                break;
+            case TimeRangeEnum.LongTerm:
+                addedToPlaylist = await TrackService.AddTracksToPlaylist(
+                    Costants.PlaylistIdTopLong,
+                    tracks!
+                );
+                break;
+        }
+
+        return addedToPlaylist
+            ? Results.Ok("Tracks added to playlist")
+            : Results.BadRequest("Failed to add tracks to playlist");
     }
-    
-    // convert timeRange from string to enum
-    var timeRange = timeRangeString.ToEnum<TimeRangeEnum>();
-    
-    // TODO: complete the implementation
-    return timeRange == null ? Results.BadRequest("Invalid time range") : Results.Ok($"Top tracks for time range: {timeRange}");
-});
+);
 
 app.MapPost(
     "/track/less",
