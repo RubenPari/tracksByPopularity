@@ -18,6 +18,7 @@ namespace tracksByPopularity
                 Scopes.UserReadPrivate,
                 Scopes.UserLibraryRead,
                 Scopes.UserLibraryModify,
+                Scopes.UserTopRead,
                 Scopes.PlaylistModifyPrivate,
                 Scopes.PlaylistModifyPublic
             ];
@@ -41,6 +42,15 @@ namespace tracksByPopularity
 
         public static string PlaylistIdMore { get; } =
             Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!;
+
+        public static string PlaylistIdTopShort { get; } =
+            Environment.GetEnvironmentVariable("PLAYLIST_ID_TOP_SHORT")!;
+
+        public static string PlaylistIdTopMedium { get; } =
+            Environment.GetEnvironmentVariable("PLAYLIST_ID_TOP_MEDIUM")!;
+
+        public static string PlaylistIdTopLong { get; } =
+            Environment.GetEnvironmentVariable("PLAYLIST_ID_TOP_LONG")!;
 
         public static string RedisConnectionString { get; } =
             Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")!;
