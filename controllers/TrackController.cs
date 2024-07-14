@@ -1,9 +1,10 @@
 using SpotifyAPI.Web;
 using StackExchange.Redis;
-using tracksByPopularity;
 using tracksByPopularity.helpers;
 using tracksByPopularity.models;
 using tracksByPopularity.services;
+
+namespace tracksByPopularity.controllers;
 
 public static class TrackController
 {
@@ -36,29 +37,17 @@ public static class TrackController
         var tracks = topTracks.Select(track => new SavedTrack { Track = track }).ToList();
 
         // added tracks to playlist based on time range
-        bool addedToPlaylist = false;
 
-        switch (timeRangeEnum)
+        var addedToPlaylist = timeRangeEnum switch
         {
-            case TimeRangeEnum.ShortTerm:
-                addedToPlaylist = await TrackService.AddTracksToPlaylist(
-                    Costants.PlaylistIdTopShort,
-                    tracks!
-                );
-                break;
-            case TimeRangeEnum.MediumTerm:
-                addedToPlaylist = await TrackService.AddTracksToPlaylist(
-                    Costants.PlaylistIdTopMedium,
-                    tracks!
-                );
-                break;
-            case TimeRangeEnum.LongTerm:
-                addedToPlaylist = await TrackService.AddTracksToPlaylist(
-                    Costants.PlaylistIdTopLong,
-                    tracks!
-                );
-                break;
-        }
+            TimeRangeEnum.ShortTerm
+                => await TrackService.AddTracksToPlaylist(Costants.PlaylistIdTopShort, tracks),
+            TimeRangeEnum.MediumTerm
+                => await TrackService.AddTracksToPlaylist(Costants.PlaylistIdTopMedium, tracks),
+            TimeRangeEnum.LongTerm
+                => await TrackService.AddTracksToPlaylist(Costants.PlaylistIdTopLong, tracks),
+            _ => false
+        };
 
         return addedToPlaylist
             ? Results.Ok("Tracks added to playlist")
@@ -190,7 +179,6 @@ public static class TrackController
     public static async Task<IResult> Artist(
         string artistId,
         IdArtistPlaylistsBody idArtistPlaylistsBody,
-        HttpContext httpContext,
         IConnectionMultiplexer cacheRedisConnection
     )
     {
