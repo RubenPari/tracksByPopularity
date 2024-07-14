@@ -7,7 +7,9 @@ namespace tracksByPopularity.helpers;
 
 public static class CacheHelper
 {
-    public static async Task<IList<SavedTrack>> GetAllUserTracks(IConnectionMultiplexer cacheRedisConnection)
+    public static async Task<IList<SavedTrack>> GetAllUserTracks(
+        IConnectionMultiplexer cacheRedisConnection
+    )
     {
         var cacheRedis = cacheRedisConnection.GetDatabase();
 
