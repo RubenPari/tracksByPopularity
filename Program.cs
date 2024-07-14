@@ -103,7 +103,7 @@ app.MapGet(
 
 app.MapPost(
     "/track/top",
-    async (HttpContext httpContext) =>
+    async (HttpContext httpContext, IConnectionMultiplexer cacheRedisConnection) =>
     {
         var timeRangeString = httpContext.Request.Query["timeRange"].FirstOrDefault();
 
@@ -120,7 +120,24 @@ app.MapPost(
             return Results.BadRequest("Invalid time range");
         }
 
-        var topTracks = await TrackService.GetTopTracks(timeRangeEnum.Value);
+        var cacheRedis = cacheRedisConnection.GetDatabase();
+
+        var tracksCache = await cacheRedis.StringGetAsync("allTracks");
+
+        IList<SavedTrack> allTracks;
+
+        if (tracksCache.HasValue)
+        {
+            allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(tracksCache!)!;
+        }
+        else
+        {
+            allTracks = await TrackService.GetAllUserTracks();
+
+            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
+        }
+
+        var topTracks = await TrackService.GetTopTracks(timeRangeEnum.Value, allTracks);
 
         // convert list of FullTrack to SavedTrack
         var tracks = topTracks.Select(track => new SavedTrack { Track = track }).ToList();
