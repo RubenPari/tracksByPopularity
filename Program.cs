@@ -1,5 +1,4 @@
 using dotenv.net;
-using Newtonsoft.Json;
 using SpotifyAPI.Web;
 using StackExchange.Redis;
 using tracksByPopularity;
@@ -49,8 +48,12 @@ app.UseSwaggerUi(config =>
 
 DotEnv.Load();
 
-app.MapGet(
-    "/auth/login",
+// ####### /AUTH #######
+
+var authRoutes = app.MapGroup("/auth");
+
+authRoutes.MapGet(
+    "/login",
     () =>
     {
         var request = new LoginRequest(
@@ -68,8 +71,8 @@ app.MapGet(
     }
 );
 
-app.MapGet(
-    "/auth/callback",
+authRoutes.MapGet(
+    "/callback",
     async (string code) =>
     {
         var response = await new OAuthClient().RequestToken(
@@ -91,8 +94,8 @@ app.MapGet(
     }
 );
 
-app.MapGet(
-    "/auth/logout",
+authRoutes.MapGet(
+    "/logout",
     () =>
     {
         Client.Spotify = null;
@@ -101,8 +104,12 @@ app.MapGet(
     }
 );
 
-app.MapPost(
-    "/track/top",
+// ####### /TRACK #######
+
+var trackRoutes = app.MapGroup("/track");
+
+trackRoutes.MapPost(
+    "/top",
     async (HttpContext httpContext, IConnectionMultiplexer cacheRedisConnection) =>
     {
         var timeRangeString = httpContext.Request.Query["timeRange"].FirstOrDefault();
@@ -159,8 +166,8 @@ app.MapPost(
     }
 );
 
-app.MapPost(
-    "/track/less",
+trackRoutes.MapPost(
+    "/less",
     async (IConnectionMultiplexer cacheRedisConnection) =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLess))
@@ -191,8 +198,8 @@ app.MapPost(
     }
 );
 
-app.MapPost(
-    "/track/less-medium",
+trackRoutes.MapPost(
+    "/less-medium",
     async (IConnectionMultiplexer cacheRedisConnection) =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLessMedium))
@@ -226,8 +233,8 @@ app.MapPost(
     }
 );
 
-app.MapPost(
-    "/track/more-medium",
+trackRoutes.MapPost(
+    "/more-medium",
     async (IConnectionMultiplexer cacheRedisConnection) =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMoreMedium))
@@ -261,8 +268,8 @@ app.MapPost(
     }
 );
 
-app.MapPost(
-    "/track/more",
+trackRoutes.MapPost(
+    "/more",
     async (IConnectionMultiplexer cacheRedisConnection) =>
     {
         if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMore))
@@ -293,8 +300,8 @@ app.MapPost(
     }
 );
 
-app.MapPost(
-    "/track/artist",
+trackRoutes.MapPost(
+    "/artist",
     async (
         string artistId,
         IdArtistPlaylistsBody idArtistPlaylistsBody,
