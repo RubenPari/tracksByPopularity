@@ -120,22 +120,8 @@ app.MapPost(
             return Results.BadRequest("Invalid time range");
         }
 
-        var cacheRedis = cacheRedisConnection.GetDatabase();
-
-        var tracksCache = await cacheRedis.StringGetAsync("allTracks");
-
-        IList<SavedTrack> allTracks;
-
-        if (tracksCache.HasValue)
-        {
-            allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(tracksCache!)!;
-        }
-        else
-        {
-            allTracks = await TrackService.GetAllUserTracks();
-
-            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
-        }
+        // get all user tracks, if possible from cache
+        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
         var topTracks = await TrackService.GetTopTracks(timeRangeEnum.Value, allTracks);
 
@@ -187,22 +173,8 @@ app.MapPost(
             return Results.BadRequest("Playlist is not empty, please clear it and retry");
         }
 
-        var cacheRedis = cacheRedisConnection.GetDatabase();
-
-        var tracksCache = await cacheRedis.StringGetAsync("allTracks");
-
-        IList<SavedTrack> allTracks;
-
-        if (tracksCache.HasValue)
-        {
-            allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(tracksCache!)!;
-        }
-        else
-        {
-            allTracks = await TrackService.GetAllUserTracks();
-
-            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
-        }
+        // get all user tracks, if possible from cache
+        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
         var trackWithPopularity = allTracks
             .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
@@ -233,22 +205,8 @@ app.MapPost(
             return Results.BadRequest("Playlist is not empty, please clear it and retry");
         }
 
-        var cacheRedis = cacheRedisConnection.GetDatabase();
-
-        var tracksCache = await cacheRedis.StringGetAsync("allTracks");
-
-        IList<SavedTrack> allTracks;
-
-        if (tracksCache.HasValue)
-        {
-            allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(tracksCache!)!;
-        }
-        else
-        {
-            allTracks = await TrackService.GetAllUserTracks();
-
-            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
-        }
+        // get all user tracks, if possible from cache
+        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
         var trackWithPopularity = allTracks
             .Where(track =>
@@ -282,22 +240,8 @@ app.MapPost(
             return Results.BadRequest("Playlist is not empty, please clear it and retry");
         }
 
-        var cacheRedis = cacheRedisConnection.GetDatabase();
-
-        var tracksCache = await cacheRedis.StringGetAsync("allTracks");
-
-        IList<SavedTrack> allTracks;
-
-        if (tracksCache.HasValue)
-        {
-            allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(tracksCache!)!;
-        }
-        else
-        {
-            allTracks = await TrackService.GetAllUserTracks();
-
-            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
-        }
+        // get all user tracks, if possible from cache
+        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
         var trackWithPopularity = allTracks
             .Where(track =>
@@ -331,22 +275,8 @@ app.MapPost(
             return Results.BadRequest("Playlist is not empty, please clear it and retry");
         }
 
-        var cacheRedis = cacheRedisConnection.GetDatabase();
-
-        var tracksCache = await cacheRedis.StringGetAsync("allTracks");
-
-        IList<SavedTrack> allTracks;
-
-        if (tracksCache.HasValue)
-        {
-            allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(tracksCache!)!;
-        }
-        else
-        {
-            allTracks = await TrackService.GetAllUserTracks();
-
-            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
-        }
+        // get all user tracks, if possible from cache
+        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
         var trackWithPopularity = allTracks
             .Where(track => track.Track.Popularity > Costants.TracksMoreMediumPopularity)
@@ -397,22 +327,8 @@ app.MapPost(
             return Results.BadRequest("Playlist is not empty, please clear it and retry");
         }
 
-        var cacheRedis = cacheRedisConnection.GetDatabase();
-
-        var tracksCache = await cacheRedis.StringGetAsync("allTracks");
-
-        IList<SavedTrack> allTracks;
-
-        if (tracksCache.HasValue)
-        {
-            allTracks = JsonConvert.DeserializeObject<IList<SavedTrack>>(tracksCache!)!;
-        }
-        else
-        {
-            allTracks = await TrackService.GetAllUserTracks();
-
-            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
-        }
+        // get all user tracks, if possible from cache
+        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
         var allTracksArtist = allTracks
             .Where(track => track.Track.Artists.Any(artist => artist.Id == artistId))
