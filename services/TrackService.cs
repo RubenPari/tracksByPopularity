@@ -31,7 +31,10 @@ public static class TrackService
         return true;
     }
 
-    public static async Task<IList<FullTrack>> GetTopTracks(TimeRangeEnum timeRange)
+    public static async Task<IList<FullTrack>> GetTopTracks(
+        TimeRangeEnum timeRange,
+        IList<SavedTrack> allTracks
+    )
     {
         var timeRangeParam = timeRange switch
         {
@@ -44,6 +47,11 @@ public static class TrackService
         var topTracks = await Client.Spotify!.Personalization.GetTopTracks(
             new PersonalizationTopRequest { TimeRangeParam = timeRangeParam, Limit = 50 }
         );
+
+        // remove tracks that are not in the user's library
+        topTracks.Items = topTracks
+            .Items!.Where(track => allTracks.Any(t => t.Track.Id == track.Id))
+            .ToList();
 
         return topTracks.Items!;
     }
