@@ -4,7 +4,7 @@ namespace tracksByPopularity
 {
     using System.Collections.Generic;
 
-    public abstract class Costants
+    public abstract class Constants
     {
         public static SpotifyClientConfig Config { get; } = SpotifyClientConfig.CreateDefault();
         public static string TitleApi => "TracksByPopularityAPI";
