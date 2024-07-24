@@ -10,15 +10,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApiDocument(config =>
 {
-    config.DocumentName = Costants.TitleApi;
-    config.Title = Costants.TitleApi;
+    config.DocumentName = Constants.TitleApi;
+    config.Title = Constants.TitleApi;
     config.Version = "v1";
 });
 
 // Service that set Redis cache
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
-    var configuration = ConfigurationOptions.Parse(Costants.RedisConnectionString);
+    var configuration = ConfigurationOptions.Parse(Constants.RedisConnectionString);
 
     configuration.AllowAdmin = true;
     configuration.AbortOnConnectFail = false;
@@ -32,12 +32,13 @@ var app = builder.Build();
 // Add middlewares
 app.UseMiddleware<RedirectHomeMiddleware>();
 app.UseMiddleware<CheckAuthMiddleware>();
+app.UseMiddleware<ClearPlaylistMiddleware>();
 
 // Add services to use OpenApi and Swagger UI
 app.UseOpenApi();
 app.UseSwaggerUi(config =>
 {
-    config.DocumentTitle = Costants.TitleApi;
+    config.DocumentTitle = Constants.TitleApi;
     config.Path = "/swagger";
     config.DocumentPath = "/swagger/{documentName}/swagger.json";
     config.DocExpansion = "list";
