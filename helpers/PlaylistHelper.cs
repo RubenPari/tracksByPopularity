@@ -15,18 +15,4 @@ public static class PlaylistHelper
 
         return true;
     }
-
-    public static async Task<bool> CheckIsEmptyPlaylist(params string[] playlistIds)
-    {
-        foreach (var playlistId in playlistIds)
-        {
-            var playlist = await Client.Spotify!.Playlists.Get(playlistId);
-            if (playlist.Tracks!.Items!.Count > 0)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
 }
