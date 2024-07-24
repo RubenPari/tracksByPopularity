@@ -4,5 +4,6 @@ public enum TimeRangeEnum
 {
     ShortTerm,
     MediumTerm,
-    LongTerm
+    LongTerm,
+    NotValid
 }
