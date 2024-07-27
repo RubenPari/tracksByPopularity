@@ -6,54 +6,48 @@ namespace tracksByPopularity.middlewares;
 
 public class ClearPlaylistMiddleware(RequestDelegate next)
 {
-    private static readonly string[] AuthPaths = ["/auth/login", "/auth/callback", "/auth/logout"];
-
-    public async Task<IResult> InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context)
     {
-        // exclude swagger from auth check
-        if (context.Request.Path.StartsWithSegments("/swagger"))
+        // Check if the path is sufficient to remove prefix
+        if (context.Request.Path.Value!.Length < 6)
         {
             await next(context);
-            return Results.Ok();
+            return;
         }
 
-        // exclude auth paths from auth check
-        if (AuthPaths.Contains(context.Request.Path.Value))
+        // Remove prefix "/track" from the path
+        var path = context.Request.Path.Value[6..];
+
+        if (path == "/top")
         {
-            await next(context);
-            return Results.Ok();
-        }
+            var timeRange = QueryParamHelper.GetTimeRangeQueryParam(context);
 
-        // remove from context.Request.Path.Value the "/track" prefix
-        var path = context.Request.Path.Value![6..];
-        var cleared = false;
+            var cleared = timeRange switch
+            {
+                TimeRangeEnum.ShortTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopShort),
+                TimeRangeEnum.MediumTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopMedium),
+                TimeRangeEnum.LongTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopLong),
+                _ => RemoveAllTracksResponse.Success
+            };
 
-        switch (path)
-        {
-            case "/top":
-                var timeRange = QueryParamHelper.GetTimeRangeQueryParam(context);
+            var result = Results.Ok();
 
-                cleared = timeRange switch
-                {
-                    TimeRangeEnum.ShortTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopShort),
-                    TimeRangeEnum.MediumTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopMedium),
-                    TimeRangeEnum.LongTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopLong),
-                    _ => cleared
-                };
+            switch (cleared)
+            {
+                case RemoveAllTracksResponse.Unauthorized:
+                    result = Results.Problem(
+                        detail: $"Unauthorized please login to {Constants.ClearSongsBaseUrl}/auth/login and retry",
+                        statusCode: 401);
+                    break;
+                case RemoveAllTracksResponse.BadRequest:
+                    result = Results.BadRequest("Something went wrong, please try again later");
+                    break;
+            }
 
-                if (!cleared)
-                {
-                    return Results.BadRequest("Failed to clear playlist");
-                }
-
-                await next(context);
-                break;
-            default:
-                await next(context);
-                return Results.Ok();
+            await result.ExecuteAsync(context);
+            return;
         }
 
         await next(context);
-        return Results.Ok();
     }
 }
