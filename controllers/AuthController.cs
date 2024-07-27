@@ -7,12 +7,12 @@ public static class AuthController
     public static IResult Login()
     {
         var request = new LoginRequest(
-            new Uri(Costants.RedirectUri),
-            Costants.ClientId,
+            new Uri(Constants.RedirectUri),
+            Constants.ClientId,
             LoginRequest.ResponseType.Code
         )
         {
-            Scope = Costants.MyScopes
+            Scope = Constants.MyScopes
         };
 
         var uri = request.ToUri();
@@ -24,14 +24,14 @@ public static class AuthController
     {
         var response = await new OAuthClient().RequestToken(
             new AuthorizationCodeTokenRequest(
-                Costants.ClientId,
-                Costants.ClientSecret,
+                Constants.ClientId,
+                Constants.ClientSecret,
                 code,
-                new Uri(Costants.RedirectUri)
+                new Uri(Constants.RedirectUri)
             )
         );
 
-        Client.Spotify = new SpotifyClient(Costants.Config.WithToken(response.AccessToken));
+        Client.Spotify = new SpotifyClient(Constants.Config.WithToken(response.AccessToken));
 
         var user = await Client.Spotify.UserProfile.Current();
 

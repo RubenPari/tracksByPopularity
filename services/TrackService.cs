@@ -41,7 +41,7 @@ public static class TrackService
             TimeRangeEnum.LongTerm => PersonalizationTopRequest.TimeRange.LongTerm,
             TimeRangeEnum.MediumTerm => PersonalizationTopRequest.TimeRange.MediumTerm,
             TimeRangeEnum.ShortTerm => PersonalizationTopRequest.TimeRange.ShortTerm,
-            _ => throw new NotImplementedException()
+            _ => throw new Exception("Invalid time range")
         };
 
         var topTracks = await Client.Spotify!.Personalization.GetTopTracks(

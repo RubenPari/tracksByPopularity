@@ -4,7 +4,7 @@ namespace tracksByPopularity
 {
     using System.Collections.Generic;
 
-    public abstract class Costants
+    public abstract class Constants
     {
         public static SpotifyClientConfig Config { get; } = SpotifyClientConfig.CreateDefault();
         public static string TitleApi => "TracksByPopularityAPI";
@@ -13,15 +13,15 @@ namespace tracksByPopularity
         public static int TracksMoreMediumPopularity => 75;
 
         public static List<string> MyScopes { get; } =
-            [
-                Scopes.UserReadEmail,
-                Scopes.UserReadPrivate,
-                Scopes.UserLibraryRead,
-                Scopes.UserLibraryModify,
-                Scopes.UserTopRead,
-                Scopes.PlaylistModifyPrivate,
-                Scopes.PlaylistModifyPublic
-            ];
+        [
+            Scopes.UserReadEmail,
+            Scopes.UserReadPrivate,
+            Scopes.UserLibraryRead,
+            Scopes.UserLibraryModify,
+            Scopes.UserTopRead,
+            Scopes.PlaylistModifyPrivate,
+            Scopes.PlaylistModifyPublic
+        ];
 
         public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;
 
@@ -54,5 +54,8 @@ namespace tracksByPopularity
 
         public static string RedisConnectionString { get; } =
             Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")!;
+
+        public static string ClearSongsBaseUrl { get; } =
+            Environment.GetEnvironmentVariable("CLEAR_SONGS_BASE_URL")!;
     }
 }

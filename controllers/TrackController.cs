@@ -13,39 +13,26 @@ public static class TrackController
         IConnectionMultiplexer cacheRedisConnection
     )
     {
-        var timeRangeString = httpContext.Request.Query["timeRange"].FirstOrDefault();
-
-        if (string.IsNullOrEmpty(timeRangeString))
-        {
-            return Results.BadRequest("Time range is required");
-        }
-
-        // convert timeRange from string to enum
-        var timeRangeEnum = timeRangeString.ToEnum<TimeRangeEnum>();
-
-        if (timeRangeEnum == null)
-        {
-            return Results.BadRequest("Invalid time range");
-        }
-
+        var timerRange = QueryParamHelper.GetTimeRangeQueryParam(httpContext);
+        
         // get all user tracks, if possible from cache
         var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
-        var topTracks = await TrackService.GetTopTracks(timeRangeEnum.Value, allTracks);
+        var topTracks = await TrackService.GetTopTracks(timerRange, allTracks);
 
         // convert list of FullTrack to SavedTrack
         var tracks = topTracks.Select(track => new SavedTrack { Track = track }).ToList();
 
         // added tracks to playlist based on time range
 
-        var addedToPlaylist = timeRangeEnum switch
+        var addedToPlaylist = timerRange switch
         {
             TimeRangeEnum.ShortTerm
-                => await TrackService.AddTracksToPlaylist(Costants.PlaylistIdTopShort, tracks),
+                => await TrackService.AddTracksToPlaylist(Constants.PlaylistIdTopShort, tracks),
             TimeRangeEnum.MediumTerm
-                => await TrackService.AddTracksToPlaylist(Costants.PlaylistIdTopMedium, tracks),
+                => await TrackService.AddTracksToPlaylist(Constants.PlaylistIdTopMedium, tracks),
             TimeRangeEnum.LongTerm
-                => await TrackService.AddTracksToPlaylist(Costants.PlaylistIdTopLong, tracks),
+                => await TrackService.AddTracksToPlaylist(Constants.PlaylistIdTopLong, tracks),
             _ => false
         };
 
@@ -56,25 +43,15 @@ public static class TrackController
 
     public static async Task<IResult> Less(IConnectionMultiplexer cacheRedisConnection)
     {
-        if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLess))
-        {
-            return Results.BadRequest("Playlist not found");
-        }
-
-        if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdLess))
-        {
-            return Results.BadRequest("Playlist is not empty, please clear it and retry");
-        }
-
         // get all user tracks, if possible from cache
         var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
         var trackWithPopularity = allTracks
-            .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
+            .Where(track => track.Track.Popularity <= Constants.TracksLessPopularity)
             .ToList();
 
         var added = await TrackService.AddTracksToPlaylist(
-            Costants.PlaylistIdLess,
+            Constants.PlaylistIdLess,
             trackWithPopularity
         );
 
@@ -85,28 +62,18 @@ public static class TrackController
 
     public static async Task<IResult> LessMedium(IConnectionMultiplexer cacheRedisConnection)
     {
-        if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdLessMedium))
-        {
-            return Results.BadRequest("Playlist not found");
-        }
-
-        if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdLessMedium))
-        {
-            return Results.BadRequest("Playlist is not empty, please clear it and retry");
-        }
-
         // get all user tracks, if possible from cache
         var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
         var trackWithPopularity = allTracks
             .Where(track =>
-                track.Track.Popularity > Costants.TracksLessPopularity
-                && track.Track.Popularity <= Costants.TracksLessMediumPopularity
+                track.Track.Popularity > Constants.TracksLessPopularity
+                && track.Track.Popularity <= Constants.TracksLessMediumPopularity
             )
             .ToList();
 
         var added = await TrackService.AddTracksToPlaylist(
-            Costants.PlaylistIdLessMedium,
+            Constants.PlaylistIdLessMedium,
             trackWithPopularity
         );
 
@@ -117,28 +84,18 @@ public static class TrackController
 
     public static async Task<IResult> MoreMedium(IConnectionMultiplexer cacheRedisConnection)
     {
-        if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMoreMedium))
-        {
-            return Results.BadRequest("Playlist not found");
-        }
-
-        if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdMoreMedium))
-        {
-            return Results.BadRequest("Playlist is not empty, please clear it and retry");
-        }
-
         // get all user tracks, if possible from cache
         var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
         var trackWithPopularity = allTracks
             .Where(track =>
-                track.Track.Popularity > Costants.TracksLessMediumPopularity
-                && track.Track.Popularity <= Costants.TracksMoreMediumPopularity
+                track.Track.Popularity > Constants.TracksLessMediumPopularity
+                && track.Track.Popularity <= Constants.TracksMoreMediumPopularity
             )
             .ToList();
 
         var added = await TrackService.AddTracksToPlaylist(
-            Costants.PlaylistIdMoreMedium,
+            Constants.PlaylistIdMoreMedium,
             trackWithPopularity
         );
 
@@ -149,25 +106,15 @@ public static class TrackController
 
     public static async Task<IResult> More(IConnectionMultiplexer cacheRedisConnection)
     {
-        if (!await PlaylistHelper.CheckValidityPlaylist(Costants.PlaylistIdMore))
-        {
-            return Results.BadRequest("Playlist not found");
-        }
-
-        if (!await PlaylistHelper.CheckIsEmptyPlaylist(Costants.PlaylistIdMore))
-        {
-            return Results.BadRequest("Playlist is not empty, please clear it and retry");
-        }
-
         // get all user tracks, if possible from cache
         var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
         var trackWithPopularity = allTracks
-            .Where(track => track.Track.Popularity > Costants.TracksMoreMediumPopularity)
+            .Where(track => track.Track.Popularity > Constants.TracksMoreMediumPopularity)
             .ToList();
 
         var added = await TrackService.AddTracksToPlaylist(
-            Costants.PlaylistIdMore,
+            Constants.PlaylistIdMore,
             trackWithPopularity
         );
 
@@ -194,20 +141,7 @@ public static class TrackController
         {
             return Results.BadRequest("Playlist not found");
         }
-
-        // check if playlists are empty
-        if (
-            !await PlaylistHelper.CheckIsEmptyPlaylist(
-                idArtistPlaylistsBody.Less,
-                idArtistPlaylistsBody.LessMedium,
-                idArtistPlaylistsBody.MoreMedium,
-                idArtistPlaylistsBody.More
-            )
-        )
-        {
-            return Results.BadRequest("Playlist is not empty, please clear it and retry");
-        }
-
+        
         // get all user tracks, if possible from cache
         var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
@@ -216,25 +150,25 @@ public static class TrackController
             .ToList();
 
         var trackWithLessPopularity = allTracksArtist
-            .Where(track => track.Track.Popularity <= Costants.TracksLessPopularity)
+            .Where(track => track.Track.Popularity <= Constants.TracksLessPopularity)
             .ToList();
 
         var trackWithLessMediumPopularity = allTracksArtist
             .Where(track =>
-                track.Track.Popularity > Costants.TracksLessPopularity
-                && track.Track.Popularity <= Costants.TracksLessMediumPopularity
+                track.Track.Popularity > Constants.TracksLessPopularity
+                && track.Track.Popularity <= Constants.TracksLessMediumPopularity
             )
             .ToList();
 
         var trackWithMoreMediumPopularity = allTracksArtist
             .Where(track =>
-                track.Track.Popularity > Costants.TracksLessMediumPopularity
-                && track.Track.Popularity <= Costants.TracksMoreMediumPopularity
+                track.Track.Popularity > Constants.TracksLessMediumPopularity
+                && track.Track.Popularity <= Constants.TracksMoreMediumPopularity
             )
             .ToList();
 
         var trackWithMorePopularity = allTracksArtist
-            .Where(track => track.Track.Popularity > Costants.TracksMoreMediumPopularity)
+            .Where(track => track.Track.Popularity > Constants.TracksMoreMediumPopularity)
             .ToList();
 
         var addedLess = await TrackService.AddTracksToPlaylist(
