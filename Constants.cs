@@ -1,4 +1,4 @@
-﻿using SpotifyAPI.Web;
+using SpotifyAPI.Web;
 
 namespace tracksByPopularity
 {
@@ -54,5 +54,8 @@ namespace tracksByPopularity
 
         public static string RedisConnectionString { get; } =
             Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")!;
+
+        public static string ClearSongsBaseUrl { get; } =
+            Environment.GetEnvironmentVariable("CLEAR_SONGS_BASE_URL")!;
     }
 }
