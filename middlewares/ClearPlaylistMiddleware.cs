@@ -47,7 +47,8 @@ public class ClearPlaylistMiddleware(RequestDelegate next)
                 case RemoveAllTracksResponse.Unauthorized:
                     result = Results.Problem(
                         detail: $"Unauthorized please login to {Constants.ClearSongsBaseUrl}/auth/login and retry",
-                        statusCode: 401);
+                        statusCode: 401
+                    );
                     break;
                 case RemoveAllTracksResponse.BadRequest:
                     result = Results.BadRequest("Something went wrong, please try again later");

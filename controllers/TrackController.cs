@@ -14,7 +14,7 @@ public static class TrackController
     )
     {
         var timerRange = QueryParamHelper.GetTimeRangeQueryParam(httpContext);
-        
+
         // get all user tracks, if possible from cache
         var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
@@ -141,7 +141,7 @@ public static class TrackController
         {
             return Results.BadRequest("Playlist not found");
         }
-        
+
         // get all user tracks, if possible from cache
         var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
