@@ -22,13 +22,23 @@ public class ClearPlaylistMiddleware(RequestDelegate next)
         {
             var timeRange = QueryParamHelper.GetTimeRangeQueryParam(context);
 
-            var cleared = timeRange switch
+            RemoveAllTracksResponse cleared;
+
+            switch (timeRange)
             {
-                TimeRangeEnum.ShortTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopShort),
-                TimeRangeEnum.MediumTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopMedium),
-                TimeRangeEnum.LongTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopLong),
-                _ => RemoveAllTracksResponse.Success
-            };
+                case TimeRangeEnum.ShortTerm:
+                    cleared = await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopShort);
+                    break;
+                case TimeRangeEnum.MediumTerm:
+                    cleared = await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopMedium);
+                    break;
+                case TimeRangeEnum.LongTerm:
+                    cleared = await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopLong);
+                    break;
+                default:
+                    cleared = RemoveAllTracksResponse.Success;
+                    break;
+            }
 
             var result = Results.Ok();
 
