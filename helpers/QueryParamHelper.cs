@@ -18,7 +18,7 @@ public static class QueryParamHelper
         {
             return TimeRangeEnum.NotValid;
         }
-        
+
         return timeRangeEnum;
     }
 }

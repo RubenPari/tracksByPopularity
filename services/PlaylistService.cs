@@ -11,7 +11,9 @@ public static class PlaylistService
         var request = new HttpRequestMessage
         {
             Method = HttpMethod.Get,
-            RequestUri = new Uri($"{Constants.ClearSongsBaseUrl}/playlist/delete-tracks?id_playlist={playlistId}"),
+            RequestUri = new Uri(
+                $"{Constants.ClearSongsBaseUrl}/playlist/delete-tracks?id_playlist={playlistId}"
+            ),
         };
 
         using var response = await client.SendAsync(request);

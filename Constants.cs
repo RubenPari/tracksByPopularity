@@ -13,15 +13,15 @@ namespace tracksByPopularity
         public static int TracksMoreMediumPopularity => 75;
 
         public static List<string> MyScopes { get; } =
-        [
-            Scopes.UserReadEmail,
-            Scopes.UserReadPrivate,
-            Scopes.UserLibraryRead,
-            Scopes.UserLibraryModify,
-            Scopes.UserTopRead,
-            Scopes.PlaylistModifyPrivate,
-            Scopes.PlaylistModifyPublic
-        ];
+            [
+                Scopes.UserReadEmail,
+                Scopes.UserReadPrivate,
+                Scopes.UserLibraryRead,
+                Scopes.UserLibraryModify,
+                Scopes.UserTopRead,
+                Scopes.PlaylistModifyPrivate,
+                Scopes.PlaylistModifyPublic
+            ];
 
         public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;
 
