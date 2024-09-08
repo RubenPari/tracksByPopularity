@@ -1,21 +1,11 @@
-﻿using tracksByPopularity.controllers;
+﻿using tracksByPopularity.src.controllers;
 
-namespace tracksByPopularity.routes;
+namespace tracksByPopularity.src.routes;
 
 public class Routes
 {
     public static void MapRoutes(WebApplication app)
     {
-        // ####### /AUTH #######
-
-        var authRoutes = app.MapGroup("/auth");
-
-        authRoutes.MapGet("/login", AuthController.Login);
-
-        authRoutes.MapGet("/callback", AuthController.Callback);
-
-        authRoutes.MapGet("/logout", AuthController.Logout);
-
         // ####### /TRACK #######
 
         var trackRoutes = app.MapGroup("/track");

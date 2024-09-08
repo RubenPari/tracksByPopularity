@@ -1,6 +1,6 @@
-﻿using StackExchange.Redis;
+﻿namespace tracksByPopularity.src.background;
 
-namespace tracksByPopularity.background;
+using StackExchange.Redis;
 
 public class RedisCacheResetService(IConnectionMultiplexer redis) : BackgroundService
 {

@@ -1,7 +1,7 @@
 using System.Net;
-using tracksByPopularity.models;
+using tracksByPopularity.src.models;
 
-namespace tracksByPopularity.services;
+namespace tracksByPopularity.src.services;
 
 public static class PlaylistService
 {
@@ -12,7 +12,7 @@ public static class PlaylistService
         {
             Method = HttpMethod.Get,
             RequestUri = new Uri(
-                $"{Constants.ClearSongsBaseUrl}/playlist/delete-tracks?id_playlist={playlistId}"
+                $"{Constants.MicroserviceClearSongsBaseUrl}/playlist/delete-tracks?id_playlist={playlistId}"
             ),
         };
 
@@ -23,7 +23,7 @@ public static class PlaylistService
         {
             HttpStatusCode.Unauthorized => RemoveAllTracksResponse.Unauthorized,
             HttpStatusCode.BadRequest => RemoveAllTracksResponse.BadRequest,
-            _ => RemoveAllTracksResponse.Success
+            _ => RemoveAllTracksResponse.Success,
         };
     }
 }

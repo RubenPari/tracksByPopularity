@@ -1,6 +1,6 @@
-using tracksByPopularity.models;
+namespace tracksByPopularity.src.helpers;
 
-namespace tracksByPopularity.helpers;
+using tracksByPopularity.src.models;
 
 public static class QueryParamHelper
 {

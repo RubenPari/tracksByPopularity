@@ -1,30 +1,41 @@
-﻿namespace tracksByPopularity.middlewares;
+﻿using System.Net;
+using Microsoft.AspNetCore.Authentication.BearerToken;
+using Newtonsoft.Json;
+using SpotifyAPI.Web;
+
+namespace tracksByPopularity.src.middlewares;
 
 public class CheckAuthMiddleware(RequestDelegate next)
 {
-    private static readonly string[] AuthPaths = ["/auth/login", "/auth/callback", "/auth/logout"];
-
+    /**
+     * Check if client has access token. If not, get it from microservice.
+     */
     public async Task InvokeAsync(HttpContext context)
     {
-        // exclude swagger from auth check
-        if (context.Request.Path.StartsWithSegments("/swagger"))
+        if (Client.Spotify == null || string.IsNullOrEmpty(Client.Spotify.UserProfile.ToString()))
         {
-            await next(context);
-            return;
-        }
+            var httpClient = new HttpClient();
 
-        // exclude auth paths from auth check
-        if (AuthPaths.Contains(context.Request.Path.Value))
-        {
-            await next(context);
-            return;
-        }
+            var response = httpClient
+                .GetAsync($"{Constants.MicroserviceAuthSpotifyBaseUrl}/token")
+                .GetAwaiter()
+                .GetResult();
 
-        if (Client.Spotify == null)
-        {
-            context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("Unauthorized");
-            return;
+            var stringResponse = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                context.Response.StatusCode = 401;
+                return;
+            }
+
+            var tokenResponseObject = JsonConvert.DeserializeObject<AccessTokenResponse>(
+                stringResponse
+            );
+
+            var accessToken = tokenResponseObject!.AccessToken;
+
+            Client.Spotify = new SpotifyClient(accessToken);
         }
 
         await next(context);

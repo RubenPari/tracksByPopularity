@@ -1,8 +1,8 @@
-using tracksByPopularity.helpers;
-using tracksByPopularity.models;
-using tracksByPopularity.services;
+using tracksByPopularity.src.helpers;
+using tracksByPopularity.src.models;
+using tracksByPopularity.src.services;
 
-namespace tracksByPopularity.middlewares;
+namespace tracksByPopularity.src.middlewares;
 
 public class ClearPlaylistMiddleware(RequestDelegate next)
 {
@@ -22,23 +22,19 @@ public class ClearPlaylistMiddleware(RequestDelegate next)
         {
             var timeRange = QueryParamHelper.GetTimeRangeQueryParam(context);
 
-            RemoveAllTracksResponse cleared;
-
-            switch (timeRange)
+            var cleared = timeRange switch
             {
-                case TimeRangeEnum.ShortTerm:
-                    cleared = await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopShort);
-                    break;
-                case TimeRangeEnum.MediumTerm:
-                    cleared = await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopMedium);
-                    break;
-                case TimeRangeEnum.LongTerm:
-                    cleared = await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopLong);
-                    break;
-                default:
-                    cleared = RemoveAllTracksResponse.Success;
-                    break;
-            }
+                TimeRangeEnum.ShortTerm => await PlaylistService.RemoveAllTracks(
+                    Constants.PlaylistIdTopShort
+                ),
+                TimeRangeEnum.MediumTerm => await PlaylistService.RemoveAllTracks(
+                    Constants.PlaylistIdTopMedium
+                ),
+                TimeRangeEnum.LongTerm => await PlaylistService.RemoveAllTracks(
+                    Constants.PlaylistIdTopLong
+                ),
+                _ => RemoveAllTracksResponse.Success,
+            };
 
             var result = Results.Ok();
 
@@ -46,7 +42,7 @@ public class ClearPlaylistMiddleware(RequestDelegate next)
             {
                 case RemoveAllTracksResponse.Unauthorized:
                     result = Results.Problem(
-                        detail: $"Unauthorized please login to {Constants.ClearSongsBaseUrl}/auth/login and retry",
+                        detail: $"Unauthorized please login to {Constants.MicroserviceClearSongsBaseUrl}/auth/login and retry",
                         statusCode: 401
                     );
                     break;

@@ -1,6 +1,6 @@
-using SpotifyAPI.Web;
+namespace tracksByPopularity.src;
 
-namespace tracksByPopularity;
+using SpotifyAPI.Web;
 
 public static class Client
 {

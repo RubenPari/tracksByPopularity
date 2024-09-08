@@ -1,9 +1,10 @@
 using dotenv.net;
 using StackExchange.Redis;
-using tracksByPopularity;
-using tracksByPopularity.background;
 using tracksByPopularity.middlewares;
-using tracksByPopularity.routes;
+using tracksByPopularity.src;
+using tracksByPopularity.src.background;
+using tracksByPopularity.src.middlewares;
+using tracksByPopularity.src.routes;
 
 var builder = WebApplication.CreateBuilder(args);
 
