@@ -1,6 +1,5 @@
 using dotenv.net;
 using StackExchange.Redis;
-using tracksByPopularity.middlewares;
 using tracksByPopularity.src;
 using tracksByPopularity.src.background;
 using tracksByPopularity.src.middlewares;
@@ -31,7 +30,6 @@ builder.Services.AddHostedService<RedisCacheResetService>();
 var app = builder.Build();
 
 // Add middlewares
-app.UseMiddleware<RedirectHomeMiddleware>();
 app.UseMiddleware<CheckAuthMiddleware>();
 app.UseMiddleware<ClearPlaylistMiddleware>();
 
@@ -40,9 +38,7 @@ app.UseOpenApi();
 app.UseSwaggerUi(config =>
 {
     config.DocumentTitle = Constants.TitleApi;
-    config.Path = "/swagger";
-    config.DocumentPath = "/swagger/{documentName}/swagger.json";
-    config.DocExpansion = "list";
+    config.DocExpansion = "fully";
 });
 
 DotEnv.Load();
