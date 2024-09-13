@@ -1,8 +1,8 @@
-using tracksByPopularity.src.helpers;
-using tracksByPopularity.src.models;
-using tracksByPopularity.src.services;
+using tracksByPopularity.helpers;
+using tracksByPopularity.models;
+using tracksByPopularity.services;
 
-namespace tracksByPopularity.src.middlewares;
+namespace tracksByPopularity.middlewares;
 
 public class ClearPlaylistMiddleware(RequestDelegate next)
 {
@@ -49,6 +49,10 @@ public class ClearPlaylistMiddleware(RequestDelegate next)
                 case RemoveAllTracksResponse.BadRequest:
                     result = Results.BadRequest("Something went wrong, please try again later");
                     break;
+                case RemoveAllTracksResponse.Success:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(context));
             }
 
             await result.ExecuteAsync(context);

@@ -1,11 +1,9 @@
-﻿namespace tracksByPopularity.src;
+﻿using SpotifyAPI.Web;
 
-using System.Collections.Generic;
-using SpotifyAPI.Web;
+namespace tracksByPopularity;
 
 public abstract class Constants
 {
-    public static SpotifyClientConfig Config { get; } = SpotifyClientConfig.CreateDefault();
     public static string TitleApi => "TracksByPopularityAPI";
     public static int TracksLessPopularity => 25;
     public static int TracksLessMediumPopularity => 50;
@@ -21,13 +19,6 @@ public abstract class Constants
             Scopes.PlaylistModifyPrivate,
             Scopes.PlaylistModifyPublic,
         ];
-
-    public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;
-
-    public static string ClientSecret { get; } =
-        Environment.GetEnvironmentVariable("CLIENT_SECRET")!;
-
-    public static string RedirectUri { get; } = Environment.GetEnvironmentVariable("REDIRECT_URI")!;
 
     public static string PlaylistIdLess { get; } =
         Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!;

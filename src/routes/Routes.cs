@@ -1,8 +1,8 @@
-﻿using tracksByPopularity.src.controllers;
+﻿using tracksByPopularity.controllers;
 
-namespace tracksByPopularity.src.routes;
+namespace tracksByPopularity.routes;
 
-public class Routes
+public abstract class Routes
 {
     public static void MapRoutes(WebApplication app)
     {

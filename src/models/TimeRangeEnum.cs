@@ -1,4 +1,4 @@
-﻿namespace tracksByPopularity.src.models;
+﻿namespace tracksByPopularity.models;
 
 public enum TimeRangeEnum
 {

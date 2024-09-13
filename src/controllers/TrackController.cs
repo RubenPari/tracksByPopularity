@@ -1,10 +1,10 @@
-namespace tracksByPopularity.src.controllers;
-
 using SpotifyAPI.Web;
 using StackExchange.Redis;
-using tracksByPopularity.src.helpers;
-using tracksByPopularity.src.models;
-using tracksByPopularity.src.services;
+using tracksByPopularity.helpers;
+using tracksByPopularity.models;
+using tracksByPopularity.services;
+
+namespace tracksByPopularity.controllers;
 
 public static class TrackController
 {

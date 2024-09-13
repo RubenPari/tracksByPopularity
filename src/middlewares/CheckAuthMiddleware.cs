@@ -1,9 +1,9 @@
 ﻿using System.Net;
-using Microsoft.AspNetCore.Authentication.BearerToken;
 using Newtonsoft.Json;
 using SpotifyAPI.Web;
+using AccessTokenResponse = tracksByPopularity.models.AccessTokenResponse;
 
-namespace tracksByPopularity.src.middlewares;
+namespace tracksByPopularity.middlewares;
 
 public class CheckAuthMiddleware(RequestDelegate next)
 {
@@ -33,7 +33,17 @@ public class CheckAuthMiddleware(RequestDelegate next)
                 stringResponse
             );
 
-            var accessToken = tokenResponseObject!.AccessToken;
+            if (tokenResponseObject == null)
+            {
+                context.Response.StatusCode = 500;
+                context
+                    .Response.WriteAsync("Error while deserialize access token")
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+
+            var accessToken = tokenResponseObject.AccessToken!;
 
             Client.Spotify = new SpotifyClient(accessToken);
         }

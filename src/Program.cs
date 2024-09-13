@@ -1,9 +1,8 @@
-using dotenv.net;
 using StackExchange.Redis;
-using tracksByPopularity.src;
-using tracksByPopularity.src.background;
-using tracksByPopularity.src.middlewares;
-using tracksByPopularity.src.routes;
+using tracksByPopularity;
+using tracksByPopularity.background;
+using tracksByPopularity.middlewares;
+using tracksByPopularity.routes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,8 +39,6 @@ app.UseSwaggerUi(config =>
     config.DocumentTitle = Constants.TitleApi;
     config.DocExpansion = "fully";
 });
-
-DotEnv.Load();
 
 Routes.MapRoutes(app);
 
