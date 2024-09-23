@@ -1,6 +1,7 @@
 using SpotifyAPI.Web;
+using tracksByPopularity.src.helpers;
 
-namespace tracksByPopularity.controllers;
+namespace tracksByPopularity.src.controllers;
 
 public static class AuthController
 {

@@ -1,7 +1,8 @@
 using System.Net;
-using tracksByPopularity.models;
+using tracksByPopularity.src.helpers;
+using tracksByPopularity.src.models;
 
-namespace tracksByPopularity.services;
+namespace tracksByPopularity.src.services;
 
 public static class PlaylistService
 {

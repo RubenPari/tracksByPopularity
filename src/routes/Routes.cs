@@ -1,6 +1,6 @@
-﻿using tracksByPopularity.controllers;
+﻿using tracksByPopularity.src.controllers;
 
-namespace tracksByPopularity.routes;
+namespace tracksByPopularity.src.routes;
 
 public class Routes
 {

@@ -1,4 +1,6 @@
-﻿namespace tracksByPopularity.middlewares;
+using tracksByPopularity.src.helpers;
+
+namespace tracksByPopularity.src.middlewares;
 
 public class CheckAuthMiddleware(RequestDelegate next)
 {

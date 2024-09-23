@@ -1,6 +1,6 @@
 using SpotifyAPI.Web;
 
-namespace tracksByPopularity;
+namespace tracksByPopularity.src.helpers;
 
 public static class Client
 {

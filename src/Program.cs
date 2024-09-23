@@ -1,9 +1,9 @@
 using dotenv.net;
 using StackExchange.Redis;
-using tracksByPopularity;
-using tracksByPopularity.background;
-using tracksByPopularity.middlewares;
-using tracksByPopularity.routes;
+using tracksByPopularity.src.background;
+using tracksByPopularity.src.helpers;
+using tracksByPopularity.src.middlewares;
+using tracksByPopularity.src.routes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,9 +39,7 @@ app.UseOpenApi();
 app.UseSwaggerUi(config =>
 {
     config.DocumentTitle = Constants.TitleApi;
-    config.Path = "/swagger";
-    config.DocumentPath = "/swagger/{documentName}/swagger.json";
-    config.DocExpansion = "list";
+    config.DocExpansion = "fully";
 });
 
 DotEnv.Load();

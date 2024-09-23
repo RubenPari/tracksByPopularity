@@ -12,6 +12,7 @@
     <PackageReference Include="SpotifyAPI.Web" Version="7.1.1" />
     <PackageReference Include="SpotifyAPI.Web.Auth" Version="7.1.1" />
     <PackageReference Include="StackExchange.Redis" Version="2.7.33" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.8.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
   </ItemGroup>
 

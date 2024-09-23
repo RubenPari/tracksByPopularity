@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
 using SpotifyAPI.Web;
 using StackExchange.Redis;
-using tracksByPopularity.services;
+using tracksByPopularity.src.services;
 
-namespace tracksByPopularity.helpers;
+namespace tracksByPopularity.src.helpers;
 
 public static class CacheHelper
 {

@@ -1,4 +1,4 @@
-﻿namespace tracksByPopularity.models;
+﻿namespace tracksByPopularity.src.models;
 
 public enum RemoveAllTracksResponse
 {
