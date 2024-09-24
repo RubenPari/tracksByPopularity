@@ -29,6 +29,7 @@ builder.Services.AddHostedService<RedisCacheResetService>();
 var app = builder.Build();
 
 // Add middlewares
+app.UseMiddleware<RedirectHomeMiddleware>();
 app.UseMiddleware<CheckAuthMiddleware>();
 app.UseMiddleware<ClearPlaylistMiddleware>();
 

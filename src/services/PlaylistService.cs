@@ -13,7 +13,7 @@ public static class PlaylistService
         {
             Method = HttpMethod.Get,
             RequestUri = new Uri(
-                $"{Constants.MicroserviceClearSongsBaseUrl}/playlist/delete-tracks?id_playlist={playlistId}"
+                $"{Constants.ClearSongsBaseUrl}/playlist/delete-tracks?id_playlist={playlistId}"
             ),
         };
 

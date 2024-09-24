@@ -1,7 +1,6 @@
 using tracksByPopularity.helpers;
 using tracksByPopularity.models;
 using tracksByPopularity.services;
-using tracksByPopularity.src.helpers;
 
 namespace tracksByPopularity.middlewares;
 
