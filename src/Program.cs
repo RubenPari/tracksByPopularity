@@ -1,6 +1,6 @@
 using StackExchange.Redis;
-using tracksByPopularity;
 using tracksByPopularity.background;
+using tracksByPopularity.helpers;
 using tracksByPopularity.middlewares;
 using tracksByPopularity.routes;
 

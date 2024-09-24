@@ -1,4 +1,6 @@
-﻿namespace tracksByPopularity.helpers;
+﻿using tracksByPopularity.helpers;
+
+namespace tracksByPopularity.src.helpers;
 
 public static class PlaylistHelper
 {

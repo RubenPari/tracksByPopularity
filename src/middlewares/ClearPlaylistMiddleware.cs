@@ -1,6 +1,7 @@
 using tracksByPopularity.helpers;
 using tracksByPopularity.models;
 using tracksByPopularity.services;
+using tracksByPopularity.src.helpers;
 
 namespace tracksByPopularity.middlewares;
 
@@ -42,7 +43,7 @@ public class ClearPlaylistMiddleware(RequestDelegate next)
             {
                 case RemoveAllTracksResponse.Unauthorized:
                     result = Results.Problem(
-                        detail: $"Unauthorized please login to {Constants.MicroserviceClearSongsBaseUrl}/auth/login and retry",
+                        detail: $"Unauthorized please login to {Constants.ClearSongsBaseUrl}/auth/login and retry",
                         statusCode: 401
                     );
                     break;
@@ -52,7 +53,7 @@ public class ClearPlaylistMiddleware(RequestDelegate next)
                 case RemoveAllTracksResponse.Success:
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(context));
+                    throw new Exception("Invalid response");
             }
 
             await result.ExecuteAsync(context);

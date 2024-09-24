@@ -2,10 +2,20 @@
 
 namespace tracksByPopularity.routes;
 
-public abstract class Routes
+public static class Routes
 {
     public static void MapRoutes(WebApplication app)
     {
+        // ####### /AUTH #######
+
+        var authRoutes = app.MapGroup("/auth");
+
+        authRoutes.MapGet("/login", AuthController.Login);
+
+        authRoutes.MapGet("/callback", AuthController.Callback);
+
+        authRoutes.MapGet("/logout", AuthController.Logout);
+
         // ####### /TRACK #######
 
         var trackRoutes = app.MapGroup("/track");
