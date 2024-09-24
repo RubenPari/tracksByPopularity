@@ -1,9 +1,7 @@
 ﻿using SpotifyAPI.Web;
 
-namespace tracksByPopularity.src.helpers
+namespace tracksByPopularity.helpers
 {
-    using System.Collections.Generic;
-
     public abstract class Constants
     {
         public static SpotifyClientConfig Config { get; } = SpotifyClientConfig.CreateDefault();
@@ -20,7 +18,7 @@ namespace tracksByPopularity.src.helpers
                 Scopes.UserLibraryModify,
                 Scopes.UserTopRead,
                 Scopes.PlaylistModifyPrivate,
-                Scopes.PlaylistModifyPublic
+                Scopes.PlaylistModifyPublic,
             ];
 
         public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;

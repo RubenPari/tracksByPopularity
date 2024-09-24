@@ -1,4 +1,4 @@
-namespace tracksByPopularity.src.middlewares;
+namespace tracksByPopularity.middlewares;
 
 public class RedirectHomeMiddleware(RequestDelegate next)
 {

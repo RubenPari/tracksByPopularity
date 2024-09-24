@@ -1,8 +1,10 @@
 using System.Net;
+using tracksByPopularity.helpers;
+using tracksByPopularity.models;
 using tracksByPopularity.src.helpers;
 using tracksByPopularity.src.models;
 
-namespace tracksByPopularity.src.services;
+namespace tracksByPopularity.services;
 
 public static class PlaylistService
 {
@@ -24,7 +26,7 @@ public static class PlaylistService
         {
             HttpStatusCode.Unauthorized => RemoveAllTracksResponse.Unauthorized,
             HttpStatusCode.BadRequest => RemoveAllTracksResponse.BadRequest,
-            _ => RemoveAllTracksResponse.Success
+            _ => RemoveAllTracksResponse.Success,
         };
     }
 }

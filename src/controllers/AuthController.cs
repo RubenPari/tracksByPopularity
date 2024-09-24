@@ -1,7 +1,7 @@
 using SpotifyAPI.Web;
-using tracksByPopularity.src.helpers;
+using tracksByPopularity.helpers;
 
-namespace tracksByPopularity.src.controllers;
+namespace tracksByPopularity.controllers;
 
 public static class AuthController
 {
@@ -13,7 +13,7 @@ public static class AuthController
             LoginRequest.ResponseType.Code
         )
         {
-            Scope = Constants.MyScopes
+            Scope = Constants.MyScopes,
         };
 
         var uri = request.ToUri();

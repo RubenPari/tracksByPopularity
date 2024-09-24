@@ -1,10 +1,12 @@
 using SpotifyAPI.Web;
 using StackExchange.Redis;
+using tracksByPopularity.helpers;
+using tracksByPopularity.models;
+using tracksByPopularity.services;
 using tracksByPopularity.src.helpers;
 using tracksByPopularity.src.models;
-using tracksByPopularity.src.services;
 
-namespace tracksByPopularity.src.controllers;
+namespace tracksByPopularity.controllers;
 
 public static class TrackController
 {
@@ -27,13 +29,19 @@ public static class TrackController
 
         var addedToPlaylist = timerRange switch
         {
-            TimeRangeEnum.ShortTerm
-                => await TrackService.AddTracksToPlaylist(Constants.PlaylistIdTopShort, tracks),
-            TimeRangeEnum.MediumTerm
-                => await TrackService.AddTracksToPlaylist(Constants.PlaylistIdTopMedium, tracks),
-            TimeRangeEnum.LongTerm
-                => await TrackService.AddTracksToPlaylist(Constants.PlaylistIdTopLong, tracks),
-            _ => false
+            TimeRangeEnum.ShortTerm => await TrackService.AddTracksToPlaylist(
+                Constants.PlaylistIdTopShort,
+                tracks
+            ),
+            TimeRangeEnum.MediumTerm => await TrackService.AddTracksToPlaylist(
+                Constants.PlaylistIdTopMedium,
+                tracks
+            ),
+            TimeRangeEnum.LongTerm => await TrackService.AddTracksToPlaylist(
+                Constants.PlaylistIdTopLong,
+                tracks
+            ),
+            _ => false,
         };
 
         return addedToPlaylist

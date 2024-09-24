@@ -1,8 +1,9 @@
+using tracksByPopularity.helpers;
+using tracksByPopularity.models;
+using tracksByPopularity.services;
 using tracksByPopularity.src.helpers;
-using tracksByPopularity.src.models;
-using tracksByPopularity.src.services;
 
-namespace tracksByPopularity.src.middlewares;
+namespace tracksByPopularity.middlewares;
 
 public class ClearPlaylistMiddleware(RequestDelegate next)
 {
@@ -21,15 +22,21 @@ public class ClearPlaylistMiddleware(RequestDelegate next)
         if (path == "/top")
         {
             var timeRange = QueryParamHelper.GetTimeRangeQueryParam(context);
-            
+
             var cleared = timeRange switch
             {
-                TimeRangeEnum.ShortTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopShort),
-                TimeRangeEnum.MediumTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopMedium),
-                TimeRangeEnum.LongTerm => await PlaylistService.RemoveAllTracks(Constants.PlaylistIdTopLong),
+                TimeRangeEnum.ShortTerm => await PlaylistService.RemoveAllTracks(
+                    Constants.PlaylistIdTopShort
+                ),
+                TimeRangeEnum.MediumTerm => await PlaylistService.RemoveAllTracks(
+                    Constants.PlaylistIdTopMedium
+                ),
+                TimeRangeEnum.LongTerm => await PlaylistService.RemoveAllTracks(
+                    Constants.PlaylistIdTopLong
+                ),
                 _ => RemoveAllTracksResponse.Success,
             };
-            
+
             var result = Results.Ok();
 
             switch (cleared)
@@ -43,6 +50,10 @@ public class ClearPlaylistMiddleware(RequestDelegate next)
                 case RemoveAllTracksResponse.BadRequest:
                     result = Results.BadRequest("Something went wrong, please try again later");
                     break;
+                case RemoveAllTracksResponse.Success:
+                    break;
+                default:
+                    throw new Exception("Invalid response");
             }
 
             await result.ExecuteAsync(context);

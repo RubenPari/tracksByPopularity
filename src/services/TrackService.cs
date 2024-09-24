@@ -1,8 +1,10 @@
 using SpotifyAPI.Web;
+using tracksByPopularity.helpers;
+using tracksByPopularity.models;
 using tracksByPopularity.src.helpers;
 using tracksByPopularity.src.models;
 
-namespace tracksByPopularity.src.services;
+namespace tracksByPopularity.services;
 
 public static class TrackService
 {
@@ -42,7 +44,7 @@ public static class TrackService
             TimeRangeEnum.LongTerm => PersonalizationTopRequest.TimeRange.LongTerm,
             TimeRangeEnum.MediumTerm => PersonalizationTopRequest.TimeRange.MediumTerm,
             TimeRangeEnum.ShortTerm => PersonalizationTopRequest.TimeRange.ShortTerm,
-            _ => throw new Exception("Invalid time range")
+            _ => throw new Exception("Invalid time range"),
         };
 
         var topTracks = await Client.Spotify!.Personalization.GetTopTracks(

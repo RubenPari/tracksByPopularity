@@ -1,3 +1,4 @@
+using tracksByPopularity.models;
 using tracksByPopularity.src.models;
 
 namespace tracksByPopularity.src.helpers;
