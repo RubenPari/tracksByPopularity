@@ -1,8 +1,6 @@
 using System.Net;
 using tracksByPopularity.helpers;
 using tracksByPopularity.models;
-using tracksByPopularity.src.helpers;
-using tracksByPopularity.src.models;
 
 namespace tracksByPopularity.services;
 
