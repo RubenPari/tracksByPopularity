@@ -9,15 +9,25 @@ public class ClearPlaylistMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        // Check if the path is sufficient to remove prefix
-        if (context.Request.Path.Value!.Length < 6)
+        // check if CLEAR_SONGS service is enabled and authenticated
+        var http = new HttpClient();
+        var response = await http.GetAsync($"{Constants.ClearSongsBaseUrl}/auth/is-auth");
+        if (!response.IsSuccessStatusCode)
+        {
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsync("Unauthorized, login to clear-songs service");
+            return;
+        }
+        
+        // Check if the path includes "/auth"
+        if (context.Request.Path.Value!.Contains("/auth"))
         {
             await next(context);
             return;
         }
 
         // Remove prefix "/track" from the path
-        var path = context.Request.Path.Value[6..];
+        var path = context.Request.Path.Value!.Replace("/track", "");
 
         if (path == "/top")
         {
