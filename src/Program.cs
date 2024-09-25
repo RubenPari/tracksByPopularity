@@ -21,10 +21,16 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 
     configuration.AllowAdmin = true;
     configuration.AbortOnConnectFail = false;
+    configuration.ConnectTimeout = 20000; // 20 seconds
+    configuration.SyncTimeout = 20000; // 20 seconds
+    configuration.AsyncTimeout = 20000; // 20 seconds
+    configuration.ReconnectRetryPolicy = new LinearRetry(10000); // 10 seconds
 
     return ConnectionMultiplexer.Connect(configuration);
 });
 builder.Services.AddHostedService<RedisCacheResetService>();
+
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 

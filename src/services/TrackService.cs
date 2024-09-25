@@ -32,7 +32,7 @@ public static class TrackService
         return true;
     }
 
-    public static async Task<IList<FullTrack>> GetTopTracks(
+    public static async Task<IList<FullTrack>> GetTop50Tracks(
         TimeRangeEnum timeRange,
         IList<SavedTrack> allTracks
     )
