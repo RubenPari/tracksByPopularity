@@ -10,7 +10,7 @@ namespace tracksByPopularity.controllers;
 
 public static class TrackController
 {
-    public static async Task<IResult> Top(
+    public static async Task<IResult> Top50(
         HttpContext httpContext,
         IConnectionMultiplexer cacheRedisConnection
     )
@@ -20,10 +20,10 @@ public static class TrackController
         // get all user tracks, if possible from cache
         var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
 
-        var topTracks = await TrackService.GetTopTracks(timerRange, allTracks);
+        var top50Tracks = await TrackService.GetTop50Tracks(timerRange, allTracks);
 
         // convert list of FullTrack to SavedTrack
-        var tracks = topTracks.Select(track => new SavedTrack { Track = track }).ToList();
+        var tracks = top50Tracks.Select(track => new SavedTrack { Track = track }).ToList();
 
         // added tracks to playlist based on time range
 

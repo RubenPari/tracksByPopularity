@@ -20,7 +20,7 @@ public static class Routes
 
         var trackRoutes = app.MapGroup("/track");
 
-        trackRoutes.MapPost("/top", TrackController.Top);
+        trackRoutes.MapPost("/top", TrackController.Top50);
 
         trackRoutes.MapPost("/less", TrackController.Less);
 
