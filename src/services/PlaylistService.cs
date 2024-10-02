@@ -38,7 +38,8 @@ public static class PlaylistService
         var playlistsUser = await Client.Spotify.PaginateAll(playlistsUserFirstPage);
 
         var idPlaylistMinorSongs = playlistsUser
-            .FirstOrDefault(playlist => playlist.Name == Constants.PlaylistNameWithMinorSongs)?.Id;
+            .FirstOrDefault(playlist => playlist.Name == Constants.PlaylistNameWithMinorSongs)
+            ?.Id;
 
         if (idPlaylistMinorSongs != null)
         {
@@ -47,9 +48,10 @@ public static class PlaylistService
         else
         {
             // Create playlist "MinorSongs"
-            var playlistMinorSongs =
-                await Client.Spotify.Playlists.Create(userId,
-                    new PlaylistCreateRequest(Constants.PlaylistNameWithMinorSongs));
+            var playlistMinorSongs = await Client.Spotify.Playlists.Create(
+                userId,
+                new PlaylistCreateRequest(Constants.PlaylistNameWithMinorSongs)
+            );
 
             idPlaylistMinorSongs = playlistMinorSongs.Id;
         }
@@ -66,9 +68,11 @@ public static class PlaylistService
         // Find all tracks that belong to artists with less than 5 songs
         var tracksToKeep = artistsSummary
             .Where(artistSummary => artistSummary.Count <= 5)
-            .SelectMany(artistSummary => tracks.Where(track => track.Track.Artists[0].Id == artistSummary.Id))
+            .SelectMany(artistSummary =>
+                tracks.Where(track => track.Track.Artists[0].Id == artistSummary.Id)
+            )
             .ToList();
-        
+
         // Convert tracks to IDs
         var trackIDs = TrackUtils.ConvertTracksToIds(tracksToKeep);
 
@@ -80,8 +84,10 @@ public static class PlaylistService
         {
             var tracksToAdd = trackIDs.Skip(offset).Take(limit).ToList();
 
-            var added = await Client.Spotify.Playlists.AddItems(idPlaylistMinorSongs!,
-                new PlaylistAddItemsRequest(tracksToAdd));
+            var added = await Client.Spotify.Playlists.AddItems(
+                idPlaylistMinorSongs!,
+                new PlaylistAddItemsRequest(tracksToAdd)
+            );
 
             if (added.SnapshotId == string.Empty)
             {

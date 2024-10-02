@@ -31,11 +31,14 @@ public static class Routes
         trackRoutes.MapPost("/more", TrackController.More);
 
         trackRoutes.MapPost("/artist", TrackController.Artist);
-        
+
         // ####### /PLAYLIST #######
-        
+
         var playlistRoutes = app.MapGroup("/playlist");
-        
-        playlistRoutes.MapPost("/create-playlist-track-minor", PlaylistController.CreatePlaylistTrackMinor);
+
+        playlistRoutes.MapPost(
+            "/create-playlist-track-minor",
+            PlaylistController.CreatePlaylistTrackMinor
+        );
     }
 }
