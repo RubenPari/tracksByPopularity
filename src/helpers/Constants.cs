@@ -11,15 +11,15 @@ namespace tracksByPopularity.helpers
         public static int TracksMoreMediumPopularity => 75;
 
         public static List<string> MyScopes { get; } =
-            [
-                Scopes.UserReadEmail,
-                Scopes.UserReadPrivate,
-                Scopes.UserLibraryRead,
-                Scopes.UserLibraryModify,
-                Scopes.UserTopRead,
-                Scopes.PlaylistModifyPrivate,
-                Scopes.PlaylistModifyPublic,
-            ];
+        [
+            Scopes.UserReadEmail,
+            Scopes.UserReadPrivate,
+            Scopes.UserLibraryRead,
+            Scopes.UserLibraryModify,
+            Scopes.UserTopRead,
+            Scopes.PlaylistModifyPrivate,
+            Scopes.PlaylistModifyPublic,
+        ];
 
         public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;
 
@@ -55,5 +55,11 @@ namespace tracksByPopularity.helpers
 
         public static string ClearSongsBaseUrl { get; } =
             Environment.GetEnvironmentVariable("CLEAR_SONGS_BASE_URL")!;
+
+        public static string PlaylistNameWithMinorSongs { get; set; } = "MinorSongs";
+
+        public static int Offset { get; set; } = 0;
+
+        public static int LimitInsertPlaylistTracks { get; set; } = 100;
     }
 }
