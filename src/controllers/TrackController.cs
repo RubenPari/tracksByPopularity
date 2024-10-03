@@ -3,8 +3,6 @@ using StackExchange.Redis;
 using tracksByPopularity.helpers;
 using tracksByPopularity.models;
 using tracksByPopularity.services;
-using tracksByPopularity.src.helpers;
-using tracksByPopularity.src.models;
 
 namespace tracksByPopularity.controllers;
 

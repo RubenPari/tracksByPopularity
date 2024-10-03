@@ -56,10 +56,17 @@ namespace tracksByPopularity.helpers
         public static string ClearSongsBaseUrl { get; } =
             Environment.GetEnvironmentVariable("CLEAR_SONGS_BASE_URL")!;
 
-        public static string PlaylistNameWithMinorSongs { get; set; } = "MinorSongs";
+        public static string PlaylistNameWithMinorSongs => "MinorSongs";
 
-        public static int Offset { get; set; } = 0;
+        public static int Offset => 0;
 
-        public static int LimitInsertPlaylistTracks { get; set; } = 100;
+        public static int LimitInsertPlaylistTracks => 100;
+
+        public static readonly string[] AuthPaths =
+        [
+            "/auth/login",
+            "/auth/callback",
+            "/auth/logout",
+        ];
     }
 }

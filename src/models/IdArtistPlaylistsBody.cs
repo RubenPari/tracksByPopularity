@@ -1,4 +1,4 @@
-﻿namespace tracksByPopularity.src.models;
+﻿namespace tracksByPopularity.models;
 
 public class IdArtistPlaylistsBody(string less, string lessMedium, string moreMedium, string more)
 {

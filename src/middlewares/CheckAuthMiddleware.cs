@@ -4,8 +4,6 @@ namespace tracksByPopularity.middlewares;
 
 public class CheckAuthMiddleware(RequestDelegate next)
 {
-    private static readonly string[] AuthPaths = ["/auth/login", "/auth/callback", "/auth/logout"];
-
     public async Task InvokeAsync(HttpContext context)
     {
         // exclude swagger from auth check
@@ -16,7 +14,7 @@ public class CheckAuthMiddleware(RequestDelegate next)
         }
 
         // exclude auth paths from auth check
-        if (AuthPaths.Contains(context.Request.Path.Value))
+        if (Constants.AuthPaths.Contains(context.Request.Path.Value))
         {
             await next(context);
             return;

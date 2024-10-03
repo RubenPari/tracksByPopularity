@@ -14,11 +14,8 @@ public static class QueryParamHelper
         }
 
         // convert timeRange from string to enum
-        if (!Enum.TryParse<TimeRangeEnum>(timeRange, out var timeRangeEnum))
-        {
-            return TimeRangeEnum.NotValid;
-        }
-
-        return timeRangeEnum;
+        return !Enum.TryParse<TimeRangeEnum>(timeRange, out var timeRangeEnum)
+            ? TimeRangeEnum.NotValid
+            : timeRangeEnum;
     }
 }

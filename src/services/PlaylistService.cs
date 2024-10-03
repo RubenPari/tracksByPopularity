@@ -41,11 +41,7 @@ public static class PlaylistService
             .FirstOrDefault(playlist => playlist.Name == Constants.PlaylistNameWithMinorSongs)
             ?.Id;
 
-        if (idPlaylistMinorSongs != null)
-        {
-            return false;
-        }
-        else
+        if (idPlaylistMinorSongs == null)
         {
             // Create playlist "MinorSongs"
             var playlistMinorSongs = await Client.Spotify.Playlists.Create(
@@ -73,8 +69,8 @@ public static class PlaylistService
             )
             .ToList();
 
-        // Convert tracks to IDs
-        var trackIDs = TrackUtils.ConvertTracksToIds(tracksToKeep);
+        // Convert tracks to Uris
+        var tracksUris = TrackUtils.ConvertTracksToUris(tracksToKeep);
 
         // Insert tracks into playlist with pagination
         var offset = Constants.Offset;
@@ -82,7 +78,7 @@ public static class PlaylistService
 
         while (true)
         {
-            var tracksToAdd = trackIDs.Skip(offset).Take(limit).ToList();
+            var tracksToAdd = tracksUris.Skip(offset).Take(limit).ToList();
 
             var added = await Client.Spotify.Playlists.AddItems(
                 idPlaylistMinorSongs!,

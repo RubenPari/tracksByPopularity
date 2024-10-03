@@ -4,8 +4,8 @@ namespace tracksByPopularity.utils;
 
 public abstract class TrackUtils
 {
-    public static IList<string> ConvertTracksToIds(IList<SavedTrack> tracks)
+    public static IList<string> ConvertTracksToUris(List<SavedTrack> tracks)
     {
-        return tracks.Select(track => track.Track.Id).ToList();
+        return tracks.Select(track => track.Track.Uri).ToList();
     }
 }

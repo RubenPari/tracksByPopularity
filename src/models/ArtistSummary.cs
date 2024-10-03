@@ -1,6 +1,6 @@
 namespace tracksByPopularity.models;
 
-public abstract class ArtistSummary
+public class ArtistSummary
 {
     public required string Id { get; set; }
     public required string Name { get; set; }
