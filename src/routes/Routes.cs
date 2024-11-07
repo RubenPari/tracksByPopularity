@@ -1,4 +1,5 @@
 ﻿using tracksByPopularity.controllers;
+using tracksByPopularity.services;
 
 namespace tracksByPopularity.routes;
 
@@ -12,8 +13,8 @@ public static class Routes
 
         authRoutes.MapGet("/login", AuthController.Login);
 
-        authRoutes.MapGet("/callback", AuthController.Callback);
-
+        authRoutes.MapGet("/callback", async (string code, SpotifyAuthService authService) => await AuthController.Callback(code, authService));
+        
         authRoutes.MapGet("/logout", AuthController.Logout);
 
         // ####### /TRACK #######

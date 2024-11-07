@@ -1,21 +1,18 @@
 using dotenv.net;
+using SpotifyAPI.Web;
 using StackExchange.Redis;
 using tracksByPopularity.background;
 using tracksByPopularity.helpers;
 using tracksByPopularity.middlewares;
 using tracksByPopularity.routes;
+using tracksByPopularity.services;
+using tracksByPopularity.services.Track;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApiDocument(config =>
-{
-    config.DocumentName = Constants.TitleApi;
-    config.Title = Constants.TitleApi;
-    config.Version = "v1";
-});
 
-// Service that set Redis cache
+// Set Redis cache service
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
     var configuration = ConfigurationOptions.Parse(Constants.RedisConnectionString);
@@ -31,22 +28,18 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 });
 builder.Services.AddHostedService<RedisCacheResetService>();
 
+// Set Spotify client injector
+builder.Services.AddSingleton<SpotifyAuthService>();
+
+builder.Services.AddScoped<TrackService>();
+
 builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
 // Add middlewares
-app.UseMiddleware<RedirectHomeMiddleware>();
 app.UseMiddleware<CheckAuthMiddleware>();
 app.UseMiddleware<ClearPlaylistMiddleware>();
-
-// Add services to use OpenApi and Swagger UI
-app.UseOpenApi();
-app.UseSwaggerUi(config =>
-{
-    config.DocumentTitle = Constants.TitleApi;
-    config.DocExpansion = "fully";
-});
 
 DotEnv.Load();
 

@@ -2,6 +2,7 @@ using Newtonsoft.Json;
 using SpotifyAPI.Web;
 using StackExchange.Redis;
 using tracksByPopularity.services;
+using tracksByPopularity.services.Track;
 
 namespace tracksByPopularity.helpers;
 

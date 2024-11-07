@@ -1,50 +1,29 @@
-using SpotifyAPI.Web;
-using tracksByPopularity.helpers;
+using tracksByPopularity.services;
 
 namespace tracksByPopularity.controllers;
 
 public static class AuthController
 {
-    public static IResult Login()
+    public static IResult Login(SpotifyAuthService authService)
     {
-        var request = new LoginRequest(
-            new Uri(Constants.RedirectUri),
-            Constants.ClientId,
-            LoginRequest.ResponseType.Code
-        )
-        {
-            Scope = Constants.MyScopes,
-        };
-
-        var uri = request.ToUri();
-
+        var uri = authService.GetLoginUri();
         return Results.Redirect(uri.ToString());
     }
 
-    public static async Task<IResult> Callback(string code)
+    public static async Task<IResult> Callback(string code, SpotifyAuthService authService)
     {
-        var response = await new OAuthClient().RequestToken(
-            new AuthorizationCodeTokenRequest(
-                Constants.ClientId,
-                Constants.ClientSecret,
-                code,
-                new Uri(Constants.RedirectUri)
-            )
-        );
+        var success = await authService.HandleCallbackAsync(code);
 
-        Client.Spotify = new SpotifyClient(Constants.Config.WithToken(response.AccessToken));
+        var user = success ? await authService.SpotifyClient!.UserProfile.Current() : null;
 
-        var user = await Client.Spotify.UserProfile.Current();
-
-        return user.Id == string.Empty
-            ? Results.BadRequest("Login failed, retry")
-            : Results.Ok("Successfully authenticated!");
+        return user != null && !string.IsNullOrEmpty(user.Id)
+            ? Results.Ok("Successfully authenticated!")
+            : Results.BadRequest("Login failed, retry");
     }
 
-    public static IResult Logout()
+    public static IResult Logout(SpotifyAuthService authService)
     {
-        Client.Spotify = null;
-
+        authService.Logout();
         return Results.Ok("Successfully logged out!");
     }
 }

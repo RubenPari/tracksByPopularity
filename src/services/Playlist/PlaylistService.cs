@@ -2,16 +2,19 @@ using System.Net;
 using SpotifyAPI.Web;
 using tracksByPopularity.helpers;
 using tracksByPopularity.models;
+using tracksByPopularity.services.Spotify;
 using tracksByPopularity.utils;
 
-namespace tracksByPopularity.services;
+namespace tracksByPopularity.services.Playlist;
 
-public static class PlaylistService
+public class PlaylistService(SpotifyService spotifyService) : IPlaylistService
 {
-    public static async Task<RemoveAllTracksResponse> RemoveAllTracks(string playlistId)
+    public async Task<RemoveAllTracksResponse> RemoveAllTracks(string playlistId)
     {
-        var client = new HttpClient();
-        client.Timeout = TimeSpan.FromSeconds(200);
+        var client = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(200)
+        };
         var request = new HttpRequestMessage
         {
             Method = HttpMethod.Delete,
@@ -29,7 +32,7 @@ public static class PlaylistService
         };
     }
 
-    public static async Task<bool> CreatePlaylistTracksMinorAsync(IList<SavedTrack> tracks)
+    public async Task<bool> CreatePlaylistTracksMinorAsync(IList<SavedTrack> tracks)
     {
         var userId = await UserHelper.GetUserId();
 
@@ -54,9 +57,9 @@ public static class PlaylistService
         // Add tracks to playlist "MinorSongs"
 
         // Get artists with less than 5 songs in user library
-        var artistsSummary = await ArtistHelper.GetArtistsSummary();
+        var artistsSummary = ArtistService.GetArtistsSummary(tracks);
 
-        if (artistsSummary == null)
+        if (artistsSummary.Count == 0)
         {
             return false;
         }
@@ -99,5 +102,15 @@ public static class PlaylistService
         }
 
         return true;
+    }
+    
+    public async Task<bool> AddTrackToPlaylist(string playlistId, IList<string> tracks)
+    {
+        var added = await spotifyService.Client.Playlists.AddItems(
+            playlistId,
+            new PlaylistAddItemsRequest(tracks)
+        );
+
+        return added.SnapshotId != string.Empty;
     }
 }
