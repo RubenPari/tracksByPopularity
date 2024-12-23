@@ -54,7 +54,7 @@ public static class PlaylistService
         // Add tracks to playlist "MinorSongs"
 
         // Get artists with less than 5 songs in user library
-        var artistsSummary = await ArtistHelper.GetArtistsSummary();
+        var artistsSummary = await ArtistService.GetArtistsSummary();
 
         if (artistsSummary == null)
         {
