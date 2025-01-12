@@ -1,9 +1,10 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using tracksByPopularity.models;
+using tracksByPopularity.utils;
 
-namespace tracksByPopularity.helpers;
+namespace tracksByPopularity.services;
 
-public abstract class ArtistHelper
+public abstract class ArtistService
 {
     public static async Task<IEnumerable<ArtistSummary>?> GetArtistsSummary()
     {

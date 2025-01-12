@@ -1,8 +1,8 @@
 using StackExchange.Redis;
 using tracksByPopularity.background;
-using tracksByPopularity.helpers;
 using tracksByPopularity.middlewares;
 using tracksByPopularity.routes;
+using tracksByPopularity.utils;
 
 var builder = WebApplication.CreateBuilder(args);
 

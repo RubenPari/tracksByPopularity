@@ -1,3 +1,5 @@
+using tracksByPopularity.utils;
+
 namespace tracksByPopularity.helpers;
 
 public abstract class UserHelper
