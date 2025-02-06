@@ -55,7 +55,7 @@ public class ClearPlaylistMiddleware(
 
         try
         {
-            var response = await http.GetAsync($"{Constants.ClearSongsBaseUrl}/auth/is-auth");
+            var response = await http.GetAsync("http://localhost:3000/auth/is-auth");
             return response.IsSuccessStatusCode;
         }
         finally
@@ -88,7 +88,7 @@ public class ClearPlaylistMiddleware(
         var result = cleared switch
         {
             RemoveAllTracksResponse.Unauthorized => Results.Problem(
-                detail: $"Unauthorized please login to {Constants.ClearSongsBaseUrl}/auth/login and retry",
+                detail: "Unauthorized please login to http://localhost:3000/auth/login and retry",
                 statusCode: 401
             ),
             RemoveAllTracksResponse.BadRequest => Results.BadRequest(

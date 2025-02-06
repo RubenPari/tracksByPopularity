@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using tracksByPopularity.models;
-using tracksByPopularity.utils;
 
 namespace tracksByPopularity.services;
 
@@ -10,7 +9,7 @@ public abstract class ArtistService
     {
         var http = new HttpClient();
 
-        var response = await http.GetAsync($"{Constants.ClearSongsBaseUrl}/track/summary");
+        var response = await http.GetAsync("http://localhost:3030/track/summary");
 
         if (!response.IsSuccessStatusCode)
         {
