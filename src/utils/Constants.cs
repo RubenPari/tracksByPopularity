@@ -11,15 +11,15 @@ namespace tracksByPopularity.utils
         public static int TracksMoreMediumPopularity => 75;
 
         public static List<string> MyScopes { get; } =
-            [
-                Scopes.UserReadEmail,
-                Scopes.UserReadPrivate,
-                Scopes.UserLibraryRead,
-                Scopes.UserLibraryModify,
-                Scopes.UserTopRead,
-                Scopes.PlaylistModifyPrivate,
-                Scopes.PlaylistModifyPublic,
-            ];
+        [
+            Scopes.UserReadEmail,
+            Scopes.UserReadPrivate,
+            Scopes.UserLibraryRead,
+            Scopes.UserLibraryModify,
+            Scopes.UserTopRead,
+            Scopes.PlaylistModifyPrivate,
+            Scopes.PlaylistModifyPublic,
+        ];
 
         public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;
 
@@ -52,9 +52,6 @@ namespace tracksByPopularity.utils
 
         public static string RedisConnectionString { get; } =
             Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")!;
-
-        public static string ClearSongsBaseUrl { get; } =
-            Environment.GetEnvironmentVariable("CLEAR_SONGS_BASE_URL")!;
 
         public static string PlaylistNameWithMinorSongs => "MinorSongs";
 
