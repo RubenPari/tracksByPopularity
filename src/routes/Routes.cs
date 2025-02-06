@@ -32,6 +32,7 @@ public static class Routes
 
         trackRoutes.MapPost("/artist", TrackController.Artist);
 
+        // TODO: move following code to regroup-musics project
         // ####### /PLAYLIST #######
 
         var playlistRoutes = app.MapGroup("/playlist");
