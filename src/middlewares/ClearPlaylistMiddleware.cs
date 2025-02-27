@@ -27,7 +27,7 @@ public class ClearPlaylistMiddleware(
 
         var path = context.Request.Path.Value!;
 
-        if (path.Contains("/top"))
+        if (path.Contains("/top") || path.Contains("/artist"))
         {
             await HandleTopPath(context);
             return;
