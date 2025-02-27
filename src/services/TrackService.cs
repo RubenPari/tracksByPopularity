@@ -1,5 +1,4 @@
 using SpotifyAPI.Web;
-using tracksByPopularity.models;
 using tracksByPopularity.utils;
 
 namespace tracksByPopularity.services;
@@ -30,31 +29,5 @@ public static class TrackService
         }
 
         return true;
-    }
-
-    public static async Task<IList<FullTrack>> GetTop50Tracks(
-        TimeRangeEnum timeRange,
-        IList<SavedTrack> allTracks
-    )
-    {
-        var timeRangeParam = timeRange switch
-        {
-            TimeRangeEnum.LongTerm => PersonalizationTopRequest.TimeRange.LongTerm,
-            TimeRangeEnum.MediumTerm => PersonalizationTopRequest.TimeRange.MediumTerm,
-            TimeRangeEnum.ShortTerm => PersonalizationTopRequest.TimeRange.ShortTerm,
-            TimeRangeEnum.NotValid => throw new Exception("Invalid time range"),
-            _ => throw new Exception("Invalid time range"),
-        };
-
-        var topTracks = await Client.Spotify!.Personalization.GetTopTracks(
-            new PersonalizationTopRequest { TimeRangeParam = timeRangeParam, Limit = 50 }
-        );
-
-        // remove tracks that are not in the user's library
-        topTracks.Items = topTracks
-            .Items!.Where(track => allTracks.Any(t => t.Track.Id == track.Id))
-            .ToList();
-
-        return topTracks.Items!;
     }
 }
