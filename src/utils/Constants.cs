@@ -12,7 +12,6 @@ namespace tracksByPopularity.utils
         public static int TracksMoreMediumPopularity => 80;
         public static int ArtistTracksLessPopularity => 33;
         public static int ArtistTracksMediumPopularity => 66;
-        public static int ArtistTracksMorePopularity => 100;
 
         public static List<string> MyScopes { get; } =
             [

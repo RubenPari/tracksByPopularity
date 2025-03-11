@@ -151,10 +151,7 @@ public static class TrackController
             .ToList();
 
         var trackWithMorePopularity = allArtistTracks
-            .Where(track =>
-                track.Track.Popularity > Constants.ArtistTracksMediumPopularity
-                && track.Track.Popularity <= Constants.ArtistTracksMorePopularity
-            )
+            .Where(track => track.Track.Popularity > Constants.ArtistTracksMediumPopularity)
             .ToList();
 
         var addedLess = await TrackService.AddTracksToPlaylist(
