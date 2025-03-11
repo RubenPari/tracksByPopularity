@@ -49,6 +49,28 @@ public static class TrackController
             : Results.BadRequest("Failed to add tracks to playlist");
     }
 
+    public static async Task<IResult> Medium(IConnectionMultiplexer cacheRedisConnection)
+    {
+        // get all user tracks, if possible from cache
+        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
+
+        var trackWithPopularity = allTracks
+            .Where(track =>
+                track.Track.Popularity > Constants.TracksLessMediumPopularity
+                && track.Track.Popularity <= Constants.TracksMediumPopularity
+            )
+            .ToList();
+
+        var added = await TrackService.AddTracksToPlaylist(
+            Constants.PlaylistIdMedium,
+            trackWithPopularity
+        );
+
+        return added
+            ? Results.Ok("Tracks added to playlist")
+            : Results.BadRequest("Failed to add tracks to playlist");
+    }
+
     public static async Task<IResult> MoreMedium(IConnectionMultiplexer cacheRedisConnection)
     {
         // get all user tracks, if possible from cache

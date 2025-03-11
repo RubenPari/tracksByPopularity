@@ -6,9 +6,10 @@ namespace tracksByPopularity.utils
     {
         public static SpotifyClientConfig Config { get; } = SpotifyClientConfig.CreateDefault();
         public static string TitleApi => "TracksByPopularityAPI";
-        public static int TracksLessPopularity => 25;
-        public static int TracksLessMediumPopularity => 50;
-        public static int TracksMoreMediumPopularity => 75;
+        public static int TracksLessPopularity => 20;
+        public static int TracksLessMediumPopularity => 40;
+        public static int TracksMediumPopularity => 60;
+        public static int TracksMoreMediumPopularity => 80;
         public static int ArtistTracksLessPopularity => 33;
         public static int ArtistTracksMediumPopularity => 66;
         public static int ArtistTracksMorePopularity => 100;
@@ -37,6 +38,9 @@ namespace tracksByPopularity.utils
 
         public static string PlaylistIdLessMedium { get; } =
             Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS_MEDIUM")!;
+
+        public static string PlaylistIdMedium { get; } =
+            Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!;
 
         public static string PlaylistIdMoreMedium { get; } =
             Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE_MEDIUM")!;

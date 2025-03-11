@@ -24,6 +24,8 @@ public static class Routes
 
         trackRoutes.MapPost("/less-medium", TrackController.LessMedium);
 
+        trackRoutes.MapPost("/medium", TrackController.Medium);
+
         trackRoutes.MapPost("/more-medium", TrackController.MoreMedium);
 
         trackRoutes.MapPost("/more", TrackController.More);
