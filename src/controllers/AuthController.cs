@@ -57,7 +57,7 @@ public abstract class AuthController(ITokenService tokenService)
                 {
                     token = jwtToken,
                     userId = user.Id,
-                    expiresAt
+                    expiresAt,
                 }
             );
         }
