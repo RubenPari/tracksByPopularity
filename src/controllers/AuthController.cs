@@ -1,9 +1,10 @@
 using SpotifyAPI.Web;
+using tracksByPopularity.models;
 using tracksByPopularity.utils;
 
 namespace tracksByPopularity.controllers;
 
-public static class AuthController
+public abstract class AuthController(ITokenService tokenService)
 {
     public static IResult Login()
     {
@@ -21,30 +22,48 @@ public static class AuthController
         return Results.Redirect(uri.ToString());
     }
 
-    public static async Task<IResult> Callback(string code)
+    public async Task<IResult> Callback(string code)
     {
-        var response = await new OAuthClient().RequestToken(
-            new AuthorizationCodeTokenRequest(
-                Constants.ClientId,
-                Constants.ClientSecret,
-                code,
-                new Uri(Constants.RedirectUri)
-            )
-        );
+        try
+        {
+            var response = await new OAuthClient().RequestToken(
+                new AuthorizationCodeTokenRequest(
+                    Constants.ClientId,
+                    Constants.ClientSecret,
+                    code,
+                    new Uri(Constants.RedirectUri)
+                )
+            );
 
-        Client.Spotify = new SpotifyClient(Constants.Config.WithToken(response.AccessToken));
+            // Create a temporary Spotify client to get the user profile
+            var tempClient = new SpotifyClient(
+                SpotifyClientConfig.CreateDefault().WithToken(response.AccessToken)
+            );
 
-        var user = await Client.Spotify.UserProfile.Current();
+            var user = await tempClient.UserProfile.Current();
+            if (string.IsNullOrEmpty(user.Id))
+            {
+                return Results.BadRequest("Login failed, retry");
+            }
 
-        return user.Id == string.Empty
-            ? Results.BadRequest("Login failed, retry")
-            : Results.Ok("Successfully authenticated!");
-    }
+            // Calculate the token expiration time
+            var expiresAt = DateTime.UtcNow.AddSeconds(response.ExpiresIn);
 
-    public static IResult Logout()
-    {
-        Client.Spotify = null;
+            // Generate JWT token
+            var jwtToken = tokenService.GenerateJwtToken(user.Id, response.AccessToken, expiresAt);
 
-        return Results.Ok("Successfully logged out!");
+            return Results.Ok(
+                new
+                {
+                    token = jwtToken,
+                    userId = user.Id,
+                    expiresAt
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest($"Authentication failed: {ex.Message}");
+        }
     }
 }
