@@ -29,13 +29,16 @@ public static class PlaylistService
         };
     }
 
-    public static async Task<bool> CreatePlaylistTracksMinorAsync(IList<SavedTrack> tracks)
+    public static async Task<bool> CreatePlaylistTracksMinorAsync(
+        IList<SavedTrack> tracks,
+        SpotifyClient spotifyClient
+    )
     {
-        var userId = await UserHelper.GetUserId();
+        var userId = await UserHelper.GetUserId(spotifyClient);
 
         // Check if "MinorSongs" playlist already exists
-        var playlistsUserFirstPage = await Client.Spotify!.Playlists.GetUsers(userId);
-        var playlistsUser = await Client.Spotify.PaginateAll(playlistsUserFirstPage);
+        var playlistsUserFirstPage = await spotifyClient.Playlists.GetUsers(userId);
+        var playlistsUser = await spotifyClient.PaginateAll(playlistsUserFirstPage);
 
         var idPlaylistMinorSongs = playlistsUser
             .FirstOrDefault(playlist => playlist.Name == Constants.PlaylistNameWithMinorSongs)
@@ -44,7 +47,7 @@ public static class PlaylistService
         if (idPlaylistMinorSongs == null)
         {
             // Create playlist "MinorSongs"
-            var playlistMinorSongs = await Client.Spotify.Playlists.Create(
+            var playlistMinorSongs = await spotifyClient.Playlists.Create(
                 userId,
                 new PlaylistCreateRequest(Constants.PlaylistNameWithMinorSongs)
             );
@@ -80,7 +83,12 @@ public static class PlaylistService
         {
             var tracksToAdd = tracksUris.Skip(offset).Take(limit).ToList();
 
-            var added = await Client.Spotify.Playlists.AddItems(
+            if (tracksToAdd.Count == 0)
+            {
+                break;
+            }
+
+            var added = await spotifyClient.Playlists.AddItems(
                 idPlaylistMinorSongs!,
                 new PlaylistAddItemsRequest(tracksToAdd)
             );

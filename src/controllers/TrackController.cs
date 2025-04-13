@@ -1,4 +1,3 @@
-using SpotifyAPI.Web;
 using StackExchange.Redis;
 using tracksByPopularity.helpers;
 using tracksByPopularity.models;
@@ -9,200 +8,277 @@ namespace tracksByPopularity.controllers;
 
 public static class TrackController
 {
-    public static async Task<IResult> Top50(
-        HttpContext httpContext,
-        IConnectionMultiplexer cacheRedisConnection
+    public static async Task<IResult> Less(
+        IConnectionMultiplexer cacheRedisConnection,
+        ISpotifyClientAccessor spotifyClientAccessor
     )
     {
-        var timerRange = QueryParamHelper.GetTimeRangeQueryParam(httpContext);
-
-        // get all user tracks, if possible from cache
-        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
-
-        var top50Tracks = await TrackService.GetTop50Tracks(timerRange, allTracks);
-
-        // convert list of FullTrack to SavedTrack
-        var tracks = top50Tracks.Select(track => new SavedTrack { Track = track }).ToList();
-
-        // added tracks to playlist based on time range
-
-        var addedToPlaylist = timerRange switch
+        try
         {
-            TimeRangeEnum.ShortTerm => await TrackService.AddTracksToPlaylist(
-                Constants.PlaylistIdTopShort,
-                tracks
-            ),
-            TimeRangeEnum.MediumTerm => await TrackService.AddTracksToPlaylist(
-                Constants.PlaylistIdTopMedium,
-                tracks
-            ),
-            TimeRangeEnum.LongTerm => await TrackService.AddTracksToPlaylist(
-                Constants.PlaylistIdTopLong,
-                tracks
-            ),
-            _ => false,
-        };
+            var spotifyClient = spotifyClientAccessor.GetClient();
 
-        return addedToPlaylist
-            ? Results.Ok("Tracks added to playlist")
-            : Results.BadRequest("Failed to add tracks to playlist");
+            // get all user tracks, if possible from cache
+            var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection, spotifyClient);
+
+            var trackWithPopularity = allTracks
+                .Where(track => track.Track.Popularity <= Constants.TracksLessPopularity)
+                .ToList();
+
+            var added = await TrackService.AddTracksToPlaylist(
+                Constants.PlaylistIdLess,
+                trackWithPopularity,
+                spotifyClient
+            );
+
+            return added
+                ? Results.Ok("Tracks added to playlist")
+                : Results.BadRequest("Failed to add tracks to playlist");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Results.Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest($"Error: {ex.Message}");
+        }
     }
 
-    public static async Task<IResult> Less(IConnectionMultiplexer cacheRedisConnection)
+    public static async Task<IResult> LessMedium(
+        IConnectionMultiplexer cacheRedisConnection,
+        ISpotifyClientAccessor spotifyClientAccessor
+    )
     {
-        // get all user tracks, if possible from cache
-        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
+        try
+        {
+            var spotifyClient = spotifyClientAccessor.GetClient();
 
-        var trackWithPopularity = allTracks
-            .Where(track => track.Track.Popularity <= Constants.TracksLessPopularity)
-            .ToList();
+            // get all user tracks, if possible from cache
+            var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection, spotifyClient);
 
-        var added = await TrackService.AddTracksToPlaylist(
-            Constants.PlaylistIdLess,
-            trackWithPopularity
-        );
+            var trackWithPopularity = allTracks
+                .Where(track =>
+                    track.Track.Popularity > Constants.TracksLessPopularity
+                    && track.Track.Popularity <= Constants.TracksLessMediumPopularity
+                )
+                .ToList();
 
-        return added
-            ? Results.Ok("Tracks added to playlist")
-            : Results.BadRequest("Failed to add tracks to playlist");
+            var added = await TrackService.AddTracksToPlaylist(
+                Constants.PlaylistIdLessMedium,
+                trackWithPopularity,
+                spotifyClient
+            );
+
+            return added
+                ? Results.Ok("Tracks added to playlist")
+                : Results.BadRequest("Failed to add tracks to playlist");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Results.Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest($"Error: {ex.Message}");
+        }
     }
 
-    public static async Task<IResult> LessMedium(IConnectionMultiplexer cacheRedisConnection)
+    public static async Task<IResult> Medium(
+        IConnectionMultiplexer cacheRedisConnection,
+        ISpotifyClientAccessor spotifyClientAccessor
+    )
     {
-        // get all user tracks, if possible from cache
-        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
+        try
+        {
+            var spotifyClient = spotifyClientAccessor.GetClient();
 
-        var trackWithPopularity = allTracks
-            .Where(track =>
-                track.Track.Popularity > Constants.TracksLessPopularity
-                && track.Track.Popularity <= Constants.TracksLessMediumPopularity
-            )
-            .ToList();
+            // get all user tracks, if possible from cache
+            var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection, spotifyClient);
 
-        var added = await TrackService.AddTracksToPlaylist(
-            Constants.PlaylistIdLessMedium,
-            trackWithPopularity
-        );
+            var trackWithPopularity = allTracks
+                .Where(track =>
+                    track.Track.Popularity > Constants.TracksLessMediumPopularity
+                    && track.Track.Popularity <= Constants.TracksMediumPopularity
+                )
+                .ToList();
 
-        return added
-            ? Results.Ok("Tracks added to playlist")
-            : Results.BadRequest("Failed to add tracks to playlist");
+            var added = await TrackService.AddTracksToPlaylist(
+                Constants.PlaylistIdMedium,
+                trackWithPopularity,
+                spotifyClient
+            );
+
+            return added
+                ? Results.Ok("Tracks added to playlist")
+                : Results.BadRequest("Failed to add tracks to playlist");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Results.Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest($"Error: {ex.Message}");
+        }
     }
 
-    public static async Task<IResult> MoreMedium(IConnectionMultiplexer cacheRedisConnection)
+    public static async Task<IResult> MoreMedium(
+        IConnectionMultiplexer cacheRedisConnection,
+        ISpotifyClientAccessor spotifyClientAccessor
+    )
     {
-        // get all user tracks, if possible from cache
-        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
+        try
+        {
+            var spotifyClient = spotifyClientAccessor.GetClient();
 
-        var trackWithPopularity = allTracks
-            .Where(track =>
-                track.Track.Popularity > Constants.TracksLessMediumPopularity
-                && track.Track.Popularity <= Constants.TracksMoreMediumPopularity
-            )
-            .ToList();
+            // get all user tracks, if possible from cache
+            var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection, spotifyClient);
 
-        var added = await TrackService.AddTracksToPlaylist(
-            Constants.PlaylistIdMoreMedium,
-            trackWithPopularity
-        );
+            var trackWithPopularity = allTracks
+                .Where(track =>
+                    track.Track.Popularity > Constants.TracksLessMediumPopularity
+                    && track.Track.Popularity <= Constants.TracksMoreMediumPopularity
+                )
+                .ToList();
 
-        return added
-            ? Results.Ok("Tracks added to playlist")
-            : Results.BadRequest("Failed to add tracks to playlist");
+            var added = await TrackService.AddTracksToPlaylist(
+                Constants.PlaylistIdMoreMedium,
+                trackWithPopularity,
+                spotifyClient
+            );
+
+            return added
+                ? Results.Ok("Tracks added to playlist")
+                : Results.BadRequest("Failed to add tracks to playlist");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Results.Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest($"Error: {ex.Message}");
+        }
     }
 
-    public static async Task<IResult> More(IConnectionMultiplexer cacheRedisConnection)
+    public static async Task<IResult> More(
+        IConnectionMultiplexer cacheRedisConnection,
+        ISpotifyClientAccessor spotifyClientAccessor
+    )
     {
-        // get all user tracks, if possible from cache
-        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
+        try
+        {
+            var spotifyClient = spotifyClientAccessor.GetClient();
 
-        var trackWithPopularity = allTracks
-            .Where(track => track.Track.Popularity > Constants.TracksMoreMediumPopularity)
-            .ToList();
+            // get all user tracks, if possible from cache
+            var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection, spotifyClient);
 
-        var added = await TrackService.AddTracksToPlaylist(
-            Constants.PlaylistIdMore,
-            trackWithPopularity
-        );
+            var trackWithPopularity = allTracks
+                .Where(track => track.Track.Popularity > Constants.TracksMoreMediumPopularity)
+                .ToList();
 
-        return added
-            ? Results.Ok("Tracks added to playlist")
-            : Results.BadRequest("Failed to add tracks to playlist");
+            var added = await TrackService.AddTracksToPlaylist(
+                Constants.PlaylistIdMore,
+                trackWithPopularity,
+                spotifyClient
+            );
+
+            return added
+                ? Results.Ok("Tracks added to playlist")
+                : Results.BadRequest("Failed to add tracks to playlist");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Results.Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest($"Error: {ex.Message}");
+        }
     }
 
     public static async Task<IResult> Artist(
         string artistId,
-        IdArtistPlaylistsBody idArtistPlaylistsBody,
-        IConnectionMultiplexer cacheRedisConnection
+        IConnectionMultiplexer cacheRedisConnection,
+        ISpotifyClientAccessor spotifyClientAccessor
     )
     {
-        // check if playlists are valid
-        if (
-            !await PlaylistHelper.CheckValidityPlaylist(
-                idArtistPlaylistsBody.Less,
-                idArtistPlaylistsBody.LessMedium,
-                idArtistPlaylistsBody.MoreMedium,
-                idArtistPlaylistsBody.More
-            )
-        )
+        try
         {
-            return Results.BadRequest("Playlist not found");
+            var spotifyClient = spotifyClientAccessor.GetClient();
+
+            var idsArtistPlaylists = await PlaylistHelper.GetOrCreateArtistPlaylists(
+                artistId,
+                spotifyClient
+            );
+
+            // clear artist playlists if they don't empty
+            foreach (var (_, id) in idsArtistPlaylists)
+            {
+                var cleared = await PlaylistService.RemoveAllTracks(id);
+
+                if (cleared != RemoveAllTracksResponse.Success)
+                {
+                    return Results.BadRequest(
+                        "Failed to clear artist playlist before added new tracks"
+                    );
+                }
+            }
+
+            // get all user tracks, if possible from cache
+            var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection, spotifyClient);
+
+            var allArtistTracks = allTracks
+                .Where(track => track.Track.Artists.Any(artist => artist.Id == artistId))
+                .ToList();
+
+            var trackWithLessPopularity = allArtistTracks
+                .Where(track => track.Track.Popularity <= Constants.ArtistTracksLessPopularity)
+                .ToList();
+
+            var trackWithMediumPopularity = allArtistTracks
+                .Where(track =>
+                    track.Track.Popularity > Constants.ArtistTracksLessPopularity
+                    && track.Track.Popularity <= Constants.ArtistTracksMediumPopularity
+                )
+                .ToList();
+
+            var trackWithMorePopularity = allArtistTracks
+                .Where(track => track.Track.Popularity > Constants.ArtistTracksMediumPopularity)
+                .ToList();
+
+            var addedLess = await TrackService.AddTracksToPlaylist(
+                idsArtistPlaylists["less"],
+                trackWithLessPopularity,
+                spotifyClient
+            );
+
+            var addedMedium = await TrackService.AddTracksToPlaylist(
+                idsArtistPlaylists["medium"],
+                trackWithMediumPopularity,
+                spotifyClient
+            );
+
+            var addedMore = await TrackService.AddTracksToPlaylist(
+                idsArtistPlaylists["more"],
+                trackWithMorePopularity,
+                spotifyClient
+            );
+
+            if (!addedLess || !addedMedium || !addedMore)
+            {
+                return Results.BadRequest("Failed to add tracks to playlist");
+            }
+
+            return Results.Ok("Tracks added to playlist");
         }
-
-        // get all user tracks, if possible from cache
-        var allTracks = await CacheHelper.GetAllUserTracks(cacheRedisConnection);
-
-        var allTracksArtist = allTracks
-            .Where(track => track.Track.Artists.Any(artist => artist.Id == artistId))
-            .ToList();
-
-        var trackWithLessPopularity = allTracksArtist
-            .Where(track => track.Track.Popularity <= Constants.TracksLessPopularity)
-            .ToList();
-
-        var trackWithLessMediumPopularity = allTracksArtist
-            .Where(track =>
-                track.Track.Popularity > Constants.TracksLessPopularity
-                && track.Track.Popularity <= Constants.TracksLessMediumPopularity
-            )
-            .ToList();
-
-        var trackWithMoreMediumPopularity = allTracksArtist
-            .Where(track =>
-                track.Track.Popularity > Constants.TracksLessMediumPopularity
-                && track.Track.Popularity <= Constants.TracksMoreMediumPopularity
-            )
-            .ToList();
-
-        var trackWithMorePopularity = allTracksArtist
-            .Where(track => track.Track.Popularity > Constants.TracksMoreMediumPopularity)
-            .ToList();
-
-        var addedLess = await TrackService.AddTracksToPlaylist(
-            idArtistPlaylistsBody.Less,
-            trackWithLessPopularity
-        );
-
-        var addedLessMedium = await TrackService.AddTracksToPlaylist(
-            idArtistPlaylistsBody.LessMedium,
-            trackWithLessMediumPopularity
-        );
-
-        var addedMoreMedium = await TrackService.AddTracksToPlaylist(
-            idArtistPlaylistsBody.MoreMedium,
-            trackWithMoreMediumPopularity
-        );
-
-        var addedMore = await TrackService.AddTracksToPlaylist(
-            idArtistPlaylistsBody.More,
-            trackWithMorePopularity
-        );
-
-        if (!addedLess || !addedLessMedium || !addedMoreMedium || !addedMore)
+        catch (UnauthorizedAccessException)
         {
-            return Results.BadRequest("Failed to add tracks to playlist");
+            return Results.Unauthorized();
         }
-
-        return Results.Ok("Tracks added to playlist");
+        catch (Exception ex)
+        {
+            return Results.BadRequest($"Error: {ex.Message}");
+        }
     }
 }

@@ -10,21 +10,22 @@ public static class Routes
 
         var authRoutes = app.MapGroup("/auth");
 
-        authRoutes.MapGet("/login", AuthController.Login);
+        authRoutes.MapGet("/login", (AuthController controller) => AuthController.Login());
 
-        authRoutes.MapGet("/callback", AuthController.Callback);
-
-        authRoutes.MapGet("/logout", AuthController.Logout);
+        authRoutes.MapGet(
+            "/callback",
+            (string code, AuthController controller) => controller.Callback(code)
+        );
 
         // ####### /TRACK #######
 
         var trackRoutes = app.MapGroup("/track");
 
-        trackRoutes.MapPost("/top", TrackController.Top50);
-
         trackRoutes.MapPost("/less", TrackController.Less);
 
         trackRoutes.MapPost("/less-medium", TrackController.LessMedium);
+
+        trackRoutes.MapPost("/medium", TrackController.Medium);
 
         trackRoutes.MapPost("/more-medium", TrackController.MoreMedium);
 
@@ -32,7 +33,6 @@ public static class Routes
 
         trackRoutes.MapPost("/artist", TrackController.Artist);
 
-        // TODO: move following code to regroup-musics project
         // ####### /PLAYLIST #######
 
         var playlistRoutes = app.MapGroup("/playlist");

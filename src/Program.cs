@@ -1,10 +1,51 @@
 using StackExchange.Redis;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using tracksByPopularity.background;
+using tracksByPopularity.controllers;
 using tracksByPopularity.middlewares;
+using tracksByPopularity.models;
 using tracksByPopularity.routes;
 using tracksByPopularity.utils;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add JWT configuration from app settings
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(
+                    builder.Configuration["Jwt:Key"]
+                        ?? throw new ArgumentNullException("JWT Key is missing")
+                )
+            ),
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ClockSkew = TimeSpan.Zero,
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// Register JWT service
+builder.Services.AddSingleton<ITokenService, TokenService>();
+
+// Register HttpContextAccessor for accessing the current HTTP context
+builder.Services.AddHttpContextAccessor();
+
+// Register Spotify client accessor
+builder.Services.AddScoped<ISpotifyClientAccessor, SpotifyClientAccessor>();
+
+// Register AuthController as a service because it needs dependencies
+builder.Services.AddScoped<AuthController>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApiDocument(config =>
@@ -12,6 +53,19 @@ builder.Services.AddOpenApiDocument(config =>
     config.DocumentName = Constants.TitleApi;
     config.Title = Constants.TitleApi;
     config.Version = "v1";
+
+    // Add JWT authentication to Swagger
+    config.AddSecurity(
+        "Bearer",
+        new NSwag.OpenApiSecurityScheme
+        {
+            Description =
+                "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+            Name = "Authorization",
+            In = NSwag.OpenApiSecurityApiKeyLocation.Header,
+            Type = NSwag.OpenApiSecuritySchemeType.ApiKey,
+        }
+    );
 });
 
 // Service that set Redis cache
@@ -36,8 +90,11 @@ var app = builder.Build();
 
 // Add middlewares
 app.UseMiddleware<RedirectHomeMiddleware>();
-app.UseMiddleware<CheckAuthMiddleware>();
+app.UseMiddleware<JwtAuthMiddleware>(); // Replace CheckAuthMiddleware with JwtAuthMiddleware
 app.UseMiddleware<ClearPlaylistMiddleware>();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Add services to use OpenApi and Swagger UI
 app.UseOpenApi();

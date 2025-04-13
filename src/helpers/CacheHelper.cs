@@ -8,12 +8,17 @@ namespace tracksByPopularity.helpers;
 public static class CacheHelper
 {
     public static async Task<IList<SavedTrack>> GetAllUserTracks(
-        IConnectionMultiplexer cacheRedisConnection
+        IConnectionMultiplexer cacheRedisConnection,
+        SpotifyClient spotifyClient
     )
     {
         var cacheRedis = cacheRedisConnection.GetDatabase();
 
-        var tracksCache = await cacheRedis.StringGetAsync("allTracks");
+        // Get user ID for cache key to ensure user-specific caching
+        var userId = (await spotifyClient.UserProfile.Current()).Id;
+        var cacheKey = $"tracks:{userId}";
+
+        var tracksCache = await cacheRedis.StringGetAsync(cacheKey);
 
         IList<SavedTrack> allTracks;
 
@@ -23,9 +28,14 @@ public static class CacheHelper
         }
         else
         {
-            allTracks = await TrackService.GetAllUserTracks();
+            allTracks = await TrackService.GetAllUserTracks(spotifyClient);
 
-            await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
+            // Set expiration time to 1 hour for cached tracks
+            await cacheRedis.StringSetAsync(
+                cacheKey,
+                JsonConvert.SerializeObject(allTracks),
+                TimeSpan.FromHours(1)
+            );
         }
 
         return allTracks;
