@@ -7,8 +7,9 @@ namespace tracksByPopularity.helpers;
 
 public static class CacheHelper
 {
-    public static async Task<IList<SavedTrack>> GetAllUserTracks(
-        IConnectionMultiplexer cacheRedisConnection
+    public static async Task<IList<SavedTrack>> GetAllUserTracksWithClient(
+        IConnectionMultiplexer cacheRedisConnection,
+        SpotifyClient spotifyClient
     )
     {
         var cacheRedis = cacheRedisConnection.GetDatabase();
@@ -23,7 +24,7 @@ public static class CacheHelper
         }
         else
         {
-            allTracks = await TrackService.GetAllUserTracks();
+            allTracks = await TrackService.GetAllUserTracksWithClient(spotifyClient);
 
             await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
         }

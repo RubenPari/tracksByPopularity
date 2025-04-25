@@ -1,6 +1,5 @@
 using System.Net;
 using SpotifyAPI.Web;
-using tracksByPopularity.helpers;
 using tracksByPopularity.models;
 using tracksByPopularity.utils;
 
@@ -29,13 +28,16 @@ public static class PlaylistService
         };
     }
 
-    public static async Task<bool> CreatePlaylistTracksMinorAsync(IList<SavedTrack> tracks)
+    public static async Task<bool> CreatePlaylistTracksMinorAsync(
+        SpotifyClient spotifyClient,
+        IList<SavedTrack> tracks
+    )
     {
-        var userId = await UserHelper.GetUserId();
+        var userId = (await spotifyClient.UserProfile.Current()).Id;
 
         // Check if "MinorSongs" playlist already exists
-        var playlistsUserFirstPage = await Client.Spotify!.Playlists.GetUsers(userId);
-        var playlistsUser = await Client.Spotify.PaginateAll(playlistsUserFirstPage);
+        var playlistsUserFirstPage = await spotifyClient.Playlists.GetUsers(userId);
+        var playlistsUser = await spotifyClient.PaginateAll(playlistsUserFirstPage);
 
         var idPlaylistMinorSongs = playlistsUser
             .FirstOrDefault(playlist => playlist.Name == Constants.PlaylistNameWithMinorSongs)
@@ -44,7 +46,7 @@ public static class PlaylistService
         if (idPlaylistMinorSongs == null)
         {
             // Create playlist "MinorSongs"
-            var playlistMinorSongs = await Client.Spotify.Playlists.Create(
+            var playlistMinorSongs = await spotifyClient.Playlists.Create(
                 userId,
                 new PlaylistCreateRequest(Constants.PlaylistNameWithMinorSongs)
             );
@@ -80,7 +82,7 @@ public static class PlaylistService
         {
             var tracksToAdd = tracksUris.Skip(offset).Take(limit).ToList();
 
-            var added = await Client.Spotify.Playlists.AddItems(
+            var added = await spotifyClient.Playlists.AddItems(
                 idPlaylistMinorSongs!,
                 new PlaylistAddItemsRequest(tracksToAdd)
             );

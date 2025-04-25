@@ -87,13 +87,13 @@ public class ClearPlaylistMiddleware(
 
         var result = cleared switch
         {
-            RemoveAllTracksResponse.Unauthorized => Results.Problem(
-                detail: "Unauthorized please login to http://localhost:3000/auth/login and retry",
-                statusCode: 401
-            ),
-            RemoveAllTracksResponse.BadRequest => Results.BadRequest(
-                "Something went wrong, please try again later"
-            ),
+            RemoveAllTracksResponse.Unauthorized
+                => Results.Problem(
+                    detail: "Unauthorized please login to http://localhost:3000/auth/login and retry",
+                    statusCode: 401
+                ),
+            RemoveAllTracksResponse.BadRequest
+                => Results.BadRequest("Something went wrong, please try again later"),
             RemoveAllTracksResponse.Success => Results.Ok(),
             _ => throw new Exception("Invalid response"),
         };
@@ -117,11 +117,8 @@ public class ClearPlaylistMiddleware(
             TimeRangeEnum.ShortTerm => Constants.PlaylistIdTopShort,
             TimeRangeEnum.MediumTerm => Constants.PlaylistIdTopMedium,
             TimeRangeEnum.LongTerm => Constants.PlaylistIdTopLong,
-            TimeRangeEnum.NotValid => throw new ArgumentOutOfRangeException(
-                nameof(timeRange),
-                timeRange,
-                null
-            ),
+            TimeRangeEnum.NotValid
+                => throw new ArgumentOutOfRangeException(nameof(timeRange), timeRange, null),
             _ => throw new ArgumentOutOfRangeException(nameof(timeRange), timeRange, null),
         };
 

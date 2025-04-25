@@ -1,13 +1,12 @@
-using tracksByPopularity.utils;
+using SpotifyAPI.Web;
 
 namespace tracksByPopularity.helpers;
 
 public abstract class UserHelper
 {
-    public static async Task<string> GetUserId()
+    public static async Task<string> GetUserIdFromClient(SpotifyClient spotifyClient)
     {
-        var currentUser = await Client.Spotify!.UserProfile.Current();
-
+        var currentUser = await spotifyClient.UserProfile.Current();
         return currentUser.Id;
     }
 }

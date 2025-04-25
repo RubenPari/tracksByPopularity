@@ -1,19 +1,21 @@
 ﻿using SpotifyAPI.Web;
-using tracksByPopularity.utils;
 
 namespace tracksByPopularity.helpers;
 
 public static class PlaylistHelper
 {
-    public static async Task<Dictionary<string, string>> GetOrCreateArtistPlaylists(string artistId)
+    public static async Task<Dictionary<string, string>> GetOrCreateArtistPlaylists(
+        SpotifyClient spotifyClient,
+        string artistId
+    )
     {
         var artistPlaylistsId = new Dictionary<string, string>();
-        var userId = (await Client.Spotify!.UserProfile.Current()).Id;
-        var artistName = (await Client.Spotify.Artists.Get(artistId)).Name;
+        var userId = (await spotifyClient.UserProfile.Current()).Id;
+        var artistName = (await spotifyClient.Artists.Get(artistId)).Name;
 
         // Recupera tutte le playlist dell'utente
-        var pagingUserPlaylists = await Client.Spotify.Playlists.GetUsers(userId);
-        var userPlaylists = await Client.Spotify.PaginateAll(pagingUserPlaylists);
+        var pagingUserPlaylists = await spotifyClient.Playlists.GetUsers(userId);
+        var userPlaylists = await spotifyClient.PaginateAll(pagingUserPlaylists);
 
         // Cerca se esistono già le playlist dell'artista (less-medium-more)
         foreach (var userPlaylist in userPlaylists)
@@ -41,21 +43,21 @@ public static class PlaylistHelper
         artistPlaylistsId.Clear();
 
         artistPlaylistsId["less"] = (
-            await Client.Spotify.Playlists.Create(
+            await spotifyClient.Playlists.Create(
                 userId,
                 new PlaylistCreateRequest($"{artistName} less")
             )
         ).Id!;
 
         artistPlaylistsId["medium"] = (
-            await Client.Spotify.Playlists.Create(
+            await spotifyClient.Playlists.Create(
                 userId,
                 new PlaylistCreateRequest($"{artistName} medium")
             )
         ).Id!;
 
         artistPlaylistsId["more"] = (
-            await Client.Spotify.Playlists.Create(
+            await spotifyClient.Playlists.Create(
                 userId,
                 new PlaylistCreateRequest($"{artistName} more")
             )

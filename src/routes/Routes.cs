@@ -14,7 +14,16 @@ public static class Routes
 
         authRoutes.MapGet("/callback", AuthController.Callback);
 
-        authRoutes.MapGet("/logout", AuthController.Logout);
+        authRoutes.MapPost("/logout", AuthController.Logout);
+
+        authRoutes.MapPost("/logout-all", AuthController.LogoutAll);
+
+        // API Key management endpoints
+        authRoutes.MapPost("/api-key", ApiKeyController.GenerateApiKey);
+
+        authRoutes.MapGet("/api-keys", ApiKeyController.ListApiKeys);
+
+        authRoutes.MapDelete("/api-key/{keyId}", ApiKeyController.RevokeApiKey);
 
         // ####### /TRACK #######
 
