@@ -6,25 +6,6 @@ public static class Routes
 {
     public static void MapRoutes(WebApplication app)
     {
-        // ####### /AUTH #######
-
-        var authRoutes = app.MapGroup("/auth");
-
-        authRoutes.MapGet("/login", AuthController.Login);
-
-        authRoutes.MapGet("/callback", AuthController.Callback);
-
-        authRoutes.MapPost("/logout", AuthController.Logout);
-
-        authRoutes.MapPost("/logout-all", AuthController.LogoutAll);
-
-        // API Key management endpoints
-        authRoutes.MapPost("/api-key", ApiKeyController.GenerateApiKey);
-
-        authRoutes.MapGet("/api-keys", ApiKeyController.ListApiKeys);
-
-        authRoutes.MapDelete("/api-key/{keyId}", ApiKeyController.RevokeApiKey);
-
         // ####### /TRACK #######
 
         var trackRoutes = app.MapGroup("/track");

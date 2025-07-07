@@ -8,20 +8,13 @@ namespace tracksByPopularity.controllers;
 public static class PlaylistController
 {
     public static async Task<IResult> CreatePlaylistTrackMinor(
-        HttpContext context,
         IConnectionMultiplexer cacheRedisConnection,
         SpotifyAuthService spotifyAuthService
     )
     {
         try
         {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Results.Unauthorized();
-            }
-
-            var spotifyClient = await spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
 
             var tracks = await CacheHelper.GetAllUserTracksWithClient(
                 cacheRedisConnection,

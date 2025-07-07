@@ -7,6 +7,18 @@ namespace tracksByPopularity.services;
 
 public class SpotifyAuthService(IConnectionMultiplexer redis)
 {
+    public static SpotifyClient GetSpotifyClientAsync()
+    {
+        // Use client credentials flow for public API access
+        var config = SpotifyClientConfig
+            .CreateDefault()
+            .WithAuthenticator(
+                new ClientCredentialsAuthenticator(Constants.ClientId, Constants.ClientSecret)
+            );
+
+        return new SpotifyClient(config);
+    }
+
     public async Task<SpotifyClient> GetSpotifyClientForUserAsync(string userId)
     {
         var db = redis.GetDatabase();

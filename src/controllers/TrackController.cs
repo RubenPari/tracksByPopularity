@@ -10,20 +10,13 @@ namespace tracksByPopularity.controllers;
 public static class TrackController
 {
     public static async Task<IResult> Less(
-        HttpContext context,
         IConnectionMultiplexer cacheRedisConnection,
         SpotifyAuthService spotifyAuthService
     )
     {
         try
         {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Results.Unauthorized();
-            }
-
-            var spotifyClient = await spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
 
             // get all user tracks, if possible from cache
             var allTracks = await CacheHelper.GetAllUserTracksWithClient(
@@ -56,20 +49,13 @@ public static class TrackController
     }
 
     public static async Task<IResult> LessMedium(
-        HttpContext context,
         IConnectionMultiplexer cacheRedisConnection,
         SpotifyAuthService spotifyAuthService
     )
     {
         try
         {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Results.Unauthorized();
-            }
-
-            var spotifyClient = await spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
 
             // get all user tracks, if possible from cache
             var allTracks = await CacheHelper.GetAllUserTracksWithClient(
@@ -105,20 +91,13 @@ public static class TrackController
     }
 
     public static async Task<IResult> Medium(
-        HttpContext context,
         IConnectionMultiplexer cacheRedisConnection,
         SpotifyAuthService spotifyAuthService
     )
     {
         try
         {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Results.Unauthorized();
-            }
-
-            var spotifyClient = await spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
 
             // get all user tracks, if possible from cache
             var allTracks = await CacheHelper.GetAllUserTracksWithClient(
@@ -154,20 +133,13 @@ public static class TrackController
     }
 
     public static async Task<IResult> MoreMedium(
-        HttpContext context,
         IConnectionMultiplexer cacheRedisConnection,
         SpotifyAuthService spotifyAuthService
     )
     {
         try
         {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Results.Unauthorized();
-            }
-
-            var spotifyClient = await spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
 
             // get all user tracks, if possible from cache
             var allTracks = await CacheHelper.GetAllUserTracksWithClient(
@@ -203,20 +175,13 @@ public static class TrackController
     }
 
     public static async Task<IResult> More(
-        HttpContext context,
         IConnectionMultiplexer cacheRedisConnection,
         SpotifyAuthService spotifyAuthService
     )
     {
         try
         {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Results.Unauthorized();
-            }
-
-            var spotifyClient = await spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
 
             // get all user tracks, if possible from cache
             var allTracks = await CacheHelper.GetAllUserTracksWithClient(
@@ -249,7 +214,6 @@ public static class TrackController
     }
 
     public static async Task<IResult> Artist(
-        HttpContext context,
         string artistId,
         IConnectionMultiplexer cacheRedisConnection,
         SpotifyAuthService spotifyAuthService
@@ -257,13 +221,7 @@ public static class TrackController
     {
         try
         {
-            var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Results.Unauthorized();
-            }
-
-            var spotifyClient = await spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
 
             var idsArtistPlaylists = await PlaylistHelper.GetOrCreateArtistPlaylists(
                 spotifyClient,

@@ -69,14 +69,4 @@ public abstract class Constants
     public static int Offset => 0;
 
     public static int LimitInsertPlaylistTracks => 100;
-
-    public static readonly string[] AuthPaths =
-    [
-        "/auth/login",
-        "/auth/callback",
-        "/auth/logout",
-        "/auth/logout-all",
-        "/auth/api-key",
-        "/auth/api-keys",
-    ];
 }
