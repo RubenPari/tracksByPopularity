@@ -8,14 +8,6 @@ using tracksByPopularity.utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApiDocument(config =>
-{
-    config.DocumentName = Constants.TitleApi;
-    config.Title = Constants.TitleApi;
-    config.Version = "v1";
-});
-
 // Service that set Redis cache
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
@@ -47,14 +39,6 @@ var app = builder.Build();
 app.UseMiddleware<RedirectHomeMiddleware>();
 app.UseMiddleware<ApiKeyAuthMiddleware>();
 app.UseMiddleware<ClearPlaylistMiddleware>();
-
-// Add services to use OpenApi and Swagger UI
-app.UseOpenApi();
-app.UseSwaggerUi(config =>
-{
-    config.DocumentTitle = Constants.TitleApi;
-    config.DocExpansion = "fully";
-});
 
 DotEnv.Load();
 
