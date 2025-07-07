@@ -21,14 +21,13 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
         ConnectTimeout = 20000, // 20 seconds
         SyncTimeout = 20000, // 20 seconds
         AsyncTimeout = 20000, // 20 seconds
-        ReconnectRetryPolicy = new LinearRetry(10000) // 10 seconds
+        ReconnectRetryPolicy = new LinearRetry(10000), // 10 seconds
     };
 
     return ConnectionMultiplexer.Connect(configuration);
 });
 builder.Services.AddHostedService<RedisCacheResetService>();
 
-builder.Services.AddScoped<ApiKeyService>();
 builder.Services.AddScoped<SpotifyAuthService>();
 
 builder.Services.AddHttpClient();
@@ -37,7 +36,6 @@ var app = builder.Build();
 
 // Add middlewares
 app.UseMiddleware<RedirectHomeMiddleware>();
-app.UseMiddleware<ApiKeyAuthMiddleware>();
 app.UseMiddleware<ClearPlaylistMiddleware>();
 
 DotEnv.Load();

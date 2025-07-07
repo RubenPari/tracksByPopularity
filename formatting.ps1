@@ -2,4 +2,4 @@
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Format all C# files in the src directory
-dotnet csharpier "$scriptDir\src"
+dotnet csharpier format "$scriptDir\src"

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using StackExchange.Redis;
 using tracksByPopularity.helpers;
 using tracksByPopularity.models;

@@ -50,7 +50,7 @@ public class SpotifyAuthService(IConnectionMultiplexer redis)
             ExpiresIn = response.ExpiresIn,
             RefreshToken = response.RefreshToken,
             Scope = response.Scope,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var db = redis.GetDatabase();
@@ -86,7 +86,7 @@ public class SpotifyAuthService(IConnectionMultiplexer redis)
             ExpiresIn = newToken.ExpiresIn,
             RefreshToken = refreshToken, // Preserve the refresh token as it might not be returned
             Scope = newToken.Scope,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var db = redis.GetDatabase();

@@ -14,15 +14,15 @@ public abstract class Constants
     public static int ArtistTracksMediumPopularity => 66;
 
     public static List<string> MyScopes { get; } =
-    [
-        Scopes.UserReadEmail,
-        Scopes.UserReadPrivate,
-        Scopes.UserLibraryRead,
-        Scopes.UserLibraryModify,
-        Scopes.UserTopRead,
-        Scopes.PlaylistModifyPrivate,
-        Scopes.PlaylistModifyPublic,
-    ];
+        [
+            Scopes.UserReadEmail,
+            Scopes.UserReadPrivate,
+            Scopes.UserLibraryRead,
+            Scopes.UserLibraryModify,
+            Scopes.UserTopRead,
+            Scopes.PlaylistModifyPrivate,
+            Scopes.PlaylistModifyPublic,
+        ];
 
     public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;
 
@@ -55,11 +55,9 @@ public abstract class Constants
     public static string PlaylistIdTopLong { get; } =
         Environment.GetEnvironmentVariable("PLAYLIST_ID_TOP_LONG")!;
 
-    public static string RedisHost { get; } =
-        Environment.GetEnvironmentVariable("REDIS_HOST")!;
+    public static string RedisHost { get; } = Environment.GetEnvironmentVariable("REDIS_HOST")!;
 
-    public static string RedisPort { get; } =
-        Environment.GetEnvironmentVariable("REDIS_PORT")!;
+    public static string RedisPort { get; } = Environment.GetEnvironmentVariable("REDIS_PORT")!;
 
     public static string RedisPassword { get; } =
         Environment.GetEnvironmentVariable("REDIS_PASSWORD")!;
