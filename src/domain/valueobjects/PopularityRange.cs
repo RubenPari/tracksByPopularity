@@ -1,3 +1,5 @@
+using tracksByPopularity.domain.exceptions;
+
 namespace tracksByPopularity.domain.valueobjects;
 
 /// <summary>
@@ -10,12 +12,17 @@ public class PopularityRange
     /// </summary>
     /// <param name="min">The minimum popularity value (inclusive).</param>
     /// <param name="max">The maximum popularity value (inclusive).</param>
-    /// <exception cref="ArgumentException">Thrown when min is greater than max.</exception>
+    /// <exception cref="InvalidPopularityRangeException">Thrown when min is greater than max or values are out of valid range (0-100).</exception>
     public PopularityRange(int min, int max)
     {
+        if (min < 0 || max > 100)
+        {
+            throw new InvalidPopularityRangeException($"Popularity values must be between 0 and 100. Got min={min}, max={max}");
+        }
+
         if (min > max)
         {
-            throw new ArgumentException("Minimum value cannot be greater than maximum value", nameof(min));
+            throw new InvalidPopularityRangeException(min, max);
         }
 
         Min = min;

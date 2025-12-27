@@ -74,6 +74,9 @@ public class GlobalExceptionHandlerMiddleware
         {
             UnauthorizedAccessException => HttpStatusCode.Unauthorized,
             ArgumentException => HttpStatusCode.BadRequest,
+            ArgumentNullException => HttpStatusCode.BadRequest,
+            domain.exceptions.DomainException => HttpStatusCode.BadRequest,
+            application.exceptions.PlaylistOperationException => HttpStatusCode.BadRequest,
             _ => HttpStatusCode.InternalServerError,
         };
 
