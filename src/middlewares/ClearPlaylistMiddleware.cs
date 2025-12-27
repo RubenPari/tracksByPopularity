@@ -26,7 +26,7 @@ public class ClearPlaylistMiddleware
     {
         if (context.Request.Path.Value!.Contains("/auth"))
         {
-            await next(context);
+            await _next(context);
             return;
         }
 
@@ -52,7 +52,7 @@ public class ClearPlaylistMiddleware
             await HandlePlaylistClear(context, playlistId);
         }
 
-        await next(context);
+        await _next(context);
     }
 
     /// <summary>
