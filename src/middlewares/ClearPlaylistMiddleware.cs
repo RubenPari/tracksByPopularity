@@ -1,52 +1,79 @@
 using tracksByPopularity.helpers;
 using tracksByPopularity.models;
 using tracksByPopularity.services;
-using tracksByPopularity.utils;
 
 namespace tracksByPopularity.middlewares;
 
+/// <summary>
+/// Middleware that automatically clears playlists before adding new tracks.
+/// Handles authentication, routing, and playlist clearing orchestration.
+/// </summary>
 public class ClearPlaylistMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IHttpClientFactory? _httpClientFactory;
-    private readonly IPlaylistService? _playlistService;
+    private readonly IAuthenticationService _authenticationService;
+    private readonly IPlaylistRoutingService _routingService;
+    private readonly IPlaylistClearingService _clearingService;
+    private readonly ILogger<ClearPlaylistMiddleware> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ClearPlaylistMiddleware"/> class.
+    /// </summary>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="authenticationService">Service for checking authentication.</param>
+    /// <param name="routingService">Service for routing and playlist ID resolution.</param>
+    /// <param name="clearingService">Service for clearing playlists.</param>
+    /// <param name="logger">Logger instance for recording middleware activities.</param>
     public ClearPlaylistMiddleware(
         RequestDelegate next,
-        IHttpClientFactory? httpClientFactory = null,
-        IPlaylistService? playlistService = null
+        IAuthenticationService authenticationService,
+        IPlaylistRoutingService routingService,
+        IPlaylistClearingService clearingService,
+        ILogger<ClearPlaylistMiddleware> logger
     )
     {
         _next = next;
-        _httpClientFactory = httpClientFactory;
-        _playlistService = playlistService;
+        _authenticationService = authenticationService;
+        _routingService = routingService;
+        _clearingService = clearingService;
+        _logger = logger;
     }
 
+    /// <summary>
+    /// Invokes the middleware to process the HTTP request.
+    /// </summary>
+    /// <param name="context">The HTTP context for the current request.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.Request.Path.Value!.Contains("/auth"))
+        var path = context.Request.Path.Value ?? string.Empty;
+
+        // Skip authentication check for auth endpoints
+        if (!_routingService.ShouldHandlePath(path))
         {
             await _next(context);
             return;
         }
 
-        if (!await IsAuthenticatedWithClearSongsService())
+        // Check authentication
+        if (!await _authenticationService.IsAuthenticatedWithClearSongsServiceAsync())
         {
+            _logger.LogWarning("Unauthorized access attempt to path: {Path}", path);
             context.Response.StatusCode = 401;
             await context.Response.WriteAsync("Unauthorized, login to clear-songs service");
             return;
         }
 
-        var path = context.Request.Path.Value!;
-
-        if (path.Contains("/top") || path.Contains("/artist"))
+        // Handle top/artist paths
+        if (path.Contains("/top", StringComparison.OrdinalIgnoreCase) || 
+            path.Contains("/artist", StringComparison.OrdinalIgnoreCase))
         {
             await HandleTopPath(context);
             return;
         }
 
-        var playlistId = GetPlaylistIdFromPath(path);
-
+        // Handle standard track paths
+        var playlistId = _routingService.GetPlaylistIdFromPath(path);
         if (playlistId != null)
         {
             await HandlePlaylistClear(context, playlistId);
@@ -56,47 +83,25 @@ public class ClearPlaylistMiddleware
     }
 
     /// <summary>
-    /// Checks if the user is authenticated with the ClearSongsService.
+    /// Handles the top path by getting the time range from the query parameter,
+    /// removing all tracks from the corresponding playlist, and returning the result.
     /// </summary>
-    /// <returns>
-    /// A boolean indicating whether the user is authenticated or not.
-    /// </returns>
-    private async Task<bool> IsAuthenticatedWithClearSongsService()
-    {
-        var http = _httpClientFactory?.CreateClient() ?? new HttpClient();
-
-        try
-        {
-            var response = await http.GetAsync("http://localhost:3000/auth/is-auth");
-            return response.IsSuccessStatusCode;
-        }
-        finally
-        {
-            if (_httpClientFactory == null)
-            {
-                http.Dispose();
-            }
-        }
-    }
-
-    // Handles the top path by getting the time range from the query parameter,
-    // removing all tracks from the corresponding playlist, and returning the result.
-    //
-    // Parameters:
-    //   context (HttpContext): The HTTP context of the request.
-    //
-    // Returns:
-    //   Task: A task representing the asynchronous operation.
+    /// <param name="context">The HTTP context of the request.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task HandleTopPath(HttpContext context)
     {
         var timeRange = QueryParamHelper.GetTimeRangeQueryParam(context);
 
-        var playlistId = GetPlaylistIdForTimeRange(timeRange);
+        if (timeRange == TimeRangeEnum.NotValid)
+        {
+            _logger.LogWarning("Invalid time range parameter in request");
+            context.Response.StatusCode = 400;
+            await context.Response.WriteAsync("Invalid time range parameter");
+            return;
+        }
 
-        // Use service if available, otherwise fall back to static method for backward compatibility
-        var cleared = _playlistService != null
-            ? await _playlistService.RemoveAllTracksAsync(playlistId)
-            : await PlaylistService.RemoveAllTracks(playlistId);
+        var playlistId = _routingService.GetPlaylistIdForTimeRange(timeRange);
+        var cleared = await _clearingService.ClearPlaylistAsync(playlistId);
 
         var result = cleared switch
         {
@@ -108,74 +113,25 @@ public class ClearPlaylistMiddleware
                 "Something went wrong, please try again later"
             ),
             RemoveAllTracksResponse.Success => Results.Ok(),
-            _ => throw new Exception("Invalid response"),
+            _ => throw new InvalidOperationException($"Invalid response: {cleared}"),
         };
 
         await result.ExecuteAsync(context);
     }
 
     /// <summary>
-    /// Retrieves the playlist ID corresponding to the given time range.
-    ///
-    /// Parameters:
-    ///     timeRange (TimeRangeEnum): The time range for which to retrieve the playlist ID.
-    ///
-    /// Returns:
-    ///     string: The playlist ID corresponding to the given time range.
-    ///
-    /// </summary>
-    private static string GetPlaylistIdForTimeRange(TimeRangeEnum timeRange) =>
-        timeRange switch
-        {
-            TimeRangeEnum.ShortTerm => Constants.PlaylistIdTopShort,
-            TimeRangeEnum.MediumTerm => Constants.PlaylistIdTopMedium,
-            TimeRangeEnum.LongTerm => Constants.PlaylistIdTopLong,
-            _ => throw new ArgumentOutOfRangeException(nameof(timeRange), timeRange, null),
-        };
-
-    /// <summary>
-    /// Retrieves the playlist ID corresponding to the given path.
-    ///
-    /// Parameters:
-    ///     path (string): The path from which to retrieve the playlist ID.
-    ///
-    /// Returns:
-    ///     string?: The playlist ID corresponding to the given path, or null if no match is found.
-    /// </summary>
-    private static string? GetPlaylistIdFromPath(string path)
-    {
-        // remove the /track prefix from path
-        path = path.Remove(0, 6);
-
-        return path switch
-        {
-            "/less" => Constants.PlaylistIdLess,
-            "/less-medium" => Constants.PlaylistIdLessMedium,
-            "/more-medium" => Constants.PlaylistIdMoreMedium,
-            "/more" => Constants.PlaylistIdMore,
-            _ => null,
-        };
-    }
-
-    /// <summary>
     /// Handles the clearing of a playlist by removing all tracks from the specified playlist ID.
-    ///
-    /// Parameters:
-    ///     context (HttpContext): The HTTP context of the request.
-    ///     playlistId (string): The ID of the playlist to clear.
-    ///
-    /// Returns:
-    ///     Task: A task representing the asynchronous operation.
     /// </summary>
+    /// <param name="context">The HTTP context of the request.</param>
+    /// <param name="playlistId">The ID of the playlist to clear.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task HandlePlaylistClear(HttpContext context, string playlistId)
     {
-        // Use service if available, otherwise fall back to static method for backward compatibility
-        var deleted = _playlistService != null
-            ? await _playlistService.RemoveAllTracksAsync(playlistId)
-            : await PlaylistService.RemoveAllTracks(playlistId);
+        var result = await _clearingService.ClearPlaylistAsync(playlistId);
 
-        if (deleted != RemoveAllTracksResponse.Success)
+        if (result != RemoveAllTracksResponse.Success)
         {
+            _logger.LogWarning("Failed to clear playlist {PlaylistId}. Response: {Response}", playlistId, result);
             context.Response.StatusCode = 400;
             await context.Response.WriteAsync("Something went wrong, please try again later");
         }
