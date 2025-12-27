@@ -2,9 +2,9 @@ using SpotifyAPI.Web;
 
 namespace tracksByPopularity.services;
 
-public static class TrackService
+public class TrackService : ITrackService
 {
-    public static async Task<IList<SavedTrack>> GetAllUserTracksWithClient(
+    public async Task<IList<SavedTrack>> GetAllUserTracksWithClientAsync(
         SpotifyClient spotifyClient
     )
     {
@@ -12,7 +12,7 @@ public static class TrackService
         return await spotifyClient.PaginateAll(firstPageTracks);
     }
 
-    public static async Task<bool> AddTracksToPlaylist(
+    public async Task<bool> AddTracksToPlaylistAsync(
         SpotifyClient spotifyClient,
         string playlistId,
         IList<SavedTrack> tracks
