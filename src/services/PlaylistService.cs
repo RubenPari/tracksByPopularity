@@ -5,11 +5,20 @@ using tracksByPopularity.utils;
 
 namespace tracksByPopularity.services;
 
-public static class PlaylistService
+public class PlaylistService : IPlaylistService
 {
-    public static async Task<RemoveAllTracksResponse> RemoveAllTracks(string playlistId)
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IArtistService _artistService;
+
+    public PlaylistService(IHttpClientFactory httpClientFactory, IArtistService artistService)
     {
-        var client = new HttpClient();
+        _httpClientFactory = httpClientFactory;
+        _artistService = artistService;
+    }
+
+    public async Task<RemoveAllTracksResponse> RemoveAllTracksAsync(string playlistId)
+    {
+        var client = _httpClientFactory.CreateClient();
         client.Timeout = TimeSpan.FromSeconds(200);
         var request = new HttpRequestMessage
         {
@@ -28,7 +37,7 @@ public static class PlaylistService
         };
     }
 
-    public static async Task<bool> CreatePlaylistTracksMinorAsync(
+    public async Task<bool> CreatePlaylistTracksMinorAsync(
         SpotifyClient spotifyClient,
         IList<SavedTrack> tracks
     )
@@ -56,7 +65,7 @@ public static class PlaylistService
         // Add tracks to playlist "MinorSongs"
 
         // Get artists with less than 5 songs in user library
-        var artistsSummary = await ArtistService.GetArtistsSummary();
+        var artistsSummary = await _artistService.GetArtistsSummaryAsync();
 
         if (artistsSummary == null)
         {
@@ -101,5 +110,28 @@ public static class PlaylistService
         }
 
         return true;
+    }
+
+    // Legacy static method for backward compatibility
+    [Obsolete("Use IPlaylistService.RemoveAllTracksAsync instead")]
+    public static async Task<RemoveAllTracksResponse> RemoveAllTracks(string playlistId)
+    {
+        var client = new HttpClient();
+        client.Timeout = TimeSpan.FromSeconds(200);
+        var request = new HttpRequestMessage
+        {
+            Method = HttpMethod.Delete,
+            RequestUri = new Uri($"http://localhost:3000/playlist/delete-tracks?id={playlistId}"),
+        };
+
+        using var response = await client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        return response.StatusCode switch
+        {
+            HttpStatusCode.Unauthorized => RemoveAllTracksResponse.Unauthorized,
+            HttpStatusCode.BadRequest => RemoveAllTracksResponse.BadRequest,
+            _ => RemoveAllTracksResponse.Success,
+        };
     }
 }
