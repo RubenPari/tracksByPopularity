@@ -5,11 +5,23 @@ using tracksByPopularity.utils;
 
 namespace tracksByPopularity.middlewares;
 
-public class ClearPlaylistMiddleware(
-    RequestDelegate next,
-    IHttpClientFactory? httpClientFactory = null
-)
+public class ClearPlaylistMiddleware
 {
+    private readonly RequestDelegate _next;
+    private readonly IHttpClientFactory? _httpClientFactory;
+    private readonly IPlaylistService? _playlistService;
+
+    public ClearPlaylistMiddleware(
+        RequestDelegate next,
+        IHttpClientFactory? httpClientFactory = null,
+        IPlaylistService? playlistService = null
+    )
+    {
+        _next = next;
+        _httpClientFactory = httpClientFactory;
+        _playlistService = playlistService;
+    }
+
     public async Task InvokeAsync(HttpContext context)
     {
         if (context.Request.Path.Value!.Contains("/auth"))
@@ -51,7 +63,7 @@ public class ClearPlaylistMiddleware(
     /// </returns>
     private async Task<bool> IsAuthenticatedWithClearSongsService()
     {
-        var http = httpClientFactory?.CreateClient() ?? new HttpClient();
+        var http = _httpClientFactory?.CreateClient() ?? new HttpClient();
 
         try
         {
@@ -60,7 +72,7 @@ public class ClearPlaylistMiddleware(
         }
         finally
         {
-            if (httpClientFactory == null)
+            if (_httpClientFactory == null)
             {
                 http.Dispose();
             }
@@ -69,21 +81,22 @@ public class ClearPlaylistMiddleware(
 
     // Handles the top path by getting the time range from the query parameter,
     // removing all tracks from the corresponding playlist, and returning the result.
-    // Handles the top path by getting the time range from the query parameter,
-    // removing all tracks from the corresponding playlist, and returning the result.
     //
     // Parameters:
     //   context (HttpContext): The HTTP context of the request.
     //
     // Returns:
     //   Task: A task representing the asynchronous operation.
-    private static async Task HandleTopPath(HttpContext context)
+    private async Task HandleTopPath(HttpContext context)
     {
         var timeRange = QueryParamHelper.GetTimeRangeQueryParam(context);
 
         var playlistId = GetPlaylistIdForTimeRange(timeRange);
 
-        var cleared = await PlaylistService.RemoveAllTracks(playlistId);
+        // Use service if available, otherwise fall back to static method for backward compatibility
+        var cleared = _playlistService != null
+            ? await _playlistService.RemoveAllTracksAsync(playlistId)
+            : await PlaylistService.RemoveAllTracks(playlistId);
 
         var result = cleared switch
         {
@@ -154,9 +167,12 @@ public class ClearPlaylistMiddleware(
     /// Returns:
     ///     Task: A task representing the asynchronous operation.
     /// </summary>
-    private static async Task HandlePlaylistClear(HttpContext context, string playlistId)
+    private async Task HandlePlaylistClear(HttpContext context, string playlistId)
     {
-        var deleted = await PlaylistService.RemoveAllTracks(playlistId);
+        // Use service if available, otherwise fall back to static method for backward compatibility
+        var deleted = _playlistService != null
+            ? await _playlistService.RemoveAllTracksAsync(playlistId)
+            : await PlaylistService.RemoveAllTracks(playlistId);
 
         if (deleted != RemoveAllTracksResponse.Success)
         {
