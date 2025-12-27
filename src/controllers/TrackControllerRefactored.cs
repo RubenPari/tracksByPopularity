@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using tracksByPopularity.domain.services;
+using tracksByPopularity.application.services;
 using tracksByPopularity.domain.valueobjects;
-using tracksByPopularity.infrastructure.mappers;
 using tracksByPopularity.models;
 using tracksByPopularity.models.requests;
 using tracksByPopularity.services;
@@ -18,39 +17,39 @@ namespace tracksByPopularity.controllers;
 public class TrackControllerV2 : ControllerBase
 {
     private readonly ICacheService _cacheService;
-    private readonly ITrackService _trackService;
+    private readonly ITrackOrganizationService _trackOrganizationService;
+    private readonly IArtistTrackOrganizationService _artistTrackOrganizationService;
     private readonly IPlaylistHelper _playlistHelper;
     private readonly IPlaylistService _playlistService;
     private readonly SpotifyAuthService _spotifyAuthService;
-    private readonly ITrackCategorizationService _categorizationService;
     private readonly ILogger<TrackControllerV2> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TrackControllerV2"/> class.
     /// </summary>
     /// <param name="cacheService">Service for retrieving cached user tracks.</param>
-    /// <param name="trackService">Service for track-related operations.</param>
+    /// <param name="trackOrganizationService">Application service for organizing tracks by popularity.</param>
+    /// <param name="artistTrackOrganizationService">Application service for organizing artist tracks.</param>
     /// <param name="playlistHelper">Helper service for managing artist playlists.</param>
     /// <param name="playlistService">Service for playlist management operations.</param>
     /// <param name="spotifyAuthService">Service for Spotify authentication.</param>
-    /// <param name="categorizationService">Domain service for categorizing tracks by popularity.</param>
     /// <param name="logger">Logger instance for recording controller activities.</param>
     public TrackControllerV2(
         ICacheService cacheService,
-        ITrackService trackService,
+        ITrackOrganizationService trackOrganizationService,
+        IArtistTrackOrganizationService artistTrackOrganizationService,
         IPlaylistHelper playlistHelper,
         IPlaylistService playlistService,
         SpotifyAuthService spotifyAuthService,
-        ITrackCategorizationService categorizationService,
         ILogger<TrackControllerV2> logger
     )
     {
         _cacheService = cacheService;
-        _trackService = trackService;
+        _trackOrganizationService = trackOrganizationService;
+        _artistTrackOrganizationService = artistTrackOrganizationService;
         _playlistHelper = playlistHelper;
         _playlistService = playlistService;
         _spotifyAuthService = spotifyAuthService;
-        _categorizationService = categorizationService;
         _logger = logger;
     }
 
@@ -75,28 +74,13 @@ public class TrackControllerV2 : ControllerBase
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
+            var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-            // Get tracks from cache (infrastructure concern)
-            var allSavedTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
-
-            // Convert to domain entities (infrastructure -> domain)
-            var domainTracks = SpotifyTrackMapper.ToDomain(allSavedTracks);
-
-            // Categorize using domain service (business logic)
-            var categorizedTracks = _categorizationService.CategorizeByPopularity(
-                domainTracks,
-                PopularityRange.Less
-            ).ToList();
-
-            // Convert back to infrastructure models for API call
-            var tracksToAdd = allSavedTracks.Where(savedTrack =>
-                categorizedTracks.Any(dt => dt.Id == savedTrack.Track.Id)
-            ).ToList();
-
-            var added = await _trackService.AddTracksToPlaylistAsync(
-                spotifyClient,
+            var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
+                allTracks,
+                PopularityRange.Less,
                 Constants.PlaylistIdLess,
-                tracksToAdd
+                spotifyClient
             );
 
             if (!added)
@@ -129,20 +113,13 @@ public class TrackControllerV2 : ControllerBase
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-
             var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-            var trackWithPopularity = allTracks
-                .Where(track =>
-                    track.Track.Popularity > Constants.TracksLessPopularity
-                    && track.Track.Popularity <= Constants.TracksLessMediumPopularity
-                )
-                .ToList();
-
-            var added = await _trackService.AddTracksToPlaylistAsync(
-                spotifyClient,
+            var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
+                allTracks,
+                PopularityRange.LessMedium,
                 Constants.PlaylistIdLessMedium,
-                trackWithPopularity
+                spotifyClient
             );
 
             if (!added)
@@ -175,20 +152,13 @@ public class TrackControllerV2 : ControllerBase
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-
             var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-            var trackWithPopularity = allTracks
-                .Where(track =>
-                    track.Track.Popularity > Constants.TracksLessMediumPopularity
-                    && track.Track.Popularity <= Constants.TracksMediumPopularity
-                )
-                .ToList();
-
-            var added = await _trackService.AddTracksToPlaylistAsync(
-                spotifyClient,
+            var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
+                allTracks,
+                PopularityRange.Medium,
                 Constants.PlaylistIdMedium,
-                trackWithPopularity
+                spotifyClient
             );
 
             if (!added)
@@ -221,20 +191,13 @@ public class TrackControllerV2 : ControllerBase
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-
             var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-            var trackWithPopularity = allTracks
-                .Where(track =>
-                    track.Track.Popularity > Constants.TracksLessMediumPopularity
-                    && track.Track.Popularity <= Constants.TracksMoreMediumPopularity
-                )
-                .ToList();
-
-            var added = await _trackService.AddTracksToPlaylistAsync(
-                spotifyClient,
+            var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
+                allTracks,
+                PopularityRange.MoreMedium,
                 Constants.PlaylistIdMoreMedium,
-                trackWithPopularity
+                spotifyClient
             );
 
             if (!added)
@@ -267,17 +230,13 @@ public class TrackControllerV2 : ControllerBase
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-
             var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-            var trackWithPopularity = allTracks
-                .Where(track => track.Track.Popularity > Constants.TracksMoreMediumPopularity)
-                .ToList();
-
-            var added = await _trackService.AddTracksToPlaylistAsync(
-                spotifyClient,
+            var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
+                allTracks,
+                PopularityRange.More,
                 Constants.PlaylistIdMore,
-                trackWithPopularity
+                spotifyClient
             );
 
             if (!added)
@@ -339,66 +298,17 @@ public class TrackControllerV2 : ControllerBase
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-
-            var idsArtistPlaylists = await _playlistHelper.GetOrCreateArtistPlaylistsAsync(
-                spotifyClient,
-                artistId
-            );
-
-            // Clear artist playlists if they don't empty
-            foreach (var (_, id) in idsArtistPlaylists)
-            {
-                var cleared = await _playlistService.RemoveAllTracksAsync(id);
-
-                if (cleared != RemoveAllTracksResponse.Success)
-                {
-                    _logger.LogWarning("Failed to clear artist playlist before adding new tracks");
-                    return BadRequest(new { success = false, error = "Failed to clear artist playlist before added new tracks" });
-                }
-            }
-
             var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-            var allArtistTracks = allTracks
-                .Where(track => track.Track.Artists.Any(artist => artist.Id == artistId))
-                .ToList();
-
-            var trackWithLessPopularity = allArtistTracks
-                .Where(track => track.Track.Popularity <= Constants.ArtistTracksLessPopularity)
-                .ToList();
-
-            var trackWithMediumPopularity = allArtistTracks
-                .Where(track =>
-                    track.Track.Popularity > Constants.ArtistTracksLessPopularity
-                    && track.Track.Popularity <= Constants.ArtistTracksMediumPopularity
-                )
-                .ToList();
-
-            var trackWithMorePopularity = allArtistTracks
-                .Where(track => track.Track.Popularity > Constants.ArtistTracksMediumPopularity)
-                .ToList();
-
-            var addedLess = await _trackService.AddTracksToPlaylistAsync(
-                spotifyClient,
-                idsArtistPlaylists["less"],
-                trackWithLessPopularity
+            var added = await _artistTrackOrganizationService.OrganizeArtistTracksAsync(
+                allTracks,
+                artistId,
+                spotifyClient
             );
 
-            var addedMedium = await _trackService.AddTracksToPlaylistAsync(
-                spotifyClient,
-                idsArtistPlaylists["medium"],
-                trackWithMediumPopularity
-            );
-
-            var addedMore = await _trackService.AddTracksToPlaylistAsync(
-                spotifyClient,
-                idsArtistPlaylists["more"],
-                trackWithMorePopularity
-            );
-
-            if (!addedLess || !addedMedium || !addedMore)
+            if (!added)
             {
-                _logger.LogWarning("Failed to add tracks to artist playlists");
+                _logger.LogWarning("Failed to organize tracks for artist: {ArtistId}", artistId);
                 return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
             }
 
