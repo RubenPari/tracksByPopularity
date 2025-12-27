@@ -55,6 +55,11 @@ builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IPlaylistHelper, PlaylistHelperService>();
 builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<domain.services.ITrackCategorizationService, domain.services.TrackCategorizationService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IPlaylistRoutingService, PlaylistRoutingService>();
+builder.Services.AddScoped<IPlaylistClearingService, PlaylistClearingService>();
+builder.Services.AddScoped<application.services.ITrackOrganizationService, application.services.TrackOrganizationService>();
+builder.Services.AddScoped<application.services.IArtistTrackOrganizationService, application.services.ArtistTrackOrganizationService>();
 
 builder.Services.AddHttpClient();
 
