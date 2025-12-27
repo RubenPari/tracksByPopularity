@@ -1,0 +1,29 @@
+# Development Dockerfile for ASP.NET Core
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS dev
+
+WORKDIR /src
+
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Copy csproj and restore dependencies
+COPY ["tracksByPopularity.csproj", "./"]
+RUN dotnet restore "tracksByPopularity.csproj"
+
+# Copy everything else
+COPY . .
+
+# Expose ports
+EXPOSE 8080
+EXPOSE 5000
+
+# Set environment variables
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Development
+
+# Create logs directory
+RUN mkdir -p /app/logs
+
+# Run with dotnet watch for hot reload
+CMD ["dotnet", "watch", "--project", "tracksByPopularity.csproj", "run", "--urls", "http://+:8080"]
+

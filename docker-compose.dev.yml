@@ -23,8 +23,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: build
+      dockerfile: Dockerfile.dev
     container_name: tracks-by-popularity-backend-dev
     ports:
       - "8080:8080"
@@ -57,7 +56,6 @@ services:
     networks:
       - tracks-network-dev
     restart: unless-stopped
-    command: dotnet watch --project tracksByPopularity.csproj run --urls http://+:8080
 
 volumes:
   redis-dev-data:
