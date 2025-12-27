@@ -16,6 +16,7 @@ public class PlaylistController : ControllerBase
 {
     private readonly ICacheService _cacheService;
     private readonly IMinorSongsPlaylistService _minorSongsPlaylistService;
+    private readonly IPlaylistService _playlistService;
     private readonly SpotifyAuthService _spotifyAuthService;
     private readonly ILogger<PlaylistController> _logger;
 
@@ -24,19 +25,47 @@ public class PlaylistController : ControllerBase
     /// </summary>
     /// <param name="cacheService">Service for retrieving cached user tracks.</param>
     /// <param name="minorSongsPlaylistService">Application service for creating MinorSongs playlist.</param>
+    /// <param name="playlistService">Service for playlist management operations.</param>
     /// <param name="spotifyAuthService">Service for Spotify authentication.</param>
     /// <param name="logger">Logger instance for recording controller activities.</param>
     public PlaylistController(
         ICacheService cacheService,
         IMinorSongsPlaylistService minorSongsPlaylistService,
+        IPlaylistService playlistService,
         SpotifyAuthService spotifyAuthService,
         ILogger<PlaylistController> logger
     )
     {
         _cacheService = cacheService;
         _minorSongsPlaylistService = minorSongsPlaylistService;
+        _playlistService = playlistService;
         _spotifyAuthService = spotifyAuthService;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Retrieves all playlists owned by the current user.
+    /// </summary>
+    /// <returns>
+    /// An <see cref="IActionResult"/> containing:
+    /// - 200 OK with a list of user playlists
+    /// - 401 Unauthorized if authentication failed
+    /// </returns>
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllPlaylists()
+    {
+        try
+        {
+            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
+            var playlists = await _playlistService.GetAllUserPlaylistsAsync(spotifyClient);
+
+            return Ok(new { success = true, data = playlists });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized access attempt");
+            return Unauthorized(new { success = false, error = "Unauthorized" });
+        }
     }
 
     /// <summary>

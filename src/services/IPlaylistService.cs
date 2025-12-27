@@ -42,5 +42,14 @@ public interface IPlaylistService
         SpotifyClient spotifyClient,
         IList<SavedTrack> tracks
     );
+
+    /// <summary>
+    /// Retrieves all playlists owned by the current user.
+    /// </summary>
+    /// <param name="spotifyClient">The authenticated Spotify client instance.</param>
+    /// <returns>
+    /// A list of <see cref="models.responses.PlaylistInfo"/> objects representing all user playlists.
+    /// </returns>
+    Task<IList<models.responses.PlaylistInfo>> GetAllUserPlaylistsAsync(SpotifyClient spotifyClient);
 }
 

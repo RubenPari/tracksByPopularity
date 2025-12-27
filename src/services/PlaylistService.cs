@@ -152,6 +152,29 @@ public class PlaylistService : IPlaylistService
     }
 
     /// <summary>
+    /// Retrieves all playlists owned by the current user.
+    /// </summary>
+    /// <param name="spotifyClient">The authenticated Spotify client instance.</param>
+    /// <returns>
+    /// A list of <see cref="models.responses.PlaylistInfo"/> objects representing all user playlists.
+    /// </returns>
+    public async Task<IList<models.responses.PlaylistInfo>> GetAllUserPlaylistsAsync(SpotifyClient spotifyClient)
+    {
+        var userId = (await spotifyClient.UserProfile.Current()).Id;
+        var playlistsFirstPage = await spotifyClient.Playlists.GetUsers(userId);
+        var allPlaylists = await spotifyClient.PaginateAll(playlistsFirstPage);
+
+        return allPlaylists.Select(playlist => new models.responses.PlaylistInfo
+        {
+            Id = playlist.Id ?? string.Empty,
+            Name = playlist.Name ?? string.Empty,
+            Description = playlist.Description,
+            TotalTracks = playlist.Tracks?.Total ?? 0,
+            Uri = playlist.Uri,
+        }).ToList();
+    }
+
+    /// <summary>
     /// Legacy static method for backward compatibility.
     /// </summary>
     /// <param name="playlistId">The unique identifier of the playlist to clear.</param>

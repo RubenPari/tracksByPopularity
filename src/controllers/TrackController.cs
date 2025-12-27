@@ -57,21 +57,34 @@ public class TrackController : ControllerBase
     /// <summary>
     /// Adds tracks with low popularity (≤20) to the designated playlist.
     /// </summary>
+    /// <param name="request">The request containing the playlist ID to add tracks to.</param>
     /// <returns>
     /// An <see cref="IActionResult"/> containing:
     /// - 200 OK with success message if tracks were added successfully
-    /// - 400 Bad Request if the operation failed
+    /// - 400 Bad Request if the operation failed or validation failed
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     /// <remarks>
     /// This endpoint:
     /// 1. Retrieves all user tracks (from cache if available)
     /// 2. Filters tracks with popularity ≤ 20
-    /// 3. Adds filtered tracks to the "less" popularity playlist
+    /// 3. Adds filtered tracks to the specified playlist
     /// </remarks>
     [HttpPost("less")]
-    public async Task<IActionResult> Less()
+    public async Task<IActionResult> Less([FromBody] AddTracksByPopularityRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
+                );
+
+            return BadRequest(new { success = false, error = "Validation failed", errors });
+        }
+
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
@@ -80,7 +93,7 @@ public class TrackController : ControllerBase
             var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
                 allTracks,
                 PopularityRange.Less,
-                Constants.PlaylistIdLess,
+                request.PlaylistId,
                 spotifyClient
             );
 
@@ -109,8 +122,20 @@ public class TrackController : ControllerBase
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     [HttpPost("less-medium")]
-    public async Task<IActionResult> LessMedium()
+    public async Task<IActionResult> LessMedium([FromBody] AddTracksByPopularityRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
+                );
+
+            return BadRequest(new { success = false, error = "Validation failed", errors });
+        }
+
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
@@ -119,7 +144,7 @@ public class TrackController : ControllerBase
             var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
                 allTracks,
                 PopularityRange.LessMedium,
-                Constants.PlaylistIdLessMedium,
+                request.PlaylistId,
                 spotifyClient
             );
 
@@ -148,8 +173,20 @@ public class TrackController : ControllerBase
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     [HttpPost("medium")]
-    public async Task<IActionResult> Medium()
+    public async Task<IActionResult> Medium([FromBody] AddTracksByPopularityRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
+                );
+
+            return BadRequest(new { success = false, error = "Validation failed", errors });
+        }
+
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
@@ -158,7 +195,7 @@ public class TrackController : ControllerBase
             var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
                 allTracks,
                 PopularityRange.Medium,
-                Constants.PlaylistIdMedium,
+                request.PlaylistId,
                 spotifyClient
             );
 
@@ -187,8 +224,20 @@ public class TrackController : ControllerBase
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     [HttpPost("more-medium")]
-    public async Task<IActionResult> MoreMedium()
+    public async Task<IActionResult> MoreMedium([FromBody] AddTracksByPopularityRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
+                );
+
+            return BadRequest(new { success = false, error = "Validation failed", errors });
+        }
+
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
@@ -197,7 +246,7 @@ public class TrackController : ControllerBase
             var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
                 allTracks,
                 PopularityRange.MoreMedium,
-                Constants.PlaylistIdMoreMedium,
+                request.PlaylistId,
                 spotifyClient
             );
 
@@ -226,8 +275,20 @@ public class TrackController : ControllerBase
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     [HttpPost("more")]
-    public async Task<IActionResult> More()
+    public async Task<IActionResult> More([FromBody] AddTracksByPopularityRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
+                );
+
+            return BadRequest(new { success = false, error = "Validation failed", errors });
+        }
+
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
@@ -236,7 +297,7 @@ public class TrackController : ControllerBase
             var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
                 allTracks,
                 PopularityRange.More,
-                Constants.PlaylistIdMore,
+                request.PlaylistId,
                 spotifyClient
             );
 
