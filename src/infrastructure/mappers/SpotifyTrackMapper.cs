@@ -20,7 +20,7 @@ public static class SpotifyTrackMapper
         {
             Id = savedTrack.Track.Id,
             Name = savedTrack.Track.Name,
-            Popularity = savedTrack.Track.Popularity ?? 0,
+            Popularity = savedTrack.Track.Popularity,
             Uri = savedTrack.Track.Uri,
             Artists = savedTrack.Track.Artists.Select(artist => new Artist
             {

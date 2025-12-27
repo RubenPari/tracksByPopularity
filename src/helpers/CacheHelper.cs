@@ -24,7 +24,10 @@ public static class CacheHelper
         }
         else
         {
-            allTracks = await TrackService.GetAllUserTracksWithClient(spotifyClient);
+            // Use the instance method through a temporary service instance
+            // Note: This is a legacy helper. Consider using ICacheService instead.
+            var trackService = new TrackService();
+            allTracks = await trackService.GetAllUserTracksWithClientAsync(spotifyClient);
 
             await cacheRedis.StringSetAsync("allTracks", JsonConvert.SerializeObject(allTracks));
         }

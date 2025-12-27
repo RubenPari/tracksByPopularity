@@ -1,30 +1,46 @@
 using dotenv.net;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Serilog;
 using StackExchange.Redis;
+using tracksByPopularity.application.services;
 using tracksByPopularity.background;
+using tracksByPopularity.domain.services;
+using tracksByPopularity.infrastructure.logging;
 using tracksByPopularity.middlewares;
-using tracksByPopularity.routes;
 using tracksByPopularity.services;
 using tracksByPopularity.utils;
 using tracksByPopularity.validators;
 using tracksByPopularity.configuration;
 
+DotEnv.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
-DotEnv.Load();
+// Configure Serilog for logging
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    SerilogConfiguration.CreateLoggerConfiguration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.File(
+            formatter: new Serilog.Formatting.Compact.CompactJsonFormatter(),
+            path: "logs/tracks-by-popularity-.log",
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 30,
+            shared: true
+        );
+});
 
 // Configure application settings
 builder.Services.AddApplicationConfiguration(builder.Configuration);
 
 // Add controllers with FluentValidation
-builder.Services.AddControllers()
-    .AddFluentValidation(fv =>
-    {
-        fv.RegisterValidatorsFromAssemblyContaining<AddTracksByArtistRequestValidator>();
-        fv.AutomaticValidationEnabled = true;
-        fv.ImplicitlyValidateChildProperties = true;
-    });
+builder.Services.AddControllers();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<AddTracksByArtistRequestValidator>();
 
 // Service that set Redis cache
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
@@ -54,13 +70,13 @@ builder.Services.AddScoped<IArtistService, ArtistService>();
 builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IPlaylistHelper, PlaylistHelperService>();
 builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
-builder.Services.AddScoped<domain.services.ITrackCategorizationService, domain.services.TrackCategorizationService>();
+builder.Services.AddScoped<ITrackCategorizationService, TrackCategorizationService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IPlaylistRoutingService, PlaylistRoutingService>();
 builder.Services.AddScoped<IPlaylistClearingService, PlaylistClearingService>();
-builder.Services.AddScoped<application.services.ITrackOrganizationService, application.services.TrackOrganizationService>();
-builder.Services.AddScoped<application.services.IArtistTrackOrganizationService, application.services.ArtistTrackOrganizationService>();
-builder.Services.AddScoped<application.services.IMinorSongsPlaylistService, application.services.MinorSongsPlaylistService>();
+builder.Services.AddScoped<ITrackOrganizationService, TrackOrganizationService>();
+builder.Services.AddScoped<IArtistTrackOrganizationService, ArtistTrackOrganizationService>();
+builder.Services.AddScoped<IMinorSongsPlaylistService, MinorSongsPlaylistService>();
 
 builder.Services.AddHttpClient();
 
@@ -73,10 +89,10 @@ app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseMiddleware<RedirectHomeMiddleware>();
 app.UseMiddleware<ClearPlaylistMiddleware>();
 
-// Map controllers
+// Map controllers (standard ASP.NET Core controllers, not minimal API)
 app.MapControllers();
 
-// Keep legacy routes for backward compatibility
-Routes.MapRoutes(app);
-
 app.Run();
+
+// Ensure Serilog flushes on application shutdown
+Log.CloseAndFlush();

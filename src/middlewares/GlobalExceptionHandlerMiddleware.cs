@@ -73,8 +73,7 @@ public class GlobalExceptionHandlerMiddleware
         var statusCode = exception switch
         {
             UnauthorizedAccessException => HttpStatusCode.Unauthorized,
-            ArgumentException => HttpStatusCode.BadRequest,
-            ArgumentNullException => HttpStatusCode.BadRequest,
+            ArgumentException or ArgumentNullException => HttpStatusCode.BadRequest,
             domain.exceptions.DomainException => HttpStatusCode.BadRequest,
             application.exceptions.PlaylistOperationException => HttpStatusCode.BadRequest,
             _ => HttpStatusCode.InternalServerError,
