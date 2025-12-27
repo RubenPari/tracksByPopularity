@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Redis Cache Service
+  redis:
+    image: redis:7-alpine
+    container_name: tracks-by-popularity-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD:-defaultpassword} --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - tracks-network
+    restart: unless-stopped
+
+  # ASP.NET Core Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tracks-by-popularity-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Spotify API Configuration
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - REDIRECT_URI=${REDIRECT_URI:-http://localhost:8080/auth/callback}
+      
+      # Redis Configuration
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-defaultpassword}
+      - REDIS_USE_SSL=false
+      
+      # ASP.NET Core Configuration
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=http://+:8080
+      
+      # Optional: Playlist IDs (if still needed for legacy routes)
+      - PLAYLIST_ID_LESS=${PLAYLIST_ID_LESS:-}
+      - PLAYLIST_ID_LESS_MEDIUM=${PLAYLIST_ID_LESS_MEDIUM:-}
+      - PLAYLIST_ID_MEDIUM=${PLAYLIST_ID_MEDIUM:-}
+      - PLAYLIST_ID_MORE_MEDIUM=${PLAYLIST_ID_MORE_MEDIUM:-}
+      - PLAYLIST_ID_MORE=${PLAYLIST_ID_MORE:-}
+      - PLAYLIST_ID_TOP_SHORT=${PLAYLIST_ID_TOP_SHORT:-}
+      - PLAYLIST_ID_TOP_MEDIUM=${PLAYLIST_ID_TOP_MEDIUM:-}
+      - PLAYLIST_ID_TOP_LONG=${PLAYLIST_ID_TOP_LONG:-}
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - tracks-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  tracks-network:
+    driver: bridge
+

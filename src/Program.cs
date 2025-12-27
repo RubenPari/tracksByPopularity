@@ -45,11 +45,15 @@ builder.Services.AddValidatorsFromAssemblyContaining<AddTracksByArtistRequestVal
 // Service that set Redis cache
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
+    var redisHost = Constants.RedisHost;
+    var redisPort = Constants.RedisPort;
+    var useSsl = Environment.GetEnvironmentVariable("REDIS_USE_SSL")?.ToLower() == "true";
+    
     var configuration = new ConfigurationOptions
     {
-        EndPoints = { Constants.RedisHost + ":" + Constants.RedisPort },
+        EndPoints = { redisHost + ":" + redisPort },
         Password = Constants.RedisPassword,
-        Ssl = true,
+        Ssl = useSsl,
         AllowAdmin = true,
         AbortOnConnectFail = false,
         ConnectTimeout = 20000, // 20 seconds
