@@ -8,6 +8,11 @@ using tracksByPopularity.utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
+DotEnv.Load();
+
+// Add controllers
+builder.Services.AddControllers();
+
 // Service that set Redis cache
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
@@ -28,18 +33,29 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 });
 builder.Services.AddHostedService<RedisCacheResetService>();
 
+// Register services
 builder.Services.AddScoped<SpotifyAuthService>();
+builder.Services.AddScoped<ITrackService, TrackService>();
+builder.Services.AddScoped<IPlaylistService, PlaylistService>();
+builder.Services.AddScoped<IArtistService, ArtistService>();
+builder.Services.AddScoped<ICacheService, CacheService>();
+builder.Services.AddScoped<IPlaylistHelper, PlaylistHelperService>();
 
 builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
-// Add middlewares
+// Add global exception handler middleware first
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
+// Add other middlewares
 app.UseMiddleware<RedirectHomeMiddleware>();
 app.UseMiddleware<ClearPlaylistMiddleware>();
 
-DotEnv.Load();
+// Map controllers
+app.MapControllers();
 
+// Keep legacy routes for backward compatibility
 Routes.MapRoutes(app);
 
 app.Run();
