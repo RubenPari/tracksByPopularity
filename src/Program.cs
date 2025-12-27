@@ -60,6 +60,7 @@ builder.Services.AddScoped<IPlaylistRoutingService, PlaylistRoutingService>();
 builder.Services.AddScoped<IPlaylistClearingService, PlaylistClearingService>();
 builder.Services.AddScoped<application.services.ITrackOrganizationService, application.services.TrackOrganizationService>();
 builder.Services.AddScoped<application.services.IArtistTrackOrganizationService, application.services.ArtistTrackOrganizationService>();
+builder.Services.AddScoped<application.services.IMinorSongsPlaylistService, application.services.MinorSongsPlaylistService>();
 
 builder.Services.AddHttpClient();
 

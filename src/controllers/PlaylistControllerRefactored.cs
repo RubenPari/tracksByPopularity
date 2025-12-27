@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using tracksByPopularity.application.services;
 using tracksByPopularity.services;
 using tracksByPopularity.utils;
 
@@ -13,7 +14,7 @@ namespace tracksByPopularity.controllers;
 public class PlaylistControllerV2 : ControllerBase
 {
     private readonly ICacheService _cacheService;
-    private readonly IPlaylistService _playlistService;
+    private readonly IMinorSongsPlaylistService _minorSongsPlaylistService;
     private readonly SpotifyAuthService _spotifyAuthService;
     private readonly ILogger<PlaylistControllerV2> _logger;
 
@@ -21,18 +22,18 @@ public class PlaylistControllerV2 : ControllerBase
     /// Initializes a new instance of the <see cref="PlaylistControllerV2"/> class.
     /// </summary>
     /// <param name="cacheService">Service for retrieving cached user tracks.</param>
-    /// <param name="playlistService">Service for playlist management operations.</param>
+    /// <param name="minorSongsPlaylistService">Application service for creating MinorSongs playlist.</param>
     /// <param name="spotifyAuthService">Service for Spotify authentication.</param>
     /// <param name="logger">Logger instance for recording controller activities.</param>
     public PlaylistControllerV2(
         ICacheService cacheService,
-        IPlaylistService playlistService,
+        IMinorSongsPlaylistService minorSongsPlaylistService,
         SpotifyAuthService spotifyAuthService,
         ILogger<PlaylistControllerV2> logger
     )
     {
         _cacheService = cacheService;
-        _playlistService = playlistService;
+        _minorSongsPlaylistService = minorSongsPlaylistService;
         _spotifyAuthService = spotifyAuthService;
         _logger = logger;
     }
@@ -58,12 +59,11 @@ public class PlaylistControllerV2 : ControllerBase
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-
             var tracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-            var created = await _playlistService.CreatePlaylistTracksMinorAsync(
-                spotifyClient,
-                tracks
+            var created = await _minorSongsPlaylistService.CreateOrUpdateMinorSongsPlaylistAsync(
+                tracks,
+                spotifyClient
             );
 
             if (!created)
