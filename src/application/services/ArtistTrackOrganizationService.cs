@@ -77,11 +77,10 @@ public class ArtistTrackOrganizationService : IArtistTrackOrganizationService
             _logger.LogInformation("Clearing playlist {PlaylistId} for category {Category}", playlistId, category);
             var cleared = await _playlistService.RemoveAllTracksAsync(playlistId);
 
-            if (cleared != models.RemoveAllTracksResponse.Success)
-            {
-                _logger.LogWarning("Failed to clear playlist {PlaylistId} for category {Category}", playlistId, category);
-                return false;
-            }
+            if (cleared == models.RemoveAllTracksResponse.Success) continue;
+            
+            _logger.LogWarning("Failed to clear playlist {PlaylistId} for category {Category}", playlistId, category);
+            return false;
         }
 
         // Convert to domain entities

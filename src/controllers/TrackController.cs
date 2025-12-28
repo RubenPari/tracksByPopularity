@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using tracksByPopularity.application.services;
 using tracksByPopularity.domain.valueobjects;
-using tracksByPopularity.models;
 using tracksByPopularity.models.requests;
 using tracksByPopularity.services;
-using tracksByPopularity.utils;
 
 namespace tracksByPopularity.controllers;
 
@@ -20,9 +18,6 @@ public class TrackController : ControllerBase
     private readonly ICacheService _cacheService;
     private readonly ITrackOrganizationService _trackOrganizationService;
     private readonly IArtistTrackOrganizationService _artistTrackOrganizationService;
-    private readonly IPlaylistHelper _playlistHelper;
-    private readonly IPlaylistService _playlistService;
-    private readonly SpotifyAuthService _spotifyAuthService;
     private readonly ILogger<TrackController> _logger;
 
     /// <summary>
@@ -31,26 +26,17 @@ public class TrackController : ControllerBase
     /// <param name="cacheService">Service for retrieving cached user tracks.</param>
     /// <param name="trackOrganizationService">Application service for organizing tracks by popularity.</param>
     /// <param name="artistTrackOrganizationService">Application service for organizing artist tracks.</param>
-    /// <param name="playlistHelper">Helper service for managing artist playlists.</param>
-    /// <param name="playlistService">Service for playlist management operations.</param>
-    /// <param name="spotifyAuthService">Service for Spotify authentication.</param>
     /// <param name="logger">Logger instance for recording controller activities.</param>
     public TrackController(
         ICacheService cacheService,
         ITrackOrganizationService trackOrganizationService,
         IArtistTrackOrganizationService artistTrackOrganizationService,
-        IPlaylistHelper playlistHelper,
-        IPlaylistService playlistService,
-        SpotifyAuthService spotifyAuthService,
         ILogger<TrackController> logger
     )
     {
         _cacheService = cacheService;
         _trackOrganizationService = trackOrganizationService;
         _artistTrackOrganizationService = artistTrackOrganizationService;
-        _playlistHelper = playlistHelper;
-        _playlistService = playlistService;
-        _spotifyAuthService = spotifyAuthService;
         _logger = logger;
     }
 
@@ -97,13 +83,11 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (!added)
-            {
-                _logger.LogWarning("Failed to add tracks to playlist for less popularity");
-                return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
-            }
+            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
+            
+            _logger.LogWarning("Failed to add tracks to playlist for less popularity");
+            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
 
-            return Ok(new { success = true, message = "Tracks added to playlist" });
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -148,13 +132,11 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (!added)
-            {
-                _logger.LogWarning("Failed to add tracks to playlist for less-medium popularity");
-                return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
-            }
+            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
+            
+            _logger.LogWarning("Failed to add tracks to playlist for less-medium popularity");
+            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
 
-            return Ok(new { success = true, message = "Tracks added to playlist" });
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -199,13 +181,11 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (!added)
-            {
-                _logger.LogWarning("Failed to add tracks to playlist for medium popularity");
-                return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
-            }
+            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
+            
+            _logger.LogWarning("Failed to add tracks to playlist for medium popularity");
+            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
 
-            return Ok(new { success = true, message = "Tracks added to playlist" });
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -250,13 +230,11 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (!added)
-            {
-                _logger.LogWarning("Failed to add tracks to playlist for more-medium popularity");
-                return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
-            }
+            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
+            
+            _logger.LogWarning("Failed to add tracks to playlist for more-medium popularity");
+            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
 
-            return Ok(new { success = true, message = "Tracks added to playlist" });
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -301,13 +279,11 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (!added)
-            {
-                _logger.LogWarning("Failed to add tracks to playlist for more popularity");
-                return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
-            }
+            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
+            
+            _logger.LogWarning("Failed to add tracks to playlist for more popularity");
+            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
 
-            return Ok(new { success = true, message = "Tracks added to playlist" });
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -368,13 +344,11 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (!added)
-            {
-                _logger.LogWarning("Failed to organize tracks for artist: {ArtistId}", artistId);
-                return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
-            }
+            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
+            
+            _logger.LogWarning("Failed to organize tracks for artist: {ArtistId}", artistId);
+            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
 
-            return Ok(new { success = true, message = "Tracks added to playlist" });
         }
         catch (UnauthorizedAccessException ex)
         {

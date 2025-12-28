@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using tracksByPopularity.application.services;
 using tracksByPopularity.services;
-using tracksByPopularity.utils;
 
 namespace tracksByPopularity.controllers;
 
@@ -17,7 +16,6 @@ public class PlaylistController : ControllerBase
     private readonly ICacheService _cacheService;
     private readonly IMinorSongsPlaylistService _minorSongsPlaylistService;
     private readonly IPlaylistService _playlistService;
-    private readonly SpotifyAuthService _spotifyAuthService;
     private readonly ILogger<PlaylistController> _logger;
 
     /// <summary>
@@ -26,20 +24,17 @@ public class PlaylistController : ControllerBase
     /// <param name="cacheService">Service for retrieving cached user tracks.</param>
     /// <param name="minorSongsPlaylistService">Application service for creating MinorSongs playlist.</param>
     /// <param name="playlistService">Service for playlist management operations.</param>
-    /// <param name="spotifyAuthService">Service for Spotify authentication.</param>
     /// <param name="logger">Logger instance for recording controller activities.</param>
     public PlaylistController(
         ICacheService cacheService,
         IMinorSongsPlaylistService minorSongsPlaylistService,
         IPlaylistService playlistService,
-        SpotifyAuthService spotifyAuthService,
         ILogger<PlaylistController> logger
     )
     {
         _cacheService = cacheService;
         _minorSongsPlaylistService = minorSongsPlaylistService;
         _playlistService = playlistService;
-        _spotifyAuthService = spotifyAuthService;
         _logger = logger;
     }
 
@@ -96,13 +91,10 @@ public class PlaylistController : ControllerBase
                 spotifyClient
             );
 
-            if (!created)
-            {
-                _logger.LogWarning("Failed to create playlist with minor tracks");
-                return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
-            }
+            if (created) return Ok(new { success = true, message = "Tracks added to playlist" });
 
-            return Ok(new { success = true, message = "Tracks added to playlist" });
+            _logger.LogWarning("Failed to create playlist with minor tracks");
+            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -111,4 +103,3 @@ public class PlaylistController : ControllerBase
         }
     }
 }
-

@@ -1,7 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using tracksByPopularity.configuration;
-
 namespace tracksByPopularity.configuration;
 
 /// <summary>
@@ -15,10 +11,8 @@ public static class ConfigurationExtensions
     /// <param name="services">The service collection to add configuration to.</param>
     /// <param name="configuration">The configuration instance.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddApplicationConfiguration(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    public static void AddApplicationConfiguration(this IServiceCollection services,
+        IConfiguration configuration)
     {
         // Bind configuration sections to strongly-typed settings classes
         services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
@@ -27,7 +21,7 @@ public static class ConfigurationExtensions
         services.Configure<RedisSettings>(configuration.GetSection("RedisSettings"));
 
         // Also bind from environment variables as fallback
-        services.Configure<AppSettings>(options =>
+        services.Configure<AppSettings>(_ =>
         {
             // AppSettings can be overridden by environment variables if needed
         });
@@ -57,8 +51,6 @@ public static class ConfigurationExtensions
             options.Port = Environment.GetEnvironmentVariable("REDIS_PORT") ?? options.Port;
             options.Password = Environment.GetEnvironmentVariable("REDIS_PASSWORD") ?? options.Password;
         });
-
-        return services;
     }
 }
 
