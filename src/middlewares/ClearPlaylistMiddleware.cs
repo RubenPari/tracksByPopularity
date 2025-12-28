@@ -48,8 +48,9 @@ public class ClearPlaylistMiddleware
     {
         var path = context.Request.Path.Value ?? string.Empty;
 
-        // Skip authentication check for auth endpoints
-        if (!_routingService.ShouldHandlePath(path))
+        // Skip middleware for health check and auth endpoints
+        if (path.Equals("/health", StringComparison.OrdinalIgnoreCase) ||
+            !_routingService.ShouldHandlePath(path))
         {
             await _next(context);
             return;

@@ -89,6 +89,11 @@ var app = builder.Build();
 // Add global exception handler middleware first
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
+// Map health check endpoint before other middlewares to avoid interference
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
+    .WithName("HealthCheck")
+    .WithTags("Health");
+
 // Add other middlewares
 app.UseMiddleware<RedirectHomeMiddleware>();
 app.UseMiddleware<ClearPlaylistMiddleware>();
