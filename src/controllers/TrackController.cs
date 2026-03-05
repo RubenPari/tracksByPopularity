@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using tracksByPopularity.application.services;
 using tracksByPopularity.domain.valueobjects;
 using tracksByPopularity.models.requests;
+using tracksByPopularity.models.responses;
 using tracksByPopularity.services;
 
 namespace tracksByPopularity.controllers;
@@ -57,20 +58,8 @@ public class TrackController : ControllerBase
     /// 3. Adds filtered tracks to the specified playlist
     /// </remarks>
     [HttpPost("less")]
-    public async Task<IActionResult> Less([FromBody] AddTracksByPopularityRequest request)
+    public async Task<ActionResult<ApiResponse>> Less([FromBody] AddTracksByPopularityRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            var errors = ModelState
-                .Where(x => x.Value?.Errors.Count > 0)
-                .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
-                );
-
-            return BadRequest(new { success = false, error = "Validation failed", errors });
-        }
-
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
@@ -83,16 +72,16 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
-            
+            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
+
             _logger.LogWarning("Failed to add tracks to playlist for less popularity");
-            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
+            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
 
         }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(new { success = false, error = "Unauthorized" });
+            return Unauthorized(ApiResponse.Fail("Unauthorized"));
         }
     }
 
@@ -106,20 +95,8 @@ public class TrackController : ControllerBase
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     [HttpPost("less-medium")]
-    public async Task<IActionResult> LessMedium([FromBody] AddTracksByPopularityRequest request)
+    public async Task<ActionResult<ApiResponse>> LessMedium([FromBody] AddTracksByPopularityRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            var errors = ModelState
-                .Where(x => x.Value?.Errors.Count > 0)
-                .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
-                );
-
-            return BadRequest(new { success = false, error = "Validation failed", errors });
-        }
-
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
@@ -132,16 +109,16 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
-            
+            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
+
             _logger.LogWarning("Failed to add tracks to playlist for less-medium popularity");
-            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
+            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
 
         }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(new { success = false, error = "Unauthorized" });
+            return Unauthorized(ApiResponse.Fail("Unauthorized"));
         }
     }
 
@@ -155,20 +132,8 @@ public class TrackController : ControllerBase
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     [HttpPost("medium")]
-    public async Task<IActionResult> Medium([FromBody] AddTracksByPopularityRequest request)
+    public async Task<ActionResult<ApiResponse>> Medium([FromBody] AddTracksByPopularityRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            var errors = ModelState
-                .Where(x => x.Value?.Errors.Count > 0)
-                .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
-                );
-
-            return BadRequest(new { success = false, error = "Validation failed", errors });
-        }
-
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
@@ -181,16 +146,16 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
-            
+            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
+
             _logger.LogWarning("Failed to add tracks to playlist for medium popularity");
-            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
+            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
 
         }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(new { success = false, error = "Unauthorized" });
+            return Unauthorized(ApiResponse.Fail("Unauthorized"));
         }
     }
 
@@ -204,20 +169,8 @@ public class TrackController : ControllerBase
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     [HttpPost("more-medium")]
-    public async Task<IActionResult> MoreMedium([FromBody] AddTracksByPopularityRequest request)
+    public async Task<ActionResult<ApiResponse>> MoreMedium([FromBody] AddTracksByPopularityRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            var errors = ModelState
-                .Where(x => x.Value?.Errors.Count > 0)
-                .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
-                );
-
-            return BadRequest(new { success = false, error = "Validation failed", errors });
-        }
-
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
@@ -230,16 +183,16 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
-            
+            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
+
             _logger.LogWarning("Failed to add tracks to playlist for more-medium popularity");
-            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
+            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
 
         }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(new { success = false, error = "Unauthorized" });
+            return Unauthorized(ApiResponse.Fail("Unauthorized"));
         }
     }
 
@@ -253,20 +206,8 @@ public class TrackController : ControllerBase
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     [HttpPost("more")]
-    public async Task<IActionResult> More([FromBody] AddTracksByPopularityRequest request)
+    public async Task<ActionResult<ApiResponse>> More([FromBody] AddTracksByPopularityRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            var errors = ModelState
-                .Where(x => x.Value?.Errors.Count > 0)
-                .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
-                );
-
-            return BadRequest(new { success = false, error = "Validation failed", errors });
-        }
-
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
@@ -279,16 +220,16 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
-            
+            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
+
             _logger.LogWarning("Failed to add tracks to playlist for more popularity");
-            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
+            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
 
         }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(new { success = false, error = "Unauthorized" });
+            return Unauthorized(ApiResponse.Fail("Unauthorized"));
         }
     }
 
@@ -314,23 +255,8 @@ public class TrackController : ControllerBase
     /// 5. Categorizes tracks by popularity and adds them to respective playlists
     /// </remarks>
     [HttpPost("artist")]
-    public async Task<IActionResult> Artist([FromQuery] AddTracksByArtistRequest request)
+    public async Task<ActionResult<ApiResponse>> Artist([FromQuery] AddTracksByArtistRequest request)
     {
-        // FluentValidation automatically validates and adds errors to ModelState
-        // If validation fails, ASP.NET Core will return 400 BadRequest automatically
-        // due to [ApiController] attribute, but we can still check for explicit handling
-        if (!ModelState.IsValid)
-        {
-            var errors = ModelState
-                .Where(x => x.Value?.Errors.Count > 0)
-                .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
-                );
-
-            return BadRequest(new { success = false, error = "Validation failed", errors });
-        }
-
         var artistId = request.ArtistId;
 
         try
@@ -344,16 +270,16 @@ public class TrackController : ControllerBase
                 spotifyClient
             );
 
-            if (added) return Ok(new { success = true, message = "Tracks added to playlist" });
-            
+            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
+
             _logger.LogWarning("Failed to organize tracks for artist: {ArtistId}", artistId);
-            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
+            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
 
         }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(new { success = false, error = "Unauthorized" });
+            return Unauthorized(ApiResponse.Fail("Unauthorized"));
         }
     }
 }

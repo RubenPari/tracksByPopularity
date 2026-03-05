@@ -2,6 +2,7 @@ using System.Net;
 using SpotifyAPI.Web;
 using tracksByPopularity.models;
 using tracksByPopularity.utils;
+using tracksByPopularity.mapping;
 
 namespace tracksByPopularity.services;
 
@@ -164,14 +165,8 @@ public class PlaylistService : IPlaylistService
         var playlistsFirstPage = await spotifyClient.Playlists.GetUsers(userId);
         var allPlaylists = await spotifyClient.PaginateAll(playlistsFirstPage);
 
-        return allPlaylists.Select(playlist => new models.responses.PlaylistInfo
-        {
-            Id = playlist.Id ?? string.Empty,
-            Name = playlist.Name ?? string.Empty,
-            Description = playlist.Description,
-            TotalTracks = playlist.Tracks?.Total ?? 0,
-            Uri = playlist.Uri,
-        }).ToList();
+        var mapper = new PlaylistMapper();
+        return allPlaylists.Select(p => mapper.MapToPlaylistInfo(p)).ToList();
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using tracksByPopularity.application.services;
 using tracksByPopularity.services;
+using tracksByPopularity.models.responses;
 
 namespace tracksByPopularity.controllers;
 
@@ -47,19 +48,19 @@ public class PlaylistController : ControllerBase
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     [HttpGet("all")]
-    public async Task<IActionResult> GetAllPlaylists()
+    public async Task<ActionResult<ApiResponse<IList<models.responses.PlaylistInfo>>>> GetAllPlaylists()
     {
         try
         {
             var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
             var playlists = await _playlistService.GetAllUserPlaylistsAsync(spotifyClient);
 
-            return Ok(new { success = true, data = playlists });
+            return Ok(ApiResponse<IList<models.responses.PlaylistInfo>>.Ok(playlists));
         }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(new { success = false, error = "Unauthorized" });
+            return Unauthorized(ApiResponse.Fail("Unauthorized"));
         }
     }
 
@@ -79,7 +80,7 @@ public class PlaylistController : ControllerBase
     /// created if it doesn't exist, and tracks are added in paginated batches.
     /// </remarks>
     [HttpPost("create-playlist-track-minor")]
-    public async Task<IActionResult> CreatePlaylistTrackMinor()
+    public async Task<ActionResult<ApiResponse>> CreatePlaylistTrackMinor()
     {
         try
         {
@@ -91,15 +92,15 @@ public class PlaylistController : ControllerBase
                 spotifyClient
             );
 
-            if (created) return Ok(new { success = true, message = "Tracks added to playlist" });
+            if (created) return Ok(ApiResponse.Ok("Tracks added to playlist"));
 
             _logger.LogWarning("Failed to create playlist with minor tracks");
-            return BadRequest(new { success = false, error = "Failed to add tracks to playlist" });
+            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
         }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(new { success = false, error = "Unauthorized" });
+            return Unauthorized(ApiResponse.Fail("Unauthorized"));
         }
     }
 }

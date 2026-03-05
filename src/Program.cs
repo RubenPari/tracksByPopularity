@@ -36,8 +36,13 @@ builder.Host.UseSerilog((context, services, configuration) =>
 // Configure application settings
 builder.Services.AddApplicationConfiguration(builder.Configuration);
 
-// Add controllers with FluentValidation
-builder.Services.AddControllers();
+// Add controllers with FluentValidation and JSON options
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<AddTracksByArtistRequestValidator>();
@@ -48,7 +53,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
     var redisHost = Constants.RedisHost;
     var redisPort = Constants.RedisPort;
     var useSsl = Environment.GetEnvironmentVariable("REDIS_USE_SSL")?.ToLower() == "true";
-    
+
     var configuration = new ConfigurationOptions
     {
         EndPoints = { redisHost + ":" + redisPort },
