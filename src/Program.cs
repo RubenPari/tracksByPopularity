@@ -7,6 +7,7 @@ using tracksByPopularity.application.services;
 using tracksByPopularity.background;
 using tracksByPopularity.domain.services;
 using tracksByPopularity.infrastructure.logging;
+using tracksByPopularity.middleware;
 using tracksByPopularity.middlewares;
 using tracksByPopularity.services;
 using tracksByPopularity.utils;
@@ -91,8 +92,8 @@ builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
-// Add global exception handler middleware first
-app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+// Add global exception handling middleware
+app.UseGlobalExceptionHandling();
 
 // Map health check endpoint before other middlewares to avoid interference
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))

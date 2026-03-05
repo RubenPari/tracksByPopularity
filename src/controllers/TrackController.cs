@@ -42,195 +42,50 @@ public class TrackController : ControllerBase
     }
 
     /// <summary>
-    /// Adds tracks with low popularity (≤20) to the designated playlist.
+    /// Adds tracks to the designated playlist based on the specified popularity range.
+    /// Available ranges: "less" (0-20), "less-medium" (21-40), "medium" (41-60), "more-medium" (41-80), "more" (81-100).
     /// </summary>
+    /// <param name="range">The popularity range string identifier.</param>
     /// <param name="request">The request containing the playlist ID to add tracks to.</param>
     /// <returns>
     /// An <see cref="IActionResult"/> containing:
     /// - 200 OK with success message if tracks were added successfully
-    /// - 400 Bad Request if the operation failed or validation failed
+    /// - 400 Bad Request if the operation failed, validation failed, or the range is invalid
     /// - 401 Unauthorized if authentication failed
     /// </returns>
-    /// <remarks>
-    /// This endpoint:
-    /// 1. Retrieves all user tracks (from cache if available)
-    /// 2. Filters tracks with popularity ≤ 20
-    /// 3. Adds filtered tracks to the specified playlist
-    /// </remarks>
-    [HttpPost("less")]
-    public async Task<ActionResult<ApiResponse>> Less([FromBody] AddTracksByPopularityRequest request)
+    [HttpPost("popularity/{range}")]
+    public async Task<ActionResult<ApiResponse>> AddTracksByPopularity(string range, [FromBody] AddTracksByPopularityRequest request)
     {
-        try
+        var popularityRange = range.ToLowerInvariant() switch
         {
-            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-            var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+            "less" => PopularityRange.Less,
+            "less-medium" => PopularityRange.LessMedium,
+            "medium" => PopularityRange.Medium,
+            "more-medium" => PopularityRange.MoreMedium,
+            "more" => PopularityRange.More,
+            _ => null
+        };
 
-            var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
-                allTracks,
-                PopularityRange.Less,
-                request.PlaylistId,
-                spotifyClient
-            );
-
-            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
-
-            _logger.LogWarning("Failed to add tracks to playlist for less popularity");
-            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
-
-        }
-        catch (UnauthorizedAccessException ex)
+        if (popularityRange == null)
         {
-            _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(ApiResponse.Fail("Unauthorized"));
+            _logger.LogWarning("Invalid popularity range requested: {Range}", range);
+            return BadRequest(ApiResponse.Fail($"Invalid popularity range: {range}. Valid values are: less, less-medium, medium, more-medium, more."));
         }
-    }
 
-    /// <summary>
-    /// Adds tracks with low-medium popularity (21-40) to the designated playlist.
-    /// </summary>
-    /// <returns>
-    /// An <see cref="IActionResult"/> containing:
-    /// - 200 OK with success message if tracks were added successfully
-    /// - 400 Bad Request if the operation failed
-    /// - 401 Unauthorized if authentication failed
-    /// </returns>
-    [HttpPost("less-medium")]
-    public async Task<ActionResult<ApiResponse>> LessMedium([FromBody] AddTracksByPopularityRequest request)
-    {
-        try
-        {
-            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-            var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+        var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
+        var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-            var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
-                allTracks,
-                PopularityRange.LessMedium,
-                request.PlaylistId,
-                spotifyClient
-            );
+        var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
+            allTracks,
+            popularityRange,
+            request.PlaylistId,
+            spotifyClient
+        );
 
-            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
+        if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
 
-            _logger.LogWarning("Failed to add tracks to playlist for less-medium popularity");
-            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
-
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(ApiResponse.Fail("Unauthorized"));
-        }
-    }
-
-    /// <summary>
-    /// Adds tracks with medium popularity (41-60) to the designated playlist.
-    /// </summary>
-    /// <returns>
-    /// An <see cref="IActionResult"/> containing:
-    /// - 200 OK with success message if tracks were added successfully
-    /// - 400 Bad Request if the operation failed
-    /// - 401 Unauthorized if authentication failed
-    /// </returns>
-    [HttpPost("medium")]
-    public async Task<ActionResult<ApiResponse>> Medium([FromBody] AddTracksByPopularityRequest request)
-    {
-        try
-        {
-            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-            var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
-
-            var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
-                allTracks,
-                PopularityRange.Medium,
-                request.PlaylistId,
-                spotifyClient
-            );
-
-            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
-
-            _logger.LogWarning("Failed to add tracks to playlist for medium popularity");
-            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
-
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(ApiResponse.Fail("Unauthorized"));
-        }
-    }
-
-    /// <summary>
-    /// Adds tracks with medium-high popularity (41-80) to the designated playlist.
-    /// </summary>
-    /// <returns>
-    /// An <see cref="IActionResult"/> containing:
-    /// - 200 OK with success message if tracks were added successfully
-    /// - 400 Bad Request if the operation failed
-    /// - 401 Unauthorized if authentication failed
-    /// </returns>
-    [HttpPost("more-medium")]
-    public async Task<ActionResult<ApiResponse>> MoreMedium([FromBody] AddTracksByPopularityRequest request)
-    {
-        try
-        {
-            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-            var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
-
-            var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
-                allTracks,
-                PopularityRange.MoreMedium,
-                request.PlaylistId,
-                spotifyClient
-            );
-
-            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
-
-            _logger.LogWarning("Failed to add tracks to playlist for more-medium popularity");
-            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
-
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(ApiResponse.Fail("Unauthorized"));
-        }
-    }
-
-    /// <summary>
-    /// Adds tracks with high popularity (>80) to the designated playlist.
-    /// </summary>
-    /// <returns>
-    /// An <see cref="IActionResult"/> containing:
-    /// - 200 OK with success message if tracks were added successfully
-    /// - 400 Bad Request if the operation failed
-    /// - 401 Unauthorized if authentication failed
-    /// </returns>
-    [HttpPost("more")]
-    public async Task<ActionResult<ApiResponse>> More([FromBody] AddTracksByPopularityRequest request)
-    {
-        try
-        {
-            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-            var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
-
-            var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
-                allTracks,
-                PopularityRange.More,
-                request.PlaylistId,
-                spotifyClient
-            );
-
-            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
-
-            _logger.LogWarning("Failed to add tracks to playlist for more popularity");
-            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
-
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(ApiResponse.Fail("Unauthorized"));
-        }
+        _logger.LogWarning("Failed to add tracks to playlist for popularity range: {Range}", range);
+        return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
     }
 
     /// <summary>
@@ -259,28 +114,19 @@ public class TrackController : ControllerBase
     {
         var artistId = request.ArtistId;
 
-        try
-        {
-            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-            var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+        var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
+        var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-            var added = await _artistTrackOrganizationService.OrganizeArtistTracksAsync(
-                allTracks,
-                artistId,
-                spotifyClient
-            );
+        var added = await _artistTrackOrganizationService.OrganizeArtistTracksAsync(
+            allTracks,
+            artistId,
+            spotifyClient
+        );
 
-            if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
+        if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
 
-            _logger.LogWarning("Failed to organize tracks for artist: {ArtistId}", artistId);
-            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
-
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(ApiResponse.Fail("Unauthorized"));
-        }
+        _logger.LogWarning("Failed to organize tracks for artist: {ArtistId}", artistId);
+        return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
     }
 }
 

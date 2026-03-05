@@ -50,18 +50,10 @@ public class PlaylistController : ControllerBase
     [HttpGet("all")]
     public async Task<ActionResult<ApiResponse<IList<models.responses.PlaylistInfo>>>> GetAllPlaylists()
     {
-        try
-        {
-            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-            var playlists = await _playlistService.GetAllUserPlaylistsAsync(spotifyClient);
+        var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
+        var playlists = await _playlistService.GetAllUserPlaylistsAsync(spotifyClient);
 
-            return Ok(ApiResponse<IList<models.responses.PlaylistInfo>>.Ok(playlists));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(ApiResponse.Fail("Unauthorized"));
-        }
+        return Ok(ApiResponse<IList<models.responses.PlaylistInfo>>.Ok(playlists));
     }
 
     /// <summary>
@@ -82,25 +74,17 @@ public class PlaylistController : ControllerBase
     [HttpPost("create-playlist-track-minor")]
     public async Task<ActionResult<ApiResponse>> CreatePlaylistTrackMinor()
     {
-        try
-        {
-            var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
-            var tracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+        var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
+        var tracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-            var created = await _minorSongsPlaylistService.CreateOrUpdateMinorSongsPlaylistAsync(
-                tracks,
-                spotifyClient
-            );
+        var created = await _minorSongsPlaylistService.CreateOrUpdateMinorSongsPlaylistAsync(
+            tracks,
+            spotifyClient
+        );
 
-            if (created) return Ok(ApiResponse.Ok("Tracks added to playlist"));
+        if (created) return Ok(ApiResponse.Ok("Tracks added to playlist"));
 
-            _logger.LogWarning("Failed to create playlist with minor tracks");
-            return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Unauthorized access attempt");
-            return Unauthorized(ApiResponse.Fail("Unauthorized"));
-        }
+        _logger.LogWarning("Failed to create playlist with minor tracks");
+        return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
     }
 }
