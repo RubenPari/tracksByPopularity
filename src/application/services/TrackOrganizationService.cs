@@ -1,10 +1,10 @@
-using tracksByPopularity.domain.services;
-using tracksByPopularity.domain.valueobjects;
-using tracksByPopularity.infrastructure.mappers;
-using tracksByPopularity.services;
+using tracksByPopularity.Domain.Services;
+using tracksByPopularity.Domain.ValueObjects;
+using tracksByPopularity.Application.Mapping;
+using tracksByPopularity.Application.Services;
 using SpotifyAPI.Web;
 
-namespace tracksByPopularity.application.services;
+namespace tracksByPopularity.Application.Services;
 
 /// <summary>
 /// Application service implementation for organizing tracks into playlists.

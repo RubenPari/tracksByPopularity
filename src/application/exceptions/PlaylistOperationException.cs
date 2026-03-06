@@ -1,4 +1,4 @@
-namespace tracksByPopularity.application.exceptions;
+namespace tracksByPopularity.Application.Exceptions;
 
 /// <summary>
 /// Exception thrown when a playlist operation fails.

@@ -1,9 +1,9 @@
-using tracksByPopularity.domain.services;
-using tracksByPopularity.infrastructure.mappers;
-using tracksByPopularity.services;
+using tracksByPopularity.Domain.Services;
+using tracksByPopularity.Application.Mapping;
+using tracksByPopularity.Application.Services;
 using SpotifyAPI.Web;
 
-namespace tracksByPopularity.application.services;
+namespace tracksByPopularity.Application.Services;
 
 /// <summary>
 /// Application service implementation for organizing artist tracks into playlists.
@@ -77,8 +77,8 @@ public class ArtistTrackOrganizationService : IArtistTrackOrganizationService
             _logger.LogInformation("Clearing playlist {PlaylistId} for category {Category}", playlistId, category);
             var cleared = await _playlistService.RemoveAllTracksAsync(playlistId);
 
-            if (cleared == models.RemoveAllTracksResponse.Success) continue;
-            
+            if (cleared == RemoveAllTracksResponse.Success) continue;
+
             _logger.LogWarning("Failed to clear playlist {PlaylistId} for category {Category}", playlistId, category);
             return false;
         }
@@ -131,7 +131,7 @@ public class ArtistTrackOrganizationService : IArtistTrackOrganizationService
         }
 
         var allSucceeded = results.All(r => r);
-        
+
         if (allSucceeded)
         {
             _logger.LogInformation("Successfully organized all tracks for artist: {ArtistId}", artistId);

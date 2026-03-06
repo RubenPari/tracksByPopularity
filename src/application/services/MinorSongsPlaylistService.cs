@@ -1,7 +1,7 @@
-using tracksByPopularity.services;
+using tracksByPopularity.Application.Services;
 using SpotifyAPI.Web;
 
-namespace tracksByPopularity.application.services;
+namespace tracksByPopularity.Application.Services;
 
 /// <summary>
 /// Application service implementation for creating and managing the MinorSongs playlist.
