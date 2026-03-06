@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
 using SpotifyAPI.Web;
 using StackExchange.Redis;
-using tracksByPopularity.services;
+using tracksByPopularity.Application.Services;
 
-namespace tracksByPopularity.services;
+namespace tracksByPopularity.Infrastructure.Services;
 
 /// <summary>
 /// Service implementation for cache-related operations.

@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
 using SpotifyAPI.Web;
 using StackExchange.Redis;
-using tracksByPopularity.utils;
+using tracksByPopularity.Infrastructure.Helpers;
 
-namespace tracksByPopularity.services;
+namespace tracksByPopularity.Infrastructure.Services;
 
 public class SpotifyAuthService(IConnectionMultiplexer redis)
 {

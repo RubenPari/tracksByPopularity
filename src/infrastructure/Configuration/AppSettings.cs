@@ -1,4 +1,4 @@
-namespace tracksByPopularity.configuration;
+namespace tracksByPopularity.Infrastructure.Configuration;
 
 /// <summary>
 /// Application settings configuration class.

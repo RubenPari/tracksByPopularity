@@ -1,4 +1,4 @@
-namespace tracksByPopularity.configuration;
+namespace tracksByPopularity.Infrastructure.Configuration;
 
 /// <summary>
 /// Extension methods for configuring application settings using IOptions pattern.

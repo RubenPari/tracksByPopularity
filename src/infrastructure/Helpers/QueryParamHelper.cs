@@ -1,6 +1,6 @@
-using tracksByPopularity.models;
+using tracksByPopularity.Domain.Enums;
 
-namespace tracksByPopularity.helpers;
+namespace tracksByPopularity.Infrastructure.Helpers;
 
 public static class QueryParamHelper
 {

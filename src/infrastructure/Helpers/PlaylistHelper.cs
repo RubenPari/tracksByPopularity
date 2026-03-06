@@ -1,6 +1,6 @@
 ﻿using SpotifyAPI.Web;
 
-namespace tracksByPopularity.helpers;
+namespace tracksByPopularity.Infrastructure.Helpers;
 
 public static class PlaylistHelper
 {

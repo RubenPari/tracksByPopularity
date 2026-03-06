@@ -1,4 +1,4 @@
-namespace tracksByPopularity.configuration;
+namespace tracksByPopularity.Infrastructure.Configuration;
 
 public class PlaylistSettings
 {

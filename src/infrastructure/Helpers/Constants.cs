@@ -1,6 +1,6 @@
 ﻿using SpotifyAPI.Web;
 
-namespace tracksByPopularity.utils;
+namespace tracksByPopularity.Infrastructure.Helpers;
 
 public abstract class Constants
 {

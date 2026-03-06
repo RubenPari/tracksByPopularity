@@ -1,6 +1,6 @@
 ﻿using StackExchange.Redis;
 
-namespace tracksByPopularity.background;
+namespace tracksByPopularity.Infrastructure.Background;
 
 /// <summary>
 /// Background service that periodically resets the Redis cache to ensure data freshness.

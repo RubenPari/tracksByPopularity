@@ -2,7 +2,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
 
-namespace tracksByPopularity.infrastructure.logging;
+namespace tracksByPopularity.Infrastructure.Logging;
 
 /// <summary>
 /// Provides configuration for Serilog logging infrastructure.

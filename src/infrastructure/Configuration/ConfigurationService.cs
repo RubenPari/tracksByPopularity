@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
-using tracksByPopularity.configuration;
+using tracksByPopularity.Infrastructure.Configuration;
 
-namespace tracksByPopularity.services;
+namespace tracksByPopularity.Infrastructure.Configuration;
 
 /// <summary>
 /// Service implementation for accessing application configuration.
