@@ -1,8 +1,8 @@
-using tracksByPopularity.helpers;
-using tracksByPopularity.models;
-using tracksByPopularity.services;
+using tracksByPopularity.Infrastructure.Helpers;
+using tracksByPopularity.Domain.Enums;
+using tracksByPopularity.Application.Services;
 
-namespace tracksByPopularity.middlewares;
+namespace tracksByPopularity.Presentation.Middlewares;
 
 /// <summary>
 /// Middleware that automatically clears playlists before adding new tracks.
@@ -11,31 +11,13 @@ namespace tracksByPopularity.middlewares;
 public class ClearPlaylistMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IAuthenticationService _authenticationService;
-    private readonly IPlaylistRoutingService _routingService;
-    private readonly IPlaylistClearingService _clearingService;
     private readonly ILogger<ClearPlaylistMiddleware> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ClearPlaylistMiddleware"/> class.
-    /// </summary>
-    /// <param name="next">The next middleware in the pipeline.</param>
-    /// <param name="authenticationService">Service for checking authentication.</param>
-    /// <param name="routingService">Service for routing and playlist ID resolution.</param>
-    /// <param name="clearingService">Service for clearing playlists.</param>
-    /// <param name="logger">Logger instance for recording middleware activities.</param>
     public ClearPlaylistMiddleware(
         RequestDelegate next,
-        IAuthenticationService authenticationService,
-        IPlaylistRoutingService routingService,
-        IPlaylistClearingService clearingService,
         ILogger<ClearPlaylistMiddleware> logger
     )
     {
         _next = next;
-        _authenticationService = authenticationService;
-        _routingService = routingService;
-        _clearingService = clearingService;
         _logger = logger;
     }
 
@@ -44,20 +26,24 @@ public class ClearPlaylistMiddleware
     /// </summary>
     /// <param name="context">The HTTP context for the current request.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(
+        HttpContext context,
+        IAuthenticationService authenticationService,
+        IPlaylistRoutingService routingService,
+        IPlaylistClearingService clearingService)
     {
         var path = context.Request.Path.Value ?? string.Empty;
 
         // Skip middleware for health check and auth endpoints
         if (path.Equals("/health", StringComparison.OrdinalIgnoreCase) ||
-            !_routingService.ShouldHandlePath(path))
+            !routingService.ShouldHandlePath(path))
         {
             await _next(context);
             return;
         }
 
         // Check authentication
-        if (!await _authenticationService.IsAuthenticatedWithClearSongsServiceAsync())
+        if (!await authenticationService.IsAuthenticatedWithClearSongsServiceAsync())
         {
             _logger.LogWarning("Unauthorized access attempt to path: {Path}", path);
             context.Response.StatusCode = 401;
@@ -66,18 +52,18 @@ public class ClearPlaylistMiddleware
         }
 
         // Handle top/artist paths
-        if (path.Contains("/top", StringComparison.OrdinalIgnoreCase) || 
+        if (path.Contains("/top", StringComparison.OrdinalIgnoreCase) ||
             path.Contains("/artist", StringComparison.OrdinalIgnoreCase))
         {
-            await HandleTopPath(context);
+            await HandleTopPath(context, routingService, clearingService);
             return;
         }
 
         // Handle standard track paths
-        var playlistId = _routingService.GetPlaylistIdFromPath(path);
+        var playlistId = routingService.GetPlaylistIdFromPath(path);
         if (playlistId != null)
         {
-            await HandlePlaylistClear(context, playlistId);
+            await HandlePlaylistClear(context, clearingService, playlistId);
         }
 
         await _next(context);
@@ -89,7 +75,10 @@ public class ClearPlaylistMiddleware
     /// </summary>
     /// <param name="context">The HTTP context of the request.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task HandleTopPath(HttpContext context)
+    private async Task HandleTopPath(
+        HttpContext context,
+        IPlaylistRoutingService routingService,
+        IPlaylistClearingService clearingService)
     {
         var timeRange = QueryParamHelper.GetTimeRangeQueryParam(context);
 
@@ -101,8 +90,8 @@ public class ClearPlaylistMiddleware
             return;
         }
 
-        var playlistId = _routingService.GetPlaylistIdForTimeRange(timeRange);
-        var cleared = await _clearingService.ClearPlaylistAsync(playlistId);
+        var playlistId = routingService.GetPlaylistIdForTimeRange(timeRange);
+        var cleared = await clearingService.ClearPlaylistAsync(playlistId);
 
         var result = cleared switch
         {
@@ -126,9 +115,12 @@ public class ClearPlaylistMiddleware
     /// <param name="context">The HTTP context of the request.</param>
     /// <param name="playlistId">The ID of the playlist to clear.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task HandlePlaylistClear(HttpContext context, string playlistId)
+    private async Task HandlePlaylistClear(
+        HttpContext context,
+        IPlaylistClearingService clearingService,
+        string playlistId)
     {
-        var result = await _clearingService.ClearPlaylistAsync(playlistId);
+        var result = await clearingService.ClearPlaylistAsync(playlistId);
 
         if (result != RemoveAllTracksResponse.Success)
         {

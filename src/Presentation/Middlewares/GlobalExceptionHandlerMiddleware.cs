@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 
-namespace tracksByPopularity.middlewares;
+namespace tracksByPopularity.Presentation.Middlewares;
 
 /// <summary>
 /// Middleware for global exception handling across the application.
@@ -74,8 +74,8 @@ public class GlobalExceptionHandlerMiddleware
         {
             UnauthorizedAccessException => HttpStatusCode.Unauthorized,
             ArgumentException or ArgumentNullException => HttpStatusCode.BadRequest,
-            domain.exceptions.DomainException => HttpStatusCode.BadRequest,
-            application.exceptions.PlaylistOperationException => HttpStatusCode.BadRequest,
+            DomainException => HttpStatusCode.BadRequest,
+            PlaylistOperationException => HttpStatusCode.BadRequest,
             _ => HttpStatusCode.InternalServerError,
         };
 

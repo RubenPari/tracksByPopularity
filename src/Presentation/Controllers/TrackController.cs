@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using tracksByPopularity.application.services;
-using tracksByPopularity.domain.valueobjects;
-using tracksByPopularity.models.requests;
-using tracksByPopularity.models.responses;
-using tracksByPopularity.services;
+using tracksByPopularity.Application.Services;
+using tracksByPopularity.Domain.ValueObjects;
+using tracksByPopularity.Application.DTOs;
+using tracksByPopularity.Application.DTOs;
+using tracksByPopularity.Application.Services;
 
-namespace tracksByPopularity.controllers;
+namespace tracksByPopularity.Presentation.Controllers;
 
 /// <summary>
 /// API controller for track-related operations.

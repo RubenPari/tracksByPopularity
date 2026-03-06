@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace tracksByPopularity.controllers;
+namespace tracksByPopularity.Presentation.Controllers;
 
 /// <summary>
 /// Health check controller for monitoring application status.

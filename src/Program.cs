@@ -3,16 +3,15 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Serilog;
 using StackExchange.Redis;
-using tracksByPopularity.application.services;
-using tracksByPopularity.background;
-using tracksByPopularity.domain.services;
-using tracksByPopularity.infrastructure.logging;
-using tracksByPopularity.middleware;
-using tracksByPopularity.middlewares;
-using tracksByPopularity.services;
-using tracksByPopularity.utils;
-using tracksByPopularity.validators;
-using tracksByPopularity.configuration;
+using tracksByPopularity.Application.Services;
+using tracksByPopularity.Infrastructure.Background;
+using tracksByPopularity.Domain.Services;
+using tracksByPopularity.Infrastructure.Logging;
+using tracksByPopularity.Presentation.Middlewares;
+using tracksByPopularity.Application.Services;
+using tracksByPopularity.Infrastructure.Helpers;
+using tracksByPopularity.Application.Validators;
+using tracksByPopularity.Infrastructure.Configuration;
 
 DotEnv.Load();
 

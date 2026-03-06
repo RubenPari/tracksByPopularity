@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text.Json;
-using tracksByPopularity.models.responses;
+using tracksByPopularity.Application.DTOs;
 
-namespace tracksByPopularity.middleware;
+namespace tracksByPopularity.Presentation.Middlewares;
 
 public class ExceptionHandlingMiddleware
 {

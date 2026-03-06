@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using tracksByPopularity.application.services;
-using tracksByPopularity.services;
-using tracksByPopularity.models.responses;
+using tracksByPopularity.Application.Services;
+using tracksByPopularity.Application.Services;
+using tracksByPopularity.Application.DTOs;
 
-namespace tracksByPopularity.controllers;
+namespace tracksByPopularity.Presentation.Controllers;
 
 /// <summary>
 /// API controller for playlist-related operations.
@@ -48,12 +48,12 @@ public class PlaylistController : ControllerBase
     /// - 401 Unauthorized if authentication failed
     /// </returns>
     [HttpGet("all")]
-    public async Task<ActionResult<ApiResponse<IList<models.responses.PlaylistInfo>>>> GetAllPlaylists()
+    public async Task<ActionResult<ApiResponse<IList<PlaylistInfo>>>> GetAllPlaylists()
     {
         var spotifyClient = SpotifyAuthService.GetSpotifyClientAsync();
         var playlists = await _playlistService.GetAllUserPlaylistsAsync(spotifyClient);
 
-        return Ok(ApiResponse<IList<models.responses.PlaylistInfo>>.Ok(playlists));
+        return Ok(ApiResponse<IList<PlaylistInfo>>.Ok(playlists));
     }
 
     /// <summary>
