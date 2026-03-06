@@ -1,4 +1,4 @@
-﻿namespace tracksByPopularity.models;
+﻿namespace tracksByPopularity.Domain.Enums;
 
 public enum RemoveAllTracksResponse
 {

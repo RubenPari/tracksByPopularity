@@ -1,6 +1,6 @@
-using tracksByPopularity.domain.exceptions;
+using tracksByPopularity.Domain.Exceptions;
 
-namespace tracksByPopularity.domain.valueobjects;
+namespace tracksByPopularity.Domain.ValueObjects;
 
 /// <summary>
 /// Value object representing a popularity range for categorizing tracks.

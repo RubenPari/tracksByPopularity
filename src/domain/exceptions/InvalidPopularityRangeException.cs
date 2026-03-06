@@ -1,4 +1,4 @@
-namespace tracksByPopularity.domain.exceptions;
+namespace tracksByPopularity.Domain.Exceptions;
 
 /// <summary>
 /// Exception thrown when an invalid popularity range is specified.

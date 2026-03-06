@@ -1,4 +1,4 @@
-namespace tracksByPopularity.domain.exceptions;
+namespace tracksByPopularity.Domain.Exceptions;
 
 /// <summary>
 /// Base exception for domain-related errors.

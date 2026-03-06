@@ -1,4 +1,4 @@
-namespace tracksByPopularity.domain.entities;
+namespace tracksByPopularity.Domain.Entities;
 
 /// <summary>
 /// Domain entity representing a track.

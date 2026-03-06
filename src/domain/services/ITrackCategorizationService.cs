@@ -1,7 +1,7 @@
-using tracksByPopularity.domain.entities;
-using tracksByPopularity.domain.valueobjects;
+using tracksByPopularity.Domain.Entities;
+using tracksByPopularity.Domain.ValueObjects;
 
-namespace tracksByPopularity.domain.services;
+namespace tracksByPopularity.Domain.Services;
 
 /// <summary>
 /// Domain service for categorizing tracks based on popularity.
