@@ -75,7 +75,7 @@ public class ArtistTrackOrganizationService : IArtistTrackOrganizationService
         foreach (var (category, playlistId) in artistPlaylists)
         {
             _logger.LogInformation("Clearing playlist {PlaylistId} for category {Category}", playlistId, category);
-            var cleared = await _playlistService.RemoveAllTracksAsync(playlistId);
+            var cleared = await _playlistService.RemoveAllTracksAsync(playlistId, spotifyClient);
 
             if (cleared == RemoveAllTracksResponse.Success) continue;
 

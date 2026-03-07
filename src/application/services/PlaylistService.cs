@@ -38,25 +38,21 @@ public class PlaylistService : IPlaylistService
     /// to perform the track removal operation. The timeout is set to 200 seconds to handle
     /// large playlists that may take time to process.
     /// </remarks>
-    public async Task<RemoveAllTracksResponse> RemoveAllTracksAsync(string playlistId)
+    public async Task<RemoveAllTracksResponse> RemoveAllTracksAsync(string playlistId, SpotifyClient spotifyClient)
     {
-        var client = _httpClientFactory.CreateClient();
-        client.Timeout = TimeSpan.FromSeconds(200);
-        var request = new HttpRequestMessage
+        try
         {
-            Method = HttpMethod.Delete,
-            RequestUri = new Uri($"http://localhost:3000/playlist/delete-tracks?id={playlistId}"),
-        };
-
-        using var response = await client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-
-        return response.StatusCode switch
+            await spotifyClient.Playlists.ReplaceItems(playlistId, new PlaylistReplaceItemsRequest(new List<string>()));
+            return RemoveAllTracksResponse.Success;
+        }
+        catch (APIUnauthorizedException)
         {
-            HttpStatusCode.Unauthorized => RemoveAllTracksResponse.Unauthorized,
-            HttpStatusCode.BadRequest => RemoveAllTracksResponse.BadRequest,
-            _ => RemoveAllTracksResponse.Success,
-        };
+            return RemoveAllTracksResponse.Unauthorized;
+        }
+        catch (APIException)
+        {
+            return RemoveAllTracksResponse.BadRequest;
+        }
     }
 
     /// <summary>

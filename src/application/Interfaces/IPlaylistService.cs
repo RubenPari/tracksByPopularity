@@ -20,7 +20,7 @@ public interface IPlaylistService
     /// - <see cref="RemoveAllTracksResponse.Unauthorized"/> if authentication failed
     /// - <see cref="RemoveAllTracksResponse.BadRequest"/> if the request was invalid
     /// </returns>
-    Task<RemoveAllTracksResponse> RemoveAllTracksAsync(string playlistId);
+    Task<RemoveAllTracksResponse> RemoveAllTracksAsync(string playlistId, SpotifyClient spotifyClient);
 
     /// <summary>
     /// Creates or updates a playlist with tracks from artists that have 5 or fewer songs
