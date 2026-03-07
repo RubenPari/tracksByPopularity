@@ -14,6 +14,7 @@ public class TrackOrganizationService : ITrackOrganizationService
 {
     private readonly ITrackCategorizationService _categorizationService;
     private readonly ITrackService _trackService;
+    private readonly IPlaylistService _playlistService;
     private readonly ILogger<TrackOrganizationService> _logger;
 
     /// <summary>
@@ -25,11 +26,13 @@ public class TrackOrganizationService : ITrackOrganizationService
     public TrackOrganizationService(
         ITrackCategorizationService categorizationService,
         ITrackService trackService,
+        IPlaylistService playlistService,
         ILogger<TrackOrganizationService> logger
     )
     {
         _categorizationService = categorizationService;
         _trackService = trackService;
+        _playlistService = playlistService;
         _logger = logger;
     }
 
@@ -63,6 +66,9 @@ public class TrackOrganizationService : ITrackOrganizationService
             popularityRange.Max,
             playlistId
         );
+
+        // Clear existing tracks first
+        await _playlistService.RemoveAllTracksAsync(playlistId, spotifyClient);
 
         // Convert to domain entities
         var domainTracks = SpotifyTrackMapper.ToDomain(allTracks);

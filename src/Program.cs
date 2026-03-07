@@ -82,7 +82,6 @@ builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<ITrackCategorizationService, TrackCategorizationService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IPlaylistRoutingService, PlaylistRoutingService>();
-builder.Services.AddScoped<IPlaylistClearingService, PlaylistClearingService>();
 builder.Services.AddScoped<ITrackOrganizationService, TrackOrganizationService>();
 builder.Services.AddScoped<IArtistTrackOrganizationService, ArtistTrackOrganizationService>();
 builder.Services.AddScoped<IMinorSongsPlaylistService, MinorSongsPlaylistService>();
@@ -101,7 +100,6 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
 
 // Add other middlewares
 app.UseMiddleware<RedirectHomeMiddleware>();
-app.UseMiddleware<ClearPlaylistMiddleware>();
 
 // Map controllers (standard ASP.NET Core controllers, not minimal API)
 app.MapControllers();
