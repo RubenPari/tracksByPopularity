@@ -31,30 +31,6 @@ public abstract class Constants
 
     public static string RedirectUri { get; } = Environment.GetEnvironmentVariable("REDIRECT_URI")!;
 
-    public static string PlaylistIdLess { get; } =
-        Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS")!;
-
-    public static string PlaylistIdLessMedium { get; } =
-        Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS_MEDIUM")!;
-
-    public static string PlaylistIdMedium { get; } =
-        Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM")!;
-
-    public static string PlaylistIdMoreMedium { get; } =
-        Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE_MEDIUM")!;
-
-    public static string PlaylistIdMore { get; } =
-        Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE")!;
-
-    public static string PlaylistIdTopShort { get; } =
-        Environment.GetEnvironmentVariable("PLAYLIST_ID_TOP_SHORT")!;
-
-    public static string PlaylistIdTopMedium { get; } =
-        Environment.GetEnvironmentVariable("PLAYLIST_ID_TOP_MEDIUM")!;
-
-    public static string PlaylistIdTopLong { get; } =
-        Environment.GetEnvironmentVariable("PLAYLIST_ID_TOP_LONG")!;
-
     public static string RedisHost { get; } = Environment.GetEnvironmentVariable("REDIS_HOST")!;
 
     public static string RedisPort { get; } = Environment.GetEnvironmentVariable("REDIS_PORT")!;
