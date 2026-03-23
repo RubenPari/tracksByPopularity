@@ -84,7 +84,6 @@ builder.Services.AddScoped<ITrackCategorizationService, TrackCategorizationServi
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ITrackOrganizationService, TrackOrganizationService>();
 builder.Services.AddScoped<IArtistTrackOrganizationService, ArtistTrackOrganizationService>();
-builder.Services.AddScoped<IMinorSongsPlaylistService, MinorSongsPlaylistService>();
 
 builder.Services.AddHttpClient();
 

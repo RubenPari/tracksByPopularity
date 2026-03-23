@@ -38,8 +38,6 @@ public abstract class Constants
     public static string RedisPassword { get; } =
         Environment.GetEnvironmentVariable("REDIS_PASSWORD")!;
 
-    public static string PlaylistNameWithMinorSongs => "MinorSongs";
-
     public static int Offset => 0;
 
     public static int LimitInsertPlaylistTracks => 100;

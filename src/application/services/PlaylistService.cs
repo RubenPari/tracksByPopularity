@@ -13,17 +13,10 @@ namespace tracksByPopularity.Application.Services;
 public class PlaylistService : IPlaylistService
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IArtistService _artistService;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PlaylistService"/> class.
-    /// </summary>
-    /// <param name="httpClientFactory">Factory for creating HTTP clients for external service calls.</param>
-    /// <param name="artistService">Service for retrieving artist summary information.</param>
-    public PlaylistService(IHttpClientFactory httpClientFactory, IArtistService artistService)
+    public PlaylistService(IHttpClientFactory httpClientFactory)
     {
         _httpClientFactory = httpClientFactory;
-        _artistService = artistService;
     }
 
     /// <summary>
@@ -53,99 +46,6 @@ public class PlaylistService : IPlaylistService
         {
             return RemoveAllTracksResponse.BadRequest;
         }
-    }
-
-    /// <summary>
-    /// Creates or updates a "MinorSongs" playlist containing tracks from artists
-    /// that have 5 or fewer songs in the user's library.
-    /// </summary>
-    /// <param name="spotifyClient">The authenticated Spotify client instance.</param>
-    /// <param name="tracks">The complete collection of user's saved tracks.</param>
-    /// <returns>
-    /// <c>true</c> if the playlist was created/updated successfully; otherwise, <c>false</c>.
-    /// </returns>
-    /// <remarks>
-    /// This method performs the following steps:
-    /// 1. Retrieves the current user's ID
-    /// 2. Checks if a "MinorSongs" playlist exists, creating it if necessary
-    /// 3. Retrieves artist summary to identify artists with ≤5 songs
-    /// 4. Filters tracks to include only those from qualifying artists
-    /// 5. Adds filtered tracks to the playlist in paginated batches of 100
-    /// </remarks>
-    public async Task<bool> CreatePlaylistTracksMinorAsync(
-        SpotifyClient spotifyClient,
-        IList<SavedTrack> tracks
-    )
-    {
-        var userId = (await spotifyClient.UserProfile.Current()).Id;
-
-        // Check if "MinorSongs" playlist already exists
-        var playlistsUserFirstPage = await spotifyClient.Playlists.GetUsers(userId);
-        var playlistsUser = await spotifyClient.PaginateAll(playlistsUserFirstPage);
-
-        var idPlaylistMinorSongs = playlistsUser
-            .FirstOrDefault(playlist => playlist.Name == Constants.PlaylistNameWithMinorSongs)
-            ?.Id;
-
-        if (idPlaylistMinorSongs == null)
-        {
-            // Create playlist "MinorSongs" if it doesn't exist
-            var playlistMinorSongs = await spotifyClient.Playlists.Create(
-                userId,
-                new PlaylistCreateRequest(Constants.PlaylistNameWithMinorSongs)
-            );
-
-            idPlaylistMinorSongs = playlistMinorSongs.Id;
-        }
-
-        // Get artists with less than 5 songs in user library
-        var artistsSummary = await _artistService.GetArtistsSummaryAsync();
-
-        if (artistsSummary == null)
-        {
-            return false;
-        }
-
-        // Find all tracks that belong to artists with less than 5 songs
-        var tracksToKeep = artistsSummary
-            .Where(artistSummary => artistSummary.Count <= 5)
-            .SelectMany(artistSummary =>
-                tracks.Where(track => track.Track.Artists[0].Id == artistSummary.Id)
-            )
-            .ToList();
-
-        // Convert tracks to Uris for playlist addition
-        var tracksUris = TrackUtils.ConvertTracksToUris(tracksToKeep);
-
-        // Insert tracks into playlist with pagination (100 tracks per batch)
-        var offset = Constants.Offset;
-        var limit = Constants.LimitInsertPlaylistTracks;
-
-        while (true)
-        {
-            var tracksToAdd = tracksUris.Skip(offset).Take(limit).ToList();
-
-            var added = await spotifyClient.Playlists.AddItems(
-                idPlaylistMinorSongs!,
-                new PlaylistAddItemsRequest(tracksToAdd)
-            );
-
-            // If the operation fails, Spotify returns an empty SnapshotId
-            if (added.SnapshotId == string.Empty)
-            {
-                return false;
-            }
-
-            // If we've added fewer tracks than the limit, we've reached the end
-            if (tracksToAdd.Count < limit)
-            {
-                break;
-            }
-
-            offset += limit;
-        }
-
-        return true;
     }
 
     /// <summary>

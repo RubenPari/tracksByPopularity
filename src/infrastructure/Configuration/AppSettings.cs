@@ -42,11 +42,6 @@ public class AppSettings
     public int ArtistTracksMediumPopularity { get; init; } = 66;
 
     /// <summary>
-    /// Gets or sets the name of the playlist for tracks from artists with ≤5 songs.
-    /// </summary>
-    public string PlaylistNameWithMinorSongs { get; init; } = "MinorSongs";
-    
-    /// <summary>
     /// Gets or sets the initial offset for pagination when adding tracks to playlists.
     /// </summary>
     public int Offset { get; init; }
