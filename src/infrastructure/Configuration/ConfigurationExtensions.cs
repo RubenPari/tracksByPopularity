@@ -17,7 +17,6 @@ public static class ConfigurationExtensions
         // Bind configuration sections to strongly-typed settings classes
         services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
         services.Configure<SpotifySettings>(configuration.GetSection("SpotifySettings"));
-        services.Configure<PlaylistSettings>(configuration.GetSection("PlaylistSettings"));
         services.Configure<RedisSettings>(configuration.GetSection("RedisSettings"));
 
         // Also bind from environment variables as fallback
@@ -31,18 +30,6 @@ public static class ConfigurationExtensions
             options.ClientId = Environment.GetEnvironmentVariable("CLIENT_ID") ?? options.ClientId;
             options.ClientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET") ?? options.ClientSecret;
             options.RedirectUri = Environment.GetEnvironmentVariable("REDIRECT_URI") ?? options.RedirectUri;
-        });
-
-        services.Configure<PlaylistSettings>(options =>
-        {
-            options.PlaylistIdLess = Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS") ?? options.PlaylistIdLess;
-            options.PlaylistIdLessMedium = Environment.GetEnvironmentVariable("PLAYLIST_ID_LESS_MEDIUM") ?? options.PlaylistIdLessMedium;
-            options.PlaylistIdMedium = Environment.GetEnvironmentVariable("PLAYLIST_ID_MEDIUM") ?? options.PlaylistIdMedium;
-            options.PlaylistIdMoreMedium = Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE_MEDIUM") ?? options.PlaylistIdMoreMedium;
-            options.PlaylistIdMore = Environment.GetEnvironmentVariable("PLAYLIST_ID_MORE") ?? options.PlaylistIdMore;
-            options.PlaylistIdTopShort = Environment.GetEnvironmentVariable("PLAYLIST_ID_TOP_SHORT") ?? options.PlaylistIdTopShort;
-            options.PlaylistIdTopMedium = Environment.GetEnvironmentVariable("PLAYLIST_ID_TOP_MEDIUM") ?? options.PlaylistIdTopMedium;
-            options.PlaylistIdTopLong = Environment.GetEnvironmentVariable("PLAYLIST_ID_TOP_LONG") ?? options.PlaylistIdTopLong;
         });
 
         services.Configure<RedisSettings>(options =>

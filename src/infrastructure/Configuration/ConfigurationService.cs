@@ -19,13 +19,11 @@ public class ConfigurationService : IConfigurationService
     public ConfigurationService(
         IOptions<AppSettings> appSettingsOptions,
         IOptions<SpotifySettings> spotifySettingsOptions,
-        IOptions<PlaylistSettings> playlistSettingsOptions,
         IOptions<RedisSettings> redisSettingsOptions
     )
     {
         AppSettings = appSettingsOptions.Value;
         SpotifySettings = spotifySettingsOptions.Value;
-        PlaylistSettings = playlistSettingsOptions.Value;
         RedisSettings = redisSettingsOptions.Value;
     }
 
@@ -34,9 +32,6 @@ public class ConfigurationService : IConfigurationService
 
     /// <inheritdoc />
     public SpotifySettings SpotifySettings { get; }
-
-    /// <inheritdoc />
-    public PlaylistSettings PlaylistSettings { get; }
 
     /// <inheritdoc />
     public RedisSettings RedisSettings { get; }

@@ -19,11 +19,6 @@ public interface IConfigurationService
     SpotifySettings SpotifySettings { get; }
 
     /// <summary>
-    /// Gets the playlist settings.
-    /// </summary>
-    PlaylistSettings PlaylistSettings { get; }
-
-    /// <summary>
     /// Gets the Redis cache settings.
     /// </summary>
     RedisSettings RedisSettings { get; }
