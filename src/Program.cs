@@ -86,7 +86,6 @@ builder.Services.AddScoped<ITrackMoodAnalyzerService, TrackMoodAnalyzerService>(
 builder.Services.AddScoped<IAudioFeaturesPlaylistService, AudioFeaturesPlaylistService>();
 builder.Services.AddScoped<ITrackCategorizationService, TrackCategorizationService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-builder.Services.AddScoped<IPlaylistRoutingService, PlaylistRoutingService>();
 builder.Services.AddScoped<ITrackOrganizationService, TrackOrganizationService>();
 builder.Services.AddScoped<IArtistTrackOrganizationService, ArtistTrackOrganizationService>();
 builder.Services.AddScoped<IMinorSongsPlaylistService, MinorSongsPlaylistService>();
