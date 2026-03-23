@@ -80,8 +80,6 @@ builder.Services.AddScoped<IArtistService, ArtistService>();
 builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IPlaylistHelper, PlaylistHelperService>();
 builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
-builder.Services.AddScoped<ITrackDeduplicationService, TrackDeduplicationService>();
-builder.Services.AddScoped<ILibraryCleanupService, LibraryCleanupService>();
 builder.Services.AddScoped<ITrackMoodAnalyzerService, TrackMoodAnalyzerService>();
 builder.Services.AddScoped<IAudioFeaturesPlaylistService, AudioFeaturesPlaylistService>();
 builder.Services.AddScoped<ITrackCategorizationService, TrackCategorizationService>();
