@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using SpotifyAPI.Web;
 using tracksByPopularity.Application.DTOs;
 
 namespace tracksByPopularity.Presentation.Middlewares;
@@ -38,6 +39,21 @@ public class ExceptionHandlingMiddleware
                 statusCode = HttpStatusCode.Unauthorized;
                 message = "Unauthorized access attempt. Please check your Spotify session.";
                 _logger.LogWarning(exception, "Unauthorized access attempt");
+                break;
+            case APIUnauthorizedException:
+                statusCode = HttpStatusCode.Unauthorized;
+                message = "Spotify session expired. Please log in again.";
+                _logger.LogWarning(exception, "Spotify API unauthorized");
+                break;
+            case APIException apiEx:
+                statusCode = HttpStatusCode.BadGateway;
+                message = $"Spotify API error: {apiEx.Message}";
+                _logger.LogError(apiEx, "Spotify API error");
+                break;
+            case ArgumentException argEx:
+                statusCode = HttpStatusCode.BadRequest;
+                message = argEx.Message;
+                _logger.LogWarning(argEx, "Bad request");
                 break;
             default:
                 _logger.LogError(exception, "Unhandled error occurred.");
