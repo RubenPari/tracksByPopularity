@@ -8,6 +8,7 @@ using tracksByPopularity.Application.Interfaces;
 using tracksByPopularity.Infrastructure.Background;
 using tracksByPopularity.Domain.Services;
 using tracksByPopularity.Infrastructure.Logging;
+using tracksByPopularity.Infrastructure.Services;
 using tracksByPopularity.Presentation.Middlewares;
 using tracksByPopularity.Application.Services;
 using tracksByPopularity.Infrastructure.Helpers;
@@ -84,6 +85,7 @@ builder.Services.AddScoped<ITrackCategorizationService, TrackCategorizationServi
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ITrackOrganizationService, TrackOrganizationService>();
 builder.Services.AddScoped<IArtistTrackOrganizationService, ArtistTrackOrganizationService>();
+builder.Services.AddScoped<IPlaylistBackupService, PlaylistBackupService>();
 
 builder.Services.AddHttpClient();
 

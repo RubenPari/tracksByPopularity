@@ -1,6 +1,7 @@
 using tracksByPopularity.Domain.Services;
 using tracksByPopularity.Domain.ValueObjects;
 using tracksByPopularity.Application.Mapping;
+using tracksByPopularity.Application.Interfaces;
 using tracksByPopularity.Application.Services;
 using SpotifyAPI.Web;
 
@@ -15,6 +16,7 @@ public class TrackOrganizationService : ITrackOrganizationService
     private readonly ITrackCategorizationService _categorizationService;
     private readonly ITrackService _trackService;
     private readonly IPlaylistService _playlistService;
+    private readonly IPlaylistBackupService _backupService;
     private readonly ILogger<TrackOrganizationService> _logger;
 
     /// <summary>
@@ -27,12 +29,14 @@ public class TrackOrganizationService : ITrackOrganizationService
         ITrackCategorizationService categorizationService,
         ITrackService trackService,
         IPlaylistService playlistService,
+        IPlaylistBackupService backupService,
         ILogger<TrackOrganizationService> logger
     )
     {
         _categorizationService = categorizationService;
         _trackService = trackService;
         _playlistService = playlistService;
+        _backupService = backupService;
         _logger = logger;
     }
 
@@ -66,6 +70,9 @@ public class TrackOrganizationService : ITrackOrganizationService
             popularityRange.Max,
             playlistId
         );
+
+        // Snapshot before clearing
+        await _backupService.CreateSnapshotAsync(playlistId, spotifyClient, "popularity");
 
         // Clear existing tracks first
         await _playlistService.RemoveAllTracksAsync(playlistId, spotifyClient);

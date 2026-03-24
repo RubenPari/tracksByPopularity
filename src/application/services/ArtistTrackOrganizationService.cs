@@ -1,5 +1,6 @@
 using tracksByPopularity.Domain.Services;
 using tracksByPopularity.Application.Mapping;
+using tracksByPopularity.Application.Interfaces;
 using tracksByPopularity.Application.Services;
 using SpotifyAPI.Web;
 
@@ -15,6 +16,7 @@ public class ArtistTrackOrganizationService : IArtistTrackOrganizationService
     private readonly ITrackService _trackService;
     private readonly IPlaylistHelper _playlistHelper;
     private readonly IPlaylistService _playlistService;
+    private readonly IPlaylistBackupService _backupService;
     private readonly ILogger<ArtistTrackOrganizationService> _logger;
 
     /// <summary>
@@ -30,6 +32,7 @@ public class ArtistTrackOrganizationService : IArtistTrackOrganizationService
         ITrackService trackService,
         IPlaylistHelper playlistHelper,
         IPlaylistService playlistService,
+        IPlaylistBackupService backupService,
         ILogger<ArtistTrackOrganizationService> logger
     )
     {
@@ -37,6 +40,7 @@ public class ArtistTrackOrganizationService : IArtistTrackOrganizationService
         _trackService = trackService;
         _playlistHelper = playlistHelper;
         _playlistService = playlistService;
+        _backupService = backupService;
         _logger = logger;
     }
 
@@ -71,10 +75,11 @@ public class ArtistTrackOrganizationService : IArtistTrackOrganizationService
             artistId
         );
 
-        // Clear existing tracks from playlists
+        // Snapshot and clear existing tracks from playlists
         foreach (var (category, playlistId) in artistPlaylists)
         {
-            _logger.LogInformation("Clearing playlist {PlaylistId} for category {Category}", playlistId, category);
+            _logger.LogInformation("Snapshotting and clearing playlist {PlaylistId} for category {Category}", playlistId, category);
+            await _backupService.CreateSnapshotAsync(playlistId, spotifyClient, "artist");
             var cleared = await _playlistService.RemoveAllTracksAsync(playlistId, spotifyClient);
 
             if (cleared == RemoveAllTracksResponse.Success) continue;
