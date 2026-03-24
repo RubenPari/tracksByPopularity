@@ -22,6 +22,7 @@ public abstract class Constants
             Scopes.UserTopRead,
             Scopes.PlaylistModifyPrivate,
             Scopes.PlaylistModifyPublic,
+            Scopes.UserFollowRead,
         ];
 
     public static string ClientId { get; } = Environment.GetEnvironmentVariable("CLIENT_ID")!;

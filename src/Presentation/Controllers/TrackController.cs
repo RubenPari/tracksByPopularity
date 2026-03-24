@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SpotifyAPI.Web;
 using tracksByPopularity.Application.Services;
 using tracksByPopularity.Domain.ValueObjects;
 using tracksByPopularity.Application.DTOs;
@@ -83,6 +84,55 @@ public class TrackController : ControllerBase
 
         _logger.LogWarning("Failed to add tracks to playlist for popularity range: {Range}", range);
         return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
+    }
+
+    /// <summary>
+    /// Returns a list of unique artists from the user's saved tracks, sorted by track count.
+    /// </summary>
+    [HttpGet("artists")]
+    public async Task<ActionResult<ApiResponse<IEnumerable<ArtistSummary>>>> GetLibraryArtists()
+    {
+        var userId = Request.Cookies[UserIdCookieName];
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(ApiResponse<IEnumerable<ArtistSummary>>.Fail("Not authenticated. Please log in with Spotify."));
+        }
+
+        var spotifyClient = await _spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+
+        // Fetch all followed artists (cursor-paginated)
+        var followedIds = new HashSet<string>();
+        string? after = null;
+        while (true)
+        {
+            var followedRequest = new FollowOfCurrentUserRequest(FollowOfCurrentUserRequest.Type.Artist) { Limit = 50 };
+            if (after != null) followedRequest.After = after;
+            var response = await spotifyClient.Follow.OfCurrentUser(followedRequest);
+            var page = response.Artists;
+            foreach (var artist in page.Items!)
+            {
+                followedIds.Add(artist.Id);
+            }
+            if (page.Cursors?.After == null) break;
+            after = page.Cursors.After;
+        }
+
+        var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+
+        var artists = allTracks
+            .SelectMany(st => st.Track.Artists.Select(a => new { a.Id, a.Name, TrackId = st.Track.Id }))
+            .Where(x => followedIds.Contains(x.Id))
+            .GroupBy(x => x.Id)
+            .Select(g => new ArtistSummary
+            {
+                Id = g.Key,
+                Name = g.First().Name,
+                Count = g.Select(x => x.TrackId).Distinct().Count()
+            })
+            .OrderByDescending(a => a.Count)
+            .ToList();
+
+        return Ok(ApiResponse<IEnumerable<ArtistSummary>>.Ok(artists));
     }
 
     /// <summary>
