@@ -33,7 +33,7 @@ public class TrackCategorizationService : ITrackCategorizationService
     {
         // Filter tracks by artist
         var artistTracks = tracks
-            .Where(track => track.Artists.Any(artist => artist.Id == artistId))
+            .Where(track => track.Artists.FirstOrDefault()?.Id == artistId)
             .ToList();
 
         // Define artist-specific popularity ranges
