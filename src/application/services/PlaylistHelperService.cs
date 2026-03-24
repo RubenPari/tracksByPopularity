@@ -55,35 +55,20 @@ public class PlaylistHelperService : IPlaylistHelper
             }
         }
 
-        // If all three playlists exist, return them
-        if (artistPlaylistsId.Count == 3)
+        // Create only the missing playlists
+        string[] categories = ["less", "medium", "more"];
+        foreach (var category in categories)
         {
-            return artistPlaylistsId;
+            if (!artistPlaylistsId.ContainsKey(category))
+            {
+                artistPlaylistsId[category] = (
+                    await spotifyClient.Playlists.Create(
+                        userId,
+                        new PlaylistCreateRequest($"{artistName} {category}")
+                    )
+                ).Id!;
+            }
         }
-
-        // Create all three playlists if any are missing (ensures consistency)
-        artistPlaylistsId.Clear();
-
-        artistPlaylistsId["less"] = (
-            await spotifyClient.Playlists.Create(
-                userId,
-                new PlaylistCreateRequest($"{artistName} less")
-            )
-        ).Id!;
-
-        artistPlaylistsId["medium"] = (
-            await spotifyClient.Playlists.Create(
-                userId,
-                new PlaylistCreateRequest($"{artistName} medium")
-            )
-        ).Id!;
-
-        artistPlaylistsId["more"] = (
-            await spotifyClient.Playlists.Create(
-                userId,
-                new PlaylistCreateRequest($"{artistName} more")
-            )
-        ).Id!;
 
         return artistPlaylistsId;
     }
