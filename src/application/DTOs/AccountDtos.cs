@@ -131,3 +131,78 @@ public class SpotifyLinkStatusDto
     public bool IsLinked { get; init; }
     public string? SpotifyUserId { get; init; }
 }
+
+// ============================================================================
+#region Authentication Result DTOs
+// ============================================================================
+
+/// <summary>
+/// Represents the result of a registration operation.
+/// </summary>
+public class AuthResult
+{
+    public bool Success { get; init; }
+    public string? Error { get; init; }
+    public string? Token { get; init; }
+    public User? User { get; init; }
+}
+
+/// <summary>
+/// Represents the result of a login operation.
+/// </summary>
+public class LoginResult
+{
+    public bool Success { get; init; }
+    public string? Error { get; init; }
+    public string? Token { get; init; }
+    public User? User { get; init; }
+    public bool EmailNotVerified { get; init; }
+}
+
+/// <summary>
+/// Represents the result of an email verification operation.
+/// </summary>
+public class VerifyResult
+{
+    public bool Success { get; init; }
+    public string? Error { get; init; }
+}
+
+/// <summary>
+/// Represents the result of a forgot password operation.
+/// </summary>
+public class ForgotPasswordResult
+{
+    public bool Success { get; init; }
+    public string? Error { get; init; }
+}
+
+/// <summary>
+/// Represents the result of a password reset operation.
+/// </summary>
+public class ResetPasswordResult
+{
+    public bool Success { get; init; }
+    public string? Error { get; init; }
+}
+
+/// <summary>
+/// Represents the result of a change password operation.
+/// </summary>
+public class ChangePasswordResult
+{
+    public bool Success { get; init; }
+    public string? Error { get; init; }
+}
+
+/// <summary>
+/// Represents the result of a Spotify linking operation.
+/// </summary>
+public class LinkSpotifyResult
+{
+    public bool Success { get; init; }
+    public string? Error { get; init; }
+    public string? Token { get; init; }
+}
+
+#endregion
