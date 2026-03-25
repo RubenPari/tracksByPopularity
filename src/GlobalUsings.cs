@@ -11,4 +11,3 @@ global using tracksByPopularity.Infrastructure.Helpers;
 global using tracksByPopularity.Infrastructure.Services;
 global using tracksByPopularity.Application.Mapping;
 global using tracksByPopularity.Application.Validators;
-global using tracksByPopularity.Application.Exceptions;

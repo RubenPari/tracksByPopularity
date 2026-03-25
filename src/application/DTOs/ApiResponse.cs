@@ -16,11 +16,6 @@ public class ApiResponse<T>
     {
         return new ApiResponse<T> { Success = true, Data = data, Message = message };
     }
-
-    public static ApiResponse<T> Fail(string error, object? errors = null)
-    {
-        return new ApiResponse<T> { Success = false, Error = error, Errors = errors };
-    }
 }
 
 /// <summary>
@@ -33,7 +28,7 @@ public class ApiResponse : ApiResponse<object>
         return new ApiResponse { Success = true, Message = message };
     }
 
-    public static new ApiResponse Fail(string error, object? errors = null)
+    public static ApiResponse Fail(string error, object? errors = null)
     {
         return new ApiResponse { Success = false, Error = error, Errors = errors };
     }
