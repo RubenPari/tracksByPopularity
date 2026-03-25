@@ -7,6 +7,6 @@ namespace tracksByPopularity.Application.Mapping;
 [Mapper]
 public partial class PlaylistMapper
 {
-    [MapProperty("Tracks.Total", "TotalTracks")]
+    [MapProperty(nameof(FullPlaylist.Tracks) + "." + nameof(Paging<FullTrack>.Total), nameof(PlaylistInfo.TotalTracks))]
     public partial PlaylistInfo MapToPlaylistInfo(FullPlaylist playlist);
 }
