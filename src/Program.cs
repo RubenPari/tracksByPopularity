@@ -15,7 +15,8 @@ using tracksByPopularity.Infrastructure.Logging;
 using tracksByPopularity.Infrastructure.Services;
 using tracksByPopularity.Infrastructure.Data;
 using tracksByPopularity.Presentation.Middlewares;
-using tracksByPopularity.Application.Services;
+using Microsoft.Extensions.Options;
+using tracksByPopularity.Infrastructure.Configuration;
 using tracksByPopularity.Infrastructure.Helpers;
 using tracksByPopularity.Application.Validators;
 using tracksByPopularity.Infrastructure.Configuration;
@@ -100,17 +101,15 @@ builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<AddTracksByArtistRequestValidator>();
 
 // Service that set Redis cache
-builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-    var redisHost = Constants.RedisHost;
-    var redisPort = Constants.RedisPort;
-    var useSsl = Environment.GetEnvironmentVariable("REDIS_USE_SSL")?.ToLower() == "true";
+    var redisSettings = sp.GetRequiredService<IOptions<RedisSettings>>().Value;
 
     var configuration = new ConfigurationOptions
     {
-        EndPoints = { redisHost + ":" + redisPort },
-        Password = Constants.RedisPassword,
-        Ssl = useSsl,
+        EndPoints = { $"{redisSettings.Host}:{redisSettings.Port}" },
+        Password = redisSettings.Password,
+        Ssl = redisSettings.UseSsl,
         AllowAdmin = true,
         AbortOnConnectFail = false,
         ConnectTimeout = 20000, // 20 seconds
@@ -140,6 +139,13 @@ builder.Services.AddScoped<IPlaylistBackupService, PlaylistBackupService>();
 builder.Services.AddHttpClient();
 
 var app = builder.Build();
+
+// Apply pending EF Core migrations automatically
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 // Add global exception handling middleware
 app.UseGlobalExceptionHandling();
