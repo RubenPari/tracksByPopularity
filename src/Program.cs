@@ -1,14 +1,19 @@
 using dotenv.net;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using StackExchange.Redis;
+using System.Text;
 using tracksByPopularity.Application.Services;
 using tracksByPopularity.Application.Interfaces;
 using tracksByPopularity.Infrastructure.Background;
 using tracksByPopularity.Domain.Services;
 using tracksByPopularity.Infrastructure.Logging;
 using tracksByPopularity.Infrastructure.Services;
+using tracksByPopularity.Infrastructure.Data;
 using tracksByPopularity.Presentation.Middlewares;
 using tracksByPopularity.Application.Services;
 using tracksByPopularity.Infrastructure.Helpers;
@@ -37,6 +42,51 @@ builder.Host.UseSerilog((context, services, configuration) =>
 
 // Configure application settings
 builder.Services.AddApplicationConfiguration(builder.Configuration);
+
+// Configure JWT Authentication
+var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? "default-secret-key-change-in-production-min-32-chars-long";
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+        ValidateIssuer = true,
+        ValidIssuer = "tracksByPopularity",
+        ValidateAudience = true,
+        ValidAudience = "tracksByPopularity",
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Cookies["access_token"];
+            if (!string.IsNullOrEmpty(accessToken))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
+
+// Configure MySQL Database
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING") 
+    ?? "Server=localhost;Port=3306;Database=tracksbypopularity;User=root;Password=password;";
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+
+// Register services
+builder.Services.AddSingleton<IJwtService, JwtService>();
+builder.Services.AddScoped<IEmailService, MailtrapEmailService>();
+builder.Services.AddScoped<IAccountAuthService, AccountAuthService>();
 
 // Add controllers with FluentValidation and JSON options
 builder.Services.AddControllers()
@@ -93,6 +143,10 @@ var app = builder.Build();
 
 // Add global exception handling middleware
 app.UseGlobalExceptionHandling();
+
+// Add authentication and authorization
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Map health check endpoint before other middlewares to avoid interference
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
