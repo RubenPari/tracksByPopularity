@@ -3,7 +3,7 @@ using SpotifyAPI.Web;
 using tracksByPopularity.Application.Services;
 using tracksByPopularity.Domain.ValueObjects;
 using tracksByPopularity.Application.DTOs;
-using tracksByPopularity.Infrastructure.Services;
+using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
 
@@ -19,25 +19,18 @@ public class TrackController : ControllerBase
     private readonly ICacheService _cacheService;
     private readonly ITrackOrganizationService _trackOrganizationService;
     private readonly IArtistTrackOrganizationService _artistTrackOrganizationService;
-    private readonly SpotifyAuthService _spotifyAuthService;
     private readonly ILogger<TrackController> _logger;
-    private const string UserIdCookieName = "spotify_user_id";
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TrackController"/> class.
-    /// </summary>
     public TrackController(
         ICacheService cacheService,
         ITrackOrganizationService trackOrganizationService,
         IArtistTrackOrganizationService artistTrackOrganizationService,
-        SpotifyAuthService spotifyAuthService,
         ILogger<TrackController> logger
     )
     {
         _cacheService = cacheService;
         _trackOrganizationService = trackOrganizationService;
         _artistTrackOrganizationService = artistTrackOrganizationService;
-        _spotifyAuthService = spotifyAuthService;
         _logger = logger;
     }
 
@@ -46,14 +39,9 @@ public class TrackController : ControllerBase
     /// Available ranges: "less" (0-20), "less-medium" (21-40), "medium" (41-60), "more-medium" (41-80), "more" (81-100).
     /// </summary>
     [HttpPost("popularity/{range}")]
-    public async Task<ActionResult<ApiResponse>> AddTracksByPopularity(string range, [FromBody] AddTracksByPopularityRequest request)
+    [SpotifyAuth]
+    public async Task<ActionResult<ApiResponse>> AddTracksByPopularity(string range)
     {
-        var userId = Request.Cookies[UserIdCookieName];
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized(ApiResponse.Fail("Not authenticated. Please log in with Spotify."));
-        }
-
         var popularityRange = range.ToLowerInvariant() switch
         {
             "less" => PopularityRange.Less,
@@ -70,13 +58,12 @@ public class TrackController : ControllerBase
             return BadRequest(ApiResponse.Fail($"Invalid popularity range: {range}. Valid values are: less, less-medium, medium, more-medium, more."));
         }
 
-        var spotifyClient = await _spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+        var spotifyClient = HttpContext.GetSpotifyClient();
         var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
         var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
             allTracks,
             popularityRange,
-            request.PlaylistId,
             spotifyClient
         );
 
@@ -90,15 +77,10 @@ public class TrackController : ControllerBase
     /// Returns a list of unique artists from the user's saved tracks, sorted by track count.
     /// </summary>
     [HttpGet("artists")]
+    [SpotifyAuth]
     public async Task<ActionResult<ApiResponse<IEnumerable<ArtistSummary>>>> GetLibraryArtists()
     {
-        var userId = Request.Cookies[UserIdCookieName];
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized(ApiResponse<IEnumerable<ArtistSummary>>.Fail("Not authenticated. Please log in with Spotify."));
-        }
-
-        var spotifyClient = await _spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+        var spotifyClient = HttpContext.GetSpotifyClient();
 
         // Fetch all followed artists (cursor-paginated)
         var followedIds = new HashSet<string>();
@@ -139,28 +121,21 @@ public class TrackController : ControllerBase
     /// Organizes tracks from a specific artist into three playlists based on popularity.
     /// </summary>
     [HttpPost("artist")]
+    [SpotifyAuth]
     public async Task<ActionResult<ApiResponse>> Artist([FromQuery] AddTracksByArtistRequest request)
     {
-        var userId = Request.Cookies[UserIdCookieName];
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized(ApiResponse.Fail("Not authenticated. Please log in with Spotify."));
-        }
-
-        var artistId = request.ArtistId;
-
-        var spotifyClient = await _spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+        var spotifyClient = HttpContext.GetSpotifyClient();
         var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
         var added = await _artistTrackOrganizationService.OrganizeArtistTracksAsync(
             allTracks,
-            artistId,
+            request.ArtistId,
             spotifyClient
         );
 
         if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
 
-        _logger.LogWarning("Failed to organize tracks for artist: {ArtistId}", artistId);
+        _logger.LogWarning("Failed to organize tracks for artist: {ArtistId}", request.ArtistId);
         return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
     }
 }

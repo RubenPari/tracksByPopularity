@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using tracksByPopularity.Application.Services;
 using tracksByPopularity.Application.DTOs;
-using tracksByPopularity.Infrastructure.Services;
+using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
 
@@ -15,42 +15,27 @@ namespace tracksByPopularity.Presentation.Controllers;
 public class PlaylistController : ControllerBase
 {
     private readonly IPlaylistService _playlistService;
-    private readonly SpotifyAuthService _spotifyAuthService;
     private readonly ILogger<PlaylistController> _logger;
-    private const string UserIdCookieName = "spotify_user_id";
 
     public PlaylistController(
         IPlaylistService playlistService,
-        SpotifyAuthService spotifyAuthService,
         ILogger<PlaylistController> logger
     )
     {
         _playlistService = playlistService;
-        _spotifyAuthService = spotifyAuthService;
         _logger = logger;
     }
 
     /// <summary>
     /// Retrieves all playlists owned by the current user.
     /// </summary>
-    /// <returns>
-    /// An <see cref="IActionResult"/> containing:
-    /// - 200 OK with a list of user playlists
-    /// - 401 Unauthorized if authentication failed
-    /// </returns>
     [HttpGet("all")]
+    [SpotifyAuth]
     public async Task<ActionResult<ApiResponse<IList<PlaylistInfo>>>> GetAllPlaylists()
     {
-        var userId = Request.Cookies[UserIdCookieName];
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized(ApiResponse<IList<PlaylistInfo>>.Fail("Not authenticated. Please log in with Spotify."));
-        }
-
-        var spotifyClient = await _spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+        var spotifyClient = HttpContext.GetSpotifyClient();
         var playlists = await _playlistService.GetAllUserPlaylistsAsync(spotifyClient);
 
         return Ok(ApiResponse<IList<PlaylistInfo>>.Ok(playlists));
     }
-
 }
