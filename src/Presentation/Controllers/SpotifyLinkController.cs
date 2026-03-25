@@ -1,11 +1,14 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SpotifyAPI.Web;
 using tracksByPopularity.Application.DTOs;
 using tracksByPopularity.Application.Services;
+using tracksByPopularity.Infrastructure.Configuration;
 using tracksByPopularity.Infrastructure.Helpers;
 using tracksByPopularity.Infrastructure.Services;
+using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
 
@@ -17,21 +20,23 @@ public class SpotifyLinkController : ControllerBase
     private readonly IAccountAuthService _accountAuthService;
     private readonly IJwtService _jwtService;
     private readonly ILogger<SpotifyLinkController> _logger;
-    private const string UserIdCookieName = "spotify_user_id";
-
-    private static readonly string FrontendOrigin =
-        Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ?? "http://127.0.0.1:5173";
+    private readonly AppSettings _appSettings;
+    private readonly SpotifySettings _spotifySettings;
 
     public SpotifyLinkController(
         SpotifyAuthService spotifyAuthService,
         IAccountAuthService accountAuthService,
         IJwtService jwtService,
-        ILogger<SpotifyLinkController> logger)
+        ILogger<SpotifyLinkController> logger,
+        IOptions<AppSettings> appSettings,
+        IOptions<SpotifySettings> spotifySettings)
     {
         _spotifyAuthService = spotifyAuthService;
         _accountAuthService = accountAuthService;
         _jwtService = jwtService;
         _logger = logger;
+        _appSettings = appSettings.Value;
+        _spotifySettings = spotifySettings.Value;
     }
 
     [HttpGet("link-url")]
@@ -39,8 +44,8 @@ public class SpotifyLinkController : ControllerBase
     public ActionResult<ApiResponse> GetLinkUrl()
     {
         var loginRequest = new LoginRequest(
-            new Uri($"{Constants.RedirectUri}/api/spotify/callback"),
-            Constants.ClientId,
+            new Uri($"{_spotifySettings.RedirectUri}/api/spotify/callback"),
+            _spotifySettings.ClientId,
             LoginRequest.ResponseType.Code
         )
         {
@@ -59,29 +64,29 @@ public class SpotifyLinkController : ControllerBase
         if (!string.IsNullOrEmpty(error))
         {
             _logger.LogWarning("Spotify auth denied during link: {Error}", error);
-            return Redirect($"{FrontendOrigin}/settings?error=auth_denied");
+            return Redirect($"{_appSettings.FrontendOrigin}/settings?error=auth_denied");
         }
 
         if (string.IsNullOrEmpty(code))
         {
             _logger.LogWarning("No code received in link callback");
-            return Redirect($"{FrontendOrigin}/settings?error=no_code");
+            return Redirect($"{_appSettings.FrontendOrigin}/settings?error=no_code");
         }
 
         if (state != "link_spotify")
         {
             _logger.LogWarning("Invalid state in link callback");
-            return Redirect($"{FrontendOrigin}/settings?error=invalid_state");
+            return Redirect($"{_appSettings.FrontendOrigin}/settings?error=invalid_state");
         }
 
         try
         {
             var tokenResponse = await new OAuthClient().RequestToken(
                 new AuthorizationCodeTokenRequest(
-                    Constants.ClientId,
-                    Constants.ClientSecret,
+                    _spotifySettings.ClientId,
+                    _spotifySettings.ClientSecret,
                     code,
-                    new Uri($"{Constants.RedirectUri}/api/spotify/callback")
+                    new Uri($"{_spotifySettings.RedirectUri}/api/spotify/callback")
                 )
             );
 
@@ -92,7 +97,7 @@ public class SpotifyLinkController : ControllerBase
             var userIdClaim = User.FindFirst("userId") ?? User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
             {
-                return Redirect($"{FrontendOrigin}/settings?error=not_authenticated");
+                return Redirect($"{_appSettings.FrontendOrigin}/settings?error=not_authenticated");
             }
 
             var linkResult = await _accountAuthService.LinkSpotifyAsync(
@@ -105,12 +110,12 @@ public class SpotifyLinkController : ControllerBase
 
             if (!linkResult.Success)
             {
-                return Redirect($"{FrontendOrigin}/settings?error={Uri.EscapeDataString(linkResult.Error!)}");
+                return Redirect($"{_appSettings.FrontendOrigin}/settings?error={Uri.EscapeDataString(linkResult.Error!)}");
             }
 
             await _spotifyAuthService.StoreTokenAsync(tokenResponse, spotifyUserId);
 
-            Response.Cookies.Append(UserIdCookieName, spotifyUserId, new CookieOptions
+            Response.Cookies.Append(SpotifyAuthFilter.UserIdCookieName, spotifyUserId, new CookieOptions
             {
                 HttpOnly = true,
                 SameSite = SameSiteMode.Lax,
@@ -119,12 +124,12 @@ public class SpotifyLinkController : ControllerBase
                 Path = "/"
             });
 
-            return Redirect($"{FrontendOrigin}/settings?success=spotify_linked");
+            return Redirect($"{_appSettings.FrontendOrigin}/settings?success=spotify_linked");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during Spotify link callback");
-            return Redirect($"{FrontendOrigin}/settings?error=link_failed");
+            return Redirect($"{_appSettings.FrontendOrigin}/settings?error=link_failed");
         }
     }
 

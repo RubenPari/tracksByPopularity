@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using tracksByPopularity.Application.DTOs;
 using tracksByPopularity.Application.Interfaces;
-using tracksByPopularity.Infrastructure.Services;
+using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
 
@@ -10,24 +10,17 @@ namespace tracksByPopularity.Presentation.Controllers;
 public class BackupController : ControllerBase
 {
     private readonly IPlaylistBackupService _backupService;
-    private readonly SpotifyAuthService _spotifyAuthService;
-    private const string UserIdCookieName = "spotify_user_id";
 
-    public BackupController(IPlaylistBackupService backupService, SpotifyAuthService spotifyAuthService)
+    public BackupController(IPlaylistBackupService backupService)
     {
         _backupService = backupService;
-        _spotifyAuthService = spotifyAuthService;
     }
 
     [HttpGet("list")]
+    [SpotifyAuth]
     public async Task<ActionResult<ApiResponse<IEnumerable<PlaylistSnapshot>>>> GetSnapshots()
     {
-        var userId = Request.Cookies[UserIdCookieName];
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized(ApiResponse<IEnumerable<PlaylistSnapshot>>.Fail("Not authenticated."));
-        }
-
+        var userId = HttpContext.GetSpotifyUserId();
         var snapshots = await _backupService.GetSnapshotsAsync(userId);
 
         // Return without TrackUris to save bandwidth
@@ -46,15 +39,11 @@ public class BackupController : ControllerBase
     }
 
     [HttpPost("restore/{snapshotId}")]
+    [SpotifyAuth]
     public async Task<ActionResult<ApiResponse>> RestoreSnapshot(string snapshotId)
     {
-        var userId = Request.Cookies[UserIdCookieName];
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized(ApiResponse.Fail("Not authenticated."));
-        }
-
-        var spotifyClient = await _spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+        var userId = HttpContext.GetSpotifyUserId();
+        var spotifyClient = HttpContext.GetSpotifyClient();
         var restored = await _backupService.RestoreSnapshotAsync(snapshotId, userId, spotifyClient);
 
         if (restored)

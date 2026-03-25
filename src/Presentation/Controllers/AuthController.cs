@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SpotifyAPI.Web;
 using tracksByPopularity.Application.DTOs;
+using tracksByPopularity.Infrastructure.Configuration;
 using tracksByPopularity.Infrastructure.Helpers;
 using tracksByPopularity.Infrastructure.Services;
+using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
 
@@ -16,23 +19,20 @@ public class AuthController : ControllerBase
 {
     private readonly SpotifyAuthService _spotifyAuthService;
     private readonly ILogger<AuthController> _logger;
-    private const string UserIdCookieName = "spotify_user_id";
-
-    /// <summary>
-    /// The frontend origin URL. In Docker, the frontend runs on port 80 via nginx,
-    /// while the backend is on port 8080. The OAuth callback hits the backend directly,
-    /// so redirects after auth must go to the frontend origin.
-    /// </summary>
-    private static readonly string FrontendOrigin =
-        Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ?? "http://127.0.0.1";
+    private readonly AppSettings _appSettings;
+    private readonly SpotifySettings _spotifySettings;
 
     public AuthController(
         SpotifyAuthService spotifyAuthService,
-        ILogger<AuthController> logger
+        ILogger<AuthController> logger,
+        IOptions<AppSettings> appSettings,
+        IOptions<SpotifySettings> spotifySettings
     )
     {
         _spotifyAuthService = spotifyAuthService;
         _logger = logger;
+        _appSettings = appSettings.Value;
+        _spotifySettings = spotifySettings.Value;
     }
 
     /// <summary>
@@ -42,8 +42,8 @@ public class AuthController : ControllerBase
     public ActionResult<ApiResponse<object>> Login()
     {
         var loginRequest = new LoginRequest(
-            new Uri(Constants.RedirectUri),
-            Constants.ClientId,
+            new Uri(_spotifySettings.RedirectUri),
+            _spotifySettings.ClientId,
             LoginRequest.ResponseType.Code
         )
         {
@@ -66,13 +66,13 @@ public class AuthController : ControllerBase
         if (!string.IsNullOrEmpty(error))
         {
             _logger.LogWarning("Spotify auth denied: {Error}", error);
-            return Redirect($"{FrontendOrigin}/?error=auth_denied");
+            return Redirect($"{_appSettings.FrontendOrigin}/?error=auth_denied");
         }
 
         if (string.IsNullOrEmpty(code))
         {
             _logger.LogWarning("No code received in callback");
-            return Redirect($"{FrontendOrigin}/?error=no_code");
+            return Redirect($"{_appSettings.FrontendOrigin}/?error=no_code");
         }
 
         try
@@ -80,10 +80,10 @@ public class AuthController : ControllerBase
             // Exchange code for tokens
             var tokenResponse = await new OAuthClient().RequestToken(
                 new AuthorizationCodeTokenRequest(
-                    Constants.ClientId,
-                    Constants.ClientSecret,
+                    _spotifySettings.ClientId,
+                    _spotifySettings.ClientSecret,
                     code,
-                    new Uri(Constants.RedirectUri)
+                    new Uri(_spotifySettings.RedirectUri)
                 )
             );
 
@@ -96,7 +96,7 @@ public class AuthController : ControllerBase
             await _spotifyAuthService.StoreTokenAsync(tokenResponse, userId);
 
             // Set user ID cookie so subsequent requests know which user this is
-            Response.Cookies.Append(UserIdCookieName, userId, new CookieOptions
+            Response.Cookies.Append(SpotifyAuthFilter.UserIdCookieName, userId, new CookieOptions
             {
                 HttpOnly = true,
                 SameSite = SameSiteMode.Lax,
@@ -106,12 +106,12 @@ public class AuthController : ControllerBase
             });
 
             _logger.LogInformation("Successfully authenticated user: {UserId}", userId);
-            return Redirect(FrontendOrigin);
+            return Redirect(_appSettings.FrontendOrigin);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during OAuth callback");
-            return Redirect($"{FrontendOrigin}/?error=auth_failed");
+            return Redirect($"{_appSettings.FrontendOrigin}/?error=auth_failed");
         }
     }
 
@@ -121,7 +121,7 @@ public class AuthController : ControllerBase
     [HttpGet("is-auth")]
     public async Task<ActionResult<ApiResponse<object>>> IsAuthenticated()
     {
-        var userId = Request.Cookies[UserIdCookieName];
+        var userId = Request.Cookies[SpotifyAuthFilter.UserIdCookieName];
 
         if (string.IsNullOrEmpty(userId))
         {
@@ -137,7 +137,7 @@ public class AuthController : ControllerBase
         catch (UnauthorizedAccessException)
         {
             // Token expired or not found — clear cookie
-            Response.Cookies.Delete(UserIdCookieName);
+            Response.Cookies.Delete(SpotifyAuthFilter.UserIdCookieName);
             return Ok(ApiResponse<object>.Ok(new { authenticated = false }));
         }
     }
@@ -148,14 +148,14 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<ActionResult<ApiResponse>> Logout()
     {
-        var userId = Request.Cookies[UserIdCookieName];
+        var userId = Request.Cookies[SpotifyAuthFilter.UserIdCookieName];
 
         if (!string.IsNullOrEmpty(userId))
         {
             await _spotifyAuthService.RemoveTokenAsync(userId);
         }
 
-        Response.Cookies.Delete(UserIdCookieName);
+        Response.Cookies.Delete(SpotifyAuthFilter.UserIdCookieName);
         _logger.LogInformation("User logged out: {UserId}", userId ?? "unknown");
 
         return Ok(ApiResponse.Ok("Logged out successfully"));
