@@ -1,19 +1,22 @@
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SpotifyAPI.Web;
 using StackExchange.Redis;
-using tracksByPopularity.Infrastructure.Helpers;
+using tracksByPopularity.Infrastructure.Configuration;
 
 namespace tracksByPopularity.Infrastructure.Services;
 
-public class SpotifyAuthService(IConnectionMultiplexer redis)
+public class SpotifyAuthService(IConnectionMultiplexer redis, IOptions<SpotifySettings> spotifySettings)
 {
-    public static SpotifyClient GetSpotifyClientAsync()
+    private readonly SpotifySettings _spotifySettings = spotifySettings.Value;
+
+    public SpotifyClient GetSpotifyClientAsync()
     {
         // Use client credentials flow for public API access
         var config = SpotifyClientConfig
             .CreateDefault()
             .WithAuthenticator(
-                new ClientCredentialsAuthenticator(Constants.ClientId, Constants.ClientSecret)
+                new ClientCredentialsAuthenticator(_spotifySettings.ClientId, _spotifySettings.ClientSecret)
             );
 
         return new SpotifyClient(config);
@@ -38,7 +41,7 @@ public class SpotifyAuthService(IConnectionMultiplexer redis)
             token = await RefreshTokenAsync(token.RefreshToken, userId);
         }
 
-        return new SpotifyClient(Constants.Config.WithToken(token.AccessToken!));
+        return new SpotifyClient(SpotifyClientConfig.CreateDefault().WithToken(token.AccessToken!));
     }
 
     public async Task StoreTokenAsync(AuthorizationCodeTokenResponse response, string userId)
@@ -73,8 +76,8 @@ public class SpotifyAuthService(IConnectionMultiplexer redis)
     {
         var newToken = await new OAuthClient().RequestToken(
             new AuthorizationCodeRefreshRequest(
-                Constants.ClientId,
-                Constants.ClientSecret,
+                _spotifySettings.ClientId,
+                _spotifySettings.ClientSecret,
                 refreshToken!
             )
         );
