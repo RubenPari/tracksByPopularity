@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using SpotifyAPI.Web;
 using tracksByPopularity.Application.DTOs;
+using tracksByPopularity.Domain.Exceptions;
 
 namespace tracksByPopularity.Presentation.Middlewares;
 
@@ -49,6 +50,11 @@ public class ExceptionHandlingMiddleware
                 statusCode = HttpStatusCode.BadGateway;
                 message = $"Spotify API error: {apiEx.Message}";
                 _logger.LogError(apiEx, "Spotify API error");
+                break;
+            case DomainException domainEx:
+                statusCode = HttpStatusCode.BadRequest;
+                message = domainEx.Message;
+                _logger.LogWarning(domainEx, "Domain error");
                 break;
             case ArgumentException argEx:
                 statusCode = HttpStatusCode.BadRequest;
