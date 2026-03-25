@@ -1,5 +1,4 @@
 using SpotifyAPI.Web;
-using tracksByPopularity.Domain.Entities;
 
 namespace tracksByPopularity.Application.Mapping;
 
@@ -14,7 +13,7 @@ public static class SpotifyTrackMapper
     /// </summary>
     /// <param name="savedTrack">The Spotify SavedTrack to convert.</param>
     /// <returns>A domain Track entity.</returns>
-    public static Track ToDomain(SavedTrack savedTrack)
+    private static Track ToDomain(SavedTrack savedTrack)
     {
         return new Track
         {
@@ -38,16 +37,6 @@ public static class SpotifyTrackMapper
     public static IEnumerable<Track> ToDomain(IEnumerable<SavedTrack> savedTracks)
     {
         return savedTracks.Select(ToDomain);
-    }
-
-    /// <summary>
-    /// Extracts URIs from a collection of domain Track entities.
-    /// </summary>
-    /// <param name="tracks">The collection of domain Track entities.</param>
-    /// <returns>A list of track URIs.</returns>
-    public static List<string> ExtractUris(IEnumerable<Track> tracks)
-    {
-        return tracks.Select(track => track.Uri).ToList();
     }
 }
 

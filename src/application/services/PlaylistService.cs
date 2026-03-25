@@ -1,6 +1,4 @@
 using SpotifyAPI.Web;
-using tracksByPopularity.Domain.Enums;
-using tracksByPopularity.Application.Mapping;
 
 namespace tracksByPopularity.Application.Services;
 
@@ -10,17 +8,11 @@ namespace tracksByPopularity.Application.Services;
 /// </summary>
 public class PlaylistService : IPlaylistService
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-
-    public PlaylistService(IHttpClientFactory httpClientFactory)
-    {
-        _httpClientFactory = httpClientFactory;
-    }
-
     /// <summary>
     /// Removes all tracks from a specified playlist by calling an external service endpoint.
     /// </summary>
     /// <param name="playlistId">The unique identifier of the playlist to clear.</param>
+    /// <param name="spotifyClient">The authenticated Spotify client instance.</param>
     /// <returns>
     /// A <see cref="RemoveAllTracksResponse"/> indicating the operation result.
     /// </returns>
@@ -61,5 +53,4 @@ public class PlaylistService : IPlaylistService
         var mapper = new PlaylistMapper();
         return allPlaylists.Select(p => mapper.MapToPlaylistInfo(p)).ToList();
     }
-
 }

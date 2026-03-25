@@ -7,26 +7,18 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using StackExchange.Redis;
 using System.Text;
-using tracksByPopularity.Application.Services;
-using tracksByPopularity.Application.Interfaces;
 using tracksByPopularity.Infrastructure.Background;
-using tracksByPopularity.Domain.Services;
 using tracksByPopularity.Infrastructure.Logging;
-using tracksByPopularity.Infrastructure.Services;
 using tracksByPopularity.Infrastructure.Data;
 using tracksByPopularity.Presentation.Middlewares;
 using Microsoft.Extensions.Options;
-using tracksByPopularity.Infrastructure.Configuration;
-using tracksByPopularity.Infrastructure.Helpers;
-using tracksByPopularity.Application.Validators;
-using tracksByPopularity.Infrastructure.Configuration;
 
 DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog for logging
-builder.Host.UseSerilog((context, services, configuration) =>
+builder.Host.UseSerilog((context, services, _) =>
 {
     SerilogConfiguration.CreateLoggerConfiguration(context.Configuration)
         .ReadFrom.Services(services)

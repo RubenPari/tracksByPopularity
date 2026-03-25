@@ -1,8 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using SpotifyAPI.Web;
-using tracksByPopularity.Application.Services;
-using tracksByPopularity.Domain.ValueObjects;
-using tracksByPopularity.Application.DTOs;
 using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
@@ -13,27 +10,13 @@ namespace tracksByPopularity.Presentation.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/track")]
-[Route("track")] // Legacy route for backward compatibility
-public class TrackController : ControllerBase
+public class TrackController(
+    ICacheService cacheService,
+    ITrackOrganizationService trackOrganizationService,
+    IArtistTrackOrganizationService artistTrackOrganizationService,
+    ILogger<TrackController> logger)
+    : ControllerBase
 {
-    private readonly ICacheService _cacheService;
-    private readonly ITrackOrganizationService _trackOrganizationService;
-    private readonly IArtistTrackOrganizationService _artistTrackOrganizationService;
-    private readonly ILogger<TrackController> _logger;
-
-    public TrackController(
-        ICacheService cacheService,
-        ITrackOrganizationService trackOrganizationService,
-        IArtistTrackOrganizationService artistTrackOrganizationService,
-        ILogger<TrackController> logger
-    )
-    {
-        _cacheService = cacheService;
-        _trackOrganizationService = trackOrganizationService;
-        _artistTrackOrganizationService = artistTrackOrganizationService;
-        _logger = logger;
-    }
-
     /// <summary>
     /// Adds tracks to the designated playlist based on the specified popularity range.
     /// Available ranges: "less" (0-20), "less-medium" (21-40), "medium" (41-60), "more-medium" (41-80), "more" (81-100).
@@ -54,14 +37,14 @@ public class TrackController : ControllerBase
 
         if (popularityRange == null)
         {
-            _logger.LogWarning("Invalid popularity range requested: {Range}", range);
+            logger.LogWarning("Invalid popularity range requested: {Range}", range);
             return BadRequest(ApiResponse.Fail($"Invalid popularity range: {range}. Valid values are: less, less-medium, medium, more-medium, more."));
         }
 
         var spotifyClient = HttpContext.GetSpotifyClient();
-        var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+        var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-        var added = await _trackOrganizationService.OrganizeTracksByPopularityAsync(
+        var added = await trackOrganizationService.OrganizeTracksByPopularityAsync(
             allTracks,
             popularityRange,
             spotifyClient
@@ -69,7 +52,7 @@ public class TrackController : ControllerBase
 
         if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
 
-        _logger.LogWarning("Failed to add tracks to playlist for popularity range: {Range}", range);
+        logger.LogWarning("Failed to add tracks to playlist for popularity range: {Range}", range);
         return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
     }
 
@@ -87,7 +70,7 @@ public class TrackController : ControllerBase
         string? after = null;
         while (true)
         {
-            var followedRequest = new FollowOfCurrentUserRequest(FollowOfCurrentUserRequest.Type.Artist) { Limit = 50 };
+            var followedRequest = new FollowOfCurrentUserRequest { Limit = 50 };
             if (after != null) followedRequest.After = after;
             var response = await spotifyClient.Follow.OfCurrentUser(followedRequest);
             var page = response.Artists;
@@ -99,7 +82,7 @@ public class TrackController : ControllerBase
             after = page.Cursors.After;
         }
 
-        var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+        var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
         var artists = allTracks
             .SelectMany(st => st.Track.Artists.Select(a => new { a.Id, a.Name, TrackId = st.Track.Id }))
@@ -125,9 +108,9 @@ public class TrackController : ControllerBase
     public async Task<ActionResult<ApiResponse>> Artist([FromQuery] AddTracksByArtistRequest request)
     {
         var spotifyClient = HttpContext.GetSpotifyClient();
-        var allTracks = await _cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+        var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
-        var added = await _artistTrackOrganizationService.OrganizeArtistTracksAsync(
+        var added = await artistTrackOrganizationService.OrganizeArtistTracksAsync(
             allTracks,
             request.ArtistId,
             spotifyClient
@@ -135,7 +118,7 @@ public class TrackController : ControllerBase
 
         if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
 
-        _logger.LogWarning("Failed to organize tracks for artist: {ArtistId}", request.ArtistId);
+        logger.LogWarning("Failed to organize tracks for artist: {ArtistId}", request.ArtistId);
         return BadRequest(ApiResponse.Fail("Failed to add tracks to playlist"));
     }
 }
