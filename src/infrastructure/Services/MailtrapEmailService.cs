@@ -53,7 +53,7 @@ public class MailtrapEmailService : IEmailService
         try
         {
             var response = await _httpClient.PostAsync(
-                $"https://mailtrap.io/api/accounts/1/inboxes/{_settings.InboxId}/messages",
+                "https://send.api.mailtrap.io/api/send",
                 content
             );
 

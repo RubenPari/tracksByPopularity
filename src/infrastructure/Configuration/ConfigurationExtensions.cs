@@ -18,6 +18,9 @@ public static class ConfigurationExtensions
         services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
         services.Configure<SpotifySettings>(configuration.GetSection("SpotifySettings"));
         services.Configure<RedisSettings>(configuration.GetSection("RedisSettings"));
+        services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+        services.Configure<MailtrapSettings>(configuration.GetSection("MailtrapSettings"));
+        services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
 
         // Also bind from environment variables as fallback
         services.Configure<AppSettings>(_ =>
@@ -37,6 +40,26 @@ public static class ConfigurationExtensions
             options.Host = Environment.GetEnvironmentVariable("REDIS_HOST") ?? options.Host;
             options.Port = Environment.GetEnvironmentVariable("REDIS_PORT") ?? options.Port;
             options.Password = Environment.GetEnvironmentVariable("REDIS_PASSWORD") ?? options.Password;
+        });
+
+        services.Configure<JwtSettings>(options =>
+        {
+            options.Secret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? options.Secret;
+            options.Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? options.Issuer;
+            options.Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? options.Audience;
+            if (int.TryParse(Environment.GetEnvironmentVariable("JWT_EXPIRY_DAYS"), out var expiryDays))
+                options.ExpiryDays = expiryDays;
+        });
+
+        services.Configure<MailtrapSettings>(options =>
+        {
+            options.ApiKey = Environment.GetEnvironmentVariable("MAILTRAP_API_KEY") ?? options.ApiKey;
+            options.ClientUrl = Environment.GetEnvironmentVariable("CLIENT_URL") ?? options.ClientUrl;
+        });
+
+        services.Configure<DatabaseSettings>(options =>
+        {
+            options.ConnectionString = Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING") ?? options.ConnectionString;
         });
     }
 }
