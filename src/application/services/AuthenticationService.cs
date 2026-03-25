@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Options;
+using tracksByPopularity.Infrastructure.Configuration;
+
 namespace tracksByPopularity.Application.Services;
 
 /// <summary>
@@ -8,20 +11,20 @@ public class AuthenticationService : IAuthenticationService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<AuthenticationService> _logger;
-    private const string ClearSongsAuthUrl = "http://localhost:3000/auth/is-auth";
+    private readonly string _clearSongsAuthUrl;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthenticationService"/> class.
     /// </summary>
-    /// <param name="httpClientFactory">Factory for creating HTTP clients.</param>
-    /// <param name="logger">Logger instance for recording authentication attempts.</param>
     public AuthenticationService(
         IHttpClientFactory httpClientFactory,
-        ILogger<AuthenticationService> logger
+        ILogger<AuthenticationService> logger,
+        IOptions<AppSettings> appSettings
     )
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _clearSongsAuthUrl = $"{appSettings.Value.ClearSongsBaseUrl}/auth/is-auth";
     }
 
     /// <summary>
@@ -39,7 +42,7 @@ public class AuthenticationService : IAuthenticationService
         try
         {
             var http = _httpClientFactory.CreateClient();
-            var response = await http.GetAsync(ClearSongsAuthUrl);
+            var response = await http.GetAsync(_clearSongsAuthUrl);
             
             var isAuthenticated = response.IsSuccessStatusCode;
             

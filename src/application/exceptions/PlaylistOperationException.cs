@@ -1,9 +1,11 @@
+using tracksByPopularity.Domain.Exceptions;
+
 namespace tracksByPopularity.Application.Exceptions;
 
 /// <summary>
 /// Exception thrown when a playlist operation fails.
 /// </summary>
-public class PlaylistOperationException : Exception
+public class PlaylistOperationException : DomainException
 {
     /// <summary>
     /// Gets the playlist ID associated with the failed operation.

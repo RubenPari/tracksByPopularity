@@ -1,4 +1,5 @@
 using SpotifyAPI.Web;
+using tracksByPopularity.Domain.ValueObjects;
 
 namespace tracksByPopularity.Application.Services;
 
@@ -71,6 +72,51 @@ public class PlaylistHelperService : IPlaylistHelper
         }
 
         return artistPlaylistsId;
+    }
+
+    /// <summary>
+    /// Retrieves or creates the system-managed playlist for a specific popularity range.
+    /// </summary>
+    public async Task<string> GetOrCreatePopularityPlaylistAsync(
+        SpotifyClient spotifyClient,
+        PopularityRange popularityRange
+    )
+    {
+        var playlistName = GetPopularityPlaylistName(popularityRange);
+        var userId = (await spotifyClient.UserProfile.Current()).Id;
+
+        // Search for existing playlist by name
+        var pagingUserPlaylists = await spotifyClient.Playlists.GetUsers(userId);
+        var userPlaylists = await spotifyClient.PaginateAll(pagingUserPlaylists);
+
+        foreach (var userPlaylist in userPlaylists)
+        {
+            if (userPlaylist.Name == playlistName)
+            {
+                return userPlaylist.Id!;
+            }
+        }
+
+        // Create the playlist if it doesn't exist
+        var created = await spotifyClient.Playlists.Create(
+            userId,
+            new PlaylistCreateRequest(playlistName)
+        );
+
+        return created.Id!;
+    }
+
+    private static string GetPopularityPlaylistName(PopularityRange range)
+    {
+        return range switch
+        {
+            _ when range == PopularityRange.Less => "Popularity: Less (0-20)",
+            _ when range == PopularityRange.LessMedium => "Popularity: Less Medium (21-40)",
+            _ when range == PopularityRange.Medium => "Popularity: Medium (41-60)",
+            _ when range == PopularityRange.MoreMedium => "Popularity: More Medium (61-80)",
+            _ when range == PopularityRange.More => "Popularity: More (81-100)",
+            _ => $"Popularity: {range.Min}-{range.Max}"
+        };
     }
 }
 

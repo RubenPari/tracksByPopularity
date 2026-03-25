@@ -1,4 +1,5 @@
 using SpotifyAPI.Web;
+using tracksByPopularity.Domain.ValueObjects;
 
 namespace tracksByPopularity.Application.Interfaces;
 
@@ -28,6 +29,18 @@ public interface IPlaylistHelper
     Task<Dictionary<string, string>> GetOrCreateArtistPlaylistsAsync(
         SpotifyClient spotifyClient,
         string artistId
+    );
+
+    /// <summary>
+    /// Retrieves or creates the system-managed playlist for a specific popularity range.
+    /// Playlists use predefined names like "Popularity: Less (0-20)".
+    /// </summary>
+    /// <param name="spotifyClient">The authenticated Spotify client instance.</param>
+    /// <param name="popularityRange">The popularity range to get the playlist for.</param>
+    /// <returns>The Spotify playlist ID for the given popularity range.</returns>
+    Task<string> GetOrCreatePopularityPlaylistAsync(
+        SpotifyClient spotifyClient,
+        PopularityRange popularityRange
     );
 }
 

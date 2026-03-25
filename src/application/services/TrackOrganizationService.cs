@@ -17,19 +17,15 @@ public class TrackOrganizationService : ITrackOrganizationService
     private readonly ITrackService _trackService;
     private readonly IPlaylistService _playlistService;
     private readonly IPlaylistBackupService _backupService;
+    private readonly IPlaylistHelper _playlistHelper;
     private readonly ILogger<TrackOrganizationService> _logger;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TrackOrganizationService"/> class.
-    /// </summary>
-    /// <param name="categorizationService">Domain service for categorizing tracks.</param>
-    /// <param name="trackService">Service for adding tracks to playlists.</param>
-    /// <param name="logger">Logger instance for recording operations.</param>
     public TrackOrganizationService(
         ITrackCategorizationService categorizationService,
         ITrackService trackService,
         IPlaylistService playlistService,
         IPlaylistBackupService backupService,
+        IPlaylistHelper playlistHelper,
         ILogger<TrackOrganizationService> logger
     )
     {
@@ -37,33 +33,19 @@ public class TrackOrganizationService : ITrackOrganizationService
         _trackService = trackService;
         _playlistService = playlistService;
         _backupService = backupService;
+        _playlistHelper = playlistHelper;
         _logger = logger;
     }
 
-    /// <summary>
-    /// Organizes tracks by popularity range and adds them to the specified playlist.
-    /// </summary>
-    /// <param name="allTracks">All user tracks to categorize.</param>
-    /// <param name="popularityRange">The popularity range to filter by.</param>
-    /// <param name="playlistId">The playlist ID to add tracks to.</param>
-    /// <param name="spotifyClient">The authenticated Spotify client.</param>
-    /// <returns>
-    /// <c>true</c> if tracks were successfully added; otherwise, <c>false</c>.
-    /// </returns>
-    /// <remarks>
-    /// This method:
-    /// 1. Converts infrastructure models (SavedTrack) to domain entities (Track)
-    /// 2. Uses domain service to categorize tracks by popularity
-    /// 3. Converts back to infrastructure models for API call
-    /// 4. Adds tracks to playlist via infrastructure service
-    /// </remarks>
     public async Task<bool> OrganizeTracksByPopularityAsync(
         IList<SavedTrack> allTracks,
         PopularityRange popularityRange,
-        string playlistId,
         SpotifyClient spotifyClient
     )
     {
+        // Get or create the system-managed playlist for this popularity range
+        var playlistId = await _playlistHelper.GetOrCreatePopularityPlaylistAsync(spotifyClient, popularityRange);
+
         _logger.LogInformation(
             "Organizing tracks by popularity range {Min}-{Max} for playlist {PlaylistId}",
             popularityRange.Min,

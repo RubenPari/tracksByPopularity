@@ -21,7 +21,6 @@ public interface ITrackOrganizationService
     Task<bool> OrganizeTracksByPopularityAsync(
         IList<SpotifyAPI.Web.SavedTrack> allTracks,
         PopularityRange popularityRange,
-        string playlistId,
         SpotifyAPI.Web.SpotifyClient spotifyClient
     );
 }

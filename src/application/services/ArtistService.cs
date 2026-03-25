@@ -1,5 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using tracksByPopularity.Domain.Enums;
+using tracksByPopularity.Infrastructure.Configuration;
 
 namespace tracksByPopularity.Application.Services;
 
@@ -10,32 +12,22 @@ namespace tracksByPopularity.Application.Services;
 public class ArtistService : IArtistService
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly string _trackSummaryUrl;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ArtistService"/> class.
-    /// </summary>
-    /// <param name="httpClientFactory">Factory for creating HTTP clients for external service calls.</param>
-    public ArtistService(IHttpClientFactory httpClientFactory)
+    public ArtistService(IHttpClientFactory httpClientFactory, IOptions<AppSettings> appSettings)
     {
         _httpClientFactory = httpClientFactory;
+        _trackSummaryUrl = $"{appSettings.Value.TrackSummaryBaseUrl}/track/summary";
     }
 
     /// <summary>
     /// Retrieves a summary of all artists in the user's library from an external service.
-    /// The summary includes artist ID, name, and the count of tracks for each artist.
     /// </summary>
-    /// <returns>
-    /// An enumerable of <see cref="ArtistSummary"/> objects, or <c>null</c> if the request fails.
-    /// </returns>
-    /// <remarks>
-    /// This method calls the external service at http://localhost:3030/track/summary.
-    /// If the HTTP request is not successful, the method returns null.
-    /// </remarks>
     public async Task<IEnumerable<ArtistSummary>?> GetArtistsSummaryAsync()
     {
         var http = _httpClientFactory.CreateClient();
 
-        var response = await http.GetAsync("http://localhost:3030/track/summary");
+        var response = await http.GetAsync(_trackSummaryUrl);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -44,33 +36,6 @@ public class ArtistService : IArtistService
 
         var jsonResult = await response.Content.ReadAsStringAsync();
 
-        var artists = JsonConvert.DeserializeObject<ArtistSummary[]>(jsonResult)!;
-
-        return artists;
-    }
-
-    /// <summary>
-    /// Legacy static method for backward compatibility.
-    /// </summary>
-    /// <returns>
-    /// An enumerable of <see cref="ArtistSummary"/> objects, or <c>null</c> if the request fails.
-    /// </returns>
-    /// <remarks>
-    /// This method is deprecated. Use <see cref="IArtistService.GetArtistsSummaryAsync"/> instead
-    /// through dependency injection for better testability and resource management.
-    /// </remarks>
-    [Obsolete("Use IArtistService.GetArtistsSummaryAsync instead")]
-    public static async Task<IEnumerable<ArtistSummary>?> GetArtistsSummary()
-    {
-        var http = new HttpClient();
-        var response = await http.GetAsync("http://localhost:3030/track/summary");
-
-        if (!response.IsSuccessStatusCode)
-        {
-            return null;
-        }
-
-        var jsonResult = await response.Content.ReadAsStringAsync();
         var artists = JsonConvert.DeserializeObject<ArtistSummary[]>(jsonResult)!;
 
         return artists;
