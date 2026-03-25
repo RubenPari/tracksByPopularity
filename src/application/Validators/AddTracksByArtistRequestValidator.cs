@@ -1,5 +1,4 @@
 using FluentValidation;
-using tracksByPopularity.Application.DTOs;
 
 namespace tracksByPopularity.Application.Validators;
 
@@ -7,12 +6,12 @@ namespace tracksByPopularity.Application.Validators;
 /// Validator for <see cref="AddTracksByArtistRequest"/>.
 /// Validates that the artist ID is in the correct Spotify format.
 /// </summary>
-public class AddTracksByArtistRequestValidator : AbstractValidator<AddTracksByArtistRequest>
+public abstract class AddTracksByArtistRequestValidator : AbstractValidator<AddTracksByArtistRequest>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="AddTracksByArtistRequestValidator"/> class.
     /// </summary>
-    public AddTracksByArtistRequestValidator()
+    protected AddTracksByArtistRequestValidator()
     {
         RuleFor(x => x.ArtistId)
             .NotEmpty()
