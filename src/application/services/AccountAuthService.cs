@@ -1,101 +1,26 @@
 using Microsoft.EntityFrameworkCore;
-using tracksByPopularity.Domain.Entities;
 using tracksByPopularity.Infrastructure.Data;
-using tracksByPopularity.Infrastructure.Services;
-using BCrypt.Net;
 
 namespace tracksByPopularity.Application.Services;
 
-public interface IAccountAuthService
+public class AccountAuthService(
+    AppDbContext dbContext,
+    IJwtService jwtService,
+    IEmailService emailService,
+    ILogger<AccountAuthService> logger)
+    : IAccountAuthService
 {
-    Task<AuthResult> RegisterAsync(string email, string password);
-    Task<LoginResult> LoginAsync(string email, string password);
-    Task<VerifyResult> VerifyEmailAsync(string token);
-    Task<ForgotPasswordResult> ForgotPasswordAsync(string email);
-    Task<ResetPasswordResult> ResetPasswordAsync(string token, string newPassword);
-    Task<ChangePasswordResult> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword);
-    Task<LinkSpotifyResult> LinkSpotifyAsync(Guid userId, string spotifyUserId, string accessToken, string refreshToken, DateTime expiresAt);
-    Task<User?> GetUserByIdAsync(Guid userId);
-    Task<User?> GetUserByEmailAsync(string email);
-    Task<SpotifyLink?> GetSpotifyLinkAsync(Guid userId);
-    Task<SpotifyLink?> GetSpotifyLinkBySpotifyIdAsync(string spotifyUserId);
-    Task<User?> GetOrCreateUserFromSpotifyAsync(string spotifyUserId, string accessToken, string refreshToken, DateTime expiresAt);
-    Task UnlinkSpotifyAsync(Guid userId);
-    Task<SpotifyLink?> RefreshSpotifyTokenAsync(string spotifyUserId);
-}
-
-public class AuthResult
-{
-    public bool Success { get; init; }
-    public string? Error { get; init; }
-    public string? Token { get; init; }
-    public User? User { get; init; }
-}
-
-public class LoginResult
-{
-    public bool Success { get; init; }
-    public string? Error { get; init; }
-    public string? Token { get; init; }
-    public User? User { get; init; }
-    public bool EmailNotVerified { get; init; }
-}
-
-public class VerifyResult
-{
-    public bool Success { get; init; }
-    public string? Error { get; init; }
-}
-
-public class ForgotPasswordResult
-{
-    public bool Success { get; init; }
-    public string? Error { get; init; }
-}
-
-public class ResetPasswordResult
-{
-    public bool Success { get; init; }
-    public string? Error { get; init; }
-}
-
-public class ChangePasswordResult
-{
-    public bool Success { get; init; }
-    public string? Error { get; init; }
-}
-
-public class LinkSpotifyResult
-{
-    public bool Success { get; init; }
-    public string? Error { get; init; }
-    public string? Token { get; init; }
-}
-
-public class AccountAuthService : IAccountAuthService
-{
-    private readonly AppDbContext _dbContext;
-    private readonly IJwtService _jwtService;
-    private readonly IEmailService _emailService;
-    private readonly ILogger<AccountAuthService> _logger;
-
-    public AccountAuthService(
-        AppDbContext dbContext,
-        IJwtService jwtService,
-        IEmailService emailService,
-        ILogger<AccountAuthService> logger)
-    {
-        _dbContext = dbContext;
-        _jwtService = jwtService;
-        _emailService = emailService;
-        _logger = logger;
-    }
-
+    /// <summary>
+    /// Registers a new user with the provided email and password.
+    /// </summary>
+    /// <param name="email">The email address of the user.</param>
+    /// <param name="password">The password of the user.</param>
+    /// <returns>An <see cref="AuthResult"/> indicating the success or failure of the registration.</returns>
     public async Task<AuthResult> RegisterAsync(string email, string password)
     {
         var normalizedEmail = email.ToLowerInvariant();
 
-        if (await _dbContext.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail))
+        if (await dbContext.Users.AnyAsync(u => u.Email.Equals(normalizedEmail, StringComparison.CurrentCultureIgnoreCase)))
         {
             return new AuthResult { Success = false, Error = "Email already registered" };
         }
@@ -107,42 +32,48 @@ public class AccountAuthService : IAccountAuthService
             IsEmailVerified = false
         };
 
-        _dbContext.Users.Add(user);
-        await _dbContext.SaveChangesAsync();
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
 
         var verificationToken = GenerateVerificationToken(user.Id);
-        await _emailService.SendVerificationEmailAsync(user.Email, verificationToken);
+        await emailService.SendVerificationEmailAsync(user.Email, verificationToken);
 
-        _logger.LogInformation("User registered: {Email}", email);
+        logger.LogInformation("User registered: {Email}", email);
 
         return new AuthResult { Success = true, User = user };
     }
 
+    /// <summary>
+    /// Logs in a user with the provided email and password.
+    /// </summary>
+    /// <param name="email">The email address of the user.</param>
+    /// <param name="password">The password of the user.</param>
+    /// <returns>A <see cref="LoginResult"/> indicating the success or failure of the login.</returns>
     public async Task<LoginResult> LoginAsync(string email, string password)
     {
         var normalizedEmail = email.ToLowerInvariant();
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.Equals(normalizedEmail, StringComparison.CurrentCultureIgnoreCase));
 
-        if (user == null)
+        if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
         {
             return new LoginResult { Success = false, Error = "Invalid email or password" };
         }
 
-        if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
-        {
-            return new LoginResult { Success = false, Error = "Invalid email or password" };
-        }
+        var token = jwtService.GenerateToken(user.Id, user.Email);
 
-        var token = _jwtService.GenerateToken(user.Id, user.Email);
-
-        _logger.LogInformation("User logged in: {Email}", email);
+        logger.LogInformation("User logged in: {Email}", email);
 
         return new LoginResult { Success = true, Token = token, User = user };
     }
 
+    /// <summary>
+    /// Verifies a user's email address using a verification token.
+    /// </summary>
+    /// <param name="token">The verification token.</param>
+    /// <returns>A <see cref="VerifyResult"/> indicating the success or failure of the verification.</returns>
     public async Task<VerifyResult> VerifyEmailAsync(string token)
     {
-        var verificationToken = await _dbContext.EmailVerificationTokens
+        var verificationToken = await dbContext.EmailVerificationTokens
             .Include(t => t.User)
             .FirstOrDefaultAsync(t => t.Token == token && !t.IsUsed);
 
@@ -160,16 +91,21 @@ public class AccountAuthService : IAccountAuthService
         verificationToken.User.IsEmailVerified = true;
         verificationToken.User.UpdatedAt = DateTime.UtcNow;
 
-        await _dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("Email verified for user: {Email}", verificationToken.User.Email);
+        logger.LogInformation("Email verified for user: {Email}", verificationToken.User.Email);
 
         return new VerifyResult { Success = true };
     }
 
+    /// <summary>
+    /// Initiates the password reset process for a user.
+    /// </summary>
+    /// <param name="email">The email address of the user.</param>
+    /// <returns>A <see cref="ForgotPasswordResult"/> indicating the success or failure of the request.</returns>
     public async Task<ForgotPasswordResult> ForgotPasswordAsync(string email)
     {
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.Equals(email, StringComparison.CurrentCultureIgnoreCase));
 
         if (user == null)
         {
@@ -177,16 +113,22 @@ public class AccountAuthService : IAccountAuthService
         }
 
         var resetToken = GenerateResetToken(user.Id);
-        await _emailService.SendPasswordResetEmailAsync(user.Email, resetToken);
+        await emailService.SendPasswordResetEmailAsync(user.Email, resetToken);
 
-        _logger.LogInformation("Password reset requested for: {Email}", email);
+        logger.LogInformation("Password reset requested for: {Email}", email);
 
         return new ForgotPasswordResult { Success = true };
     }
 
+    /// <summary>
+    /// Resets a user's password using a reset token.
+    /// </summary>
+    /// <param name="token">The reset token.</param>
+    /// <param name="newPassword">The new password.</param>
+    /// <returns>A <see cref="ResetPasswordResult"/> indicating the success or failure of the reset.</returns>
     public async Task<ResetPasswordResult> ResetPasswordAsync(string token, string newPassword)
     {
-        var resetToken = await _dbContext.PasswordResetTokens
+        var resetToken = await dbContext.PasswordResetTokens
             .Include(t => t.User)
             .FirstOrDefaultAsync(t => t.Token == token && !t.IsUsed);
 
@@ -204,16 +146,23 @@ public class AccountAuthService : IAccountAuthService
         resetToken.User.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         resetToken.User.UpdatedAt = DateTime.UtcNow;
 
-        await _dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("Password reset completed for user: {Email}", resetToken.User.Email);
+        logger.LogInformation("Password reset completed for user: {Email}", resetToken.User.Email);
 
         return new ResetPasswordResult { Success = true };
     }
 
+    /// <summary>
+    /// Changes a user's password.
+    /// </summary>
+    /// <param name="userId">The ID of the user.</param>
+    /// <param name="oldPassword">The current password.</param>
+    /// <param name="newPassword">The new password.</param>
+    /// <returns>A <see cref="ChangePasswordResult"/> indicating the success or failure of the password change.</returns>
     public async Task<ChangePasswordResult> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword)
     {
-        var user = await _dbContext.Users.FindAsync(userId);
+        var user = await dbContext.Users.FindAsync(userId);
 
         if (user == null)
         {
@@ -228,23 +177,32 @@ public class AccountAuthService : IAccountAuthService
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("Password changed for user: {Email}", user.Email);
+        logger.LogInformation("Password changed for user: {Email}", user.Email);
 
         return new ChangePasswordResult { Success = true };
     }
 
+    /// <summary>
+    /// Links a Spotify account to a user.
+    /// </summary>
+    /// <param name="userId">The ID of the user.</param>
+    /// <param name="spotifyUserId">The Spotify user ID.</param>
+    /// <param name="accessToken">The Spotify access token.</param>
+    /// <param name="refreshToken">The Spotify refresh token.</param>
+    /// <param name="expiresAt">The expiration date of the access token.</param>
+    /// <returns>A <see cref="LinkSpotifyResult"/> indicating the success or failure of the linking.</returns>
     public async Task<LinkSpotifyResult> LinkSpotifyAsync(Guid userId, string spotifyUserId, string accessToken, string refreshToken, DateTime expiresAt)
     {
-        var user = await _dbContext.Users.FindAsync(userId);
+        var user = await dbContext.Users.FindAsync(userId);
 
         if (user == null)
         {
             return new LinkSpotifyResult { Success = false, Error = "User not found" };
         }
 
-        var existingLink = await _dbContext.SpotifyLinks.FirstOrDefaultAsync(s => s.SpotifyUserId == spotifyUserId);
+        var existingLink = await dbContext.SpotifyLinks.FirstOrDefaultAsync(s => s.SpotifyUserId == spotifyUserId);
 
         if (existingLink != null && existingLink.UserId != userId)
         {
@@ -269,45 +227,73 @@ public class AccountAuthService : IAccountAuthService
                 TokenExpiresAt = expiresAt
             };
 
-            _dbContext.SpotifyLinks.Add(spotifyLink);
+            dbContext.SpotifyLinks.Add(spotifyLink);
         }
 
-        await _dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
-        var token = _jwtService.GenerateToken(user.Id, user.Email);
+        var token = jwtService.GenerateToken(user.Id, user.Email);
 
-        _logger.LogInformation("Spotify linked for user: {Email}", user.Email);
+        logger.LogInformation("Spotify linked for user: {Email}", user.Email);
 
         return new LinkSpotifyResult { Success = true, Token = token };
     }
 
+    /// <summary>
+    /// Gets a user by ID.
+    /// </summary>
+    /// <param name="userId">The ID of the user.</param>
+    /// <returns>The user if found; otherwise, null.</returns>
     public async Task<User?> GetUserByIdAsync(Guid userId)
     {
-        return await _dbContext.Users
+        return await dbContext.Users
             .Include(u => u.SpotifyLink)
             .FirstOrDefaultAsync(u => u.Id == userId);
     }
 
+    /// <summary>
+    /// Gets a user by email.
+    /// </summary>
+    /// <param name="email">The email of the user.</param>
+    /// <returns>The user if found; otherwise, null.</returns>
     public async Task<User?> GetUserByEmailAsync(string email)
     {
-        return await _dbContext.Users
+        return await dbContext.Users
             .Include(u => u.SpotifyLink)
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            .FirstOrDefaultAsync(u => u.Email.Equals(email, StringComparison.CurrentCultureIgnoreCase));
     }
 
+    /// <summary>
+    /// Gets a Spotify link by user ID.
+    /// </summary>
+    /// <param name="userId">The ID of the user.</param>
+    /// <returns>The Spotify link if found; otherwise, null.</returns>
     public async Task<SpotifyLink?> GetSpotifyLinkAsync(Guid userId)
     {
-        return await _dbContext.SpotifyLinks.FirstOrDefaultAsync(s => s.UserId == userId);
+        return await dbContext.SpotifyLinks.FirstOrDefaultAsync(s => s.UserId == userId);
     }
 
+    /// <summary>
+    /// Gets a Spotify link by Spotify user ID.
+    /// </summary>
+    /// <param name="spotifyUserId">The Spotify user ID.</param>
+    /// <returns>The Spotify link if found; otherwise, null.</returns>
     public async Task<SpotifyLink?> GetSpotifyLinkBySpotifyIdAsync(string spotifyUserId)
     {
-        return await _dbContext.SpotifyLinks.FirstOrDefaultAsync(s => s.SpotifyUserId == spotifyUserId);
+        return await dbContext.SpotifyLinks.FirstOrDefaultAsync(s => s.SpotifyUserId == spotifyUserId);
     }
 
+    /// <summary>
+    /// Gets or creates a user from Spotify information.
+    /// </summary>
+    /// <param name="spotifyUserId">The Spotify user ID.</param>
+    /// <param name="accessToken">The Spotify access token.</param>
+    /// <param name="refreshToken">The Spotify refresh token.</param>
+    /// <param name="expiresAt">The expiration date of the access token.</param>
+    /// <returns>The user associated with the Spotify account.</returns>
     public async Task<User?> GetOrCreateUserFromSpotifyAsync(string spotifyUserId, string accessToken, string refreshToken, DateTime expiresAt)
     {
-        var existingLink = await _dbContext.SpotifyLinks
+        var existingLink = await dbContext.SpotifyLinks
             .Include(s => s.User)
             .FirstOrDefaultAsync(s => s.SpotifyUserId == spotifyUserId);
 
@@ -317,7 +303,7 @@ public class AccountAuthService : IAccountAuthService
             existingLink.RefreshToken = refreshToken;
             existingLink.TokenExpiresAt = expiresAt;
             existingLink.UpdatedAt = DateTime.UtcNow;
-            await _dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
             return existingLink.User;
         }
 
@@ -329,8 +315,8 @@ public class AccountAuthService : IAccountAuthService
             IsEmailVerified = true
         };
 
-        _dbContext.Users.Add(user);
-        await _dbContext.SaveChangesAsync();
+        dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync();
 
         var spotifyLink = new SpotifyLink
         {
@@ -341,33 +327,47 @@ public class AccountAuthService : IAccountAuthService
             TokenExpiresAt = expiresAt
         };
 
-        _dbContext.SpotifyLinks.Add(spotifyLink);
-        await _dbContext.SaveChangesAsync();
+        dbContext.SpotifyLinks.Add(spotifyLink);
+        await dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("Created new user from Spotify: {SpotifyUserId}", spotifyUserId);
+        logger.LogInformation("Created new user from Spotify: {SpotifyUserId}", spotifyUserId);
 
         return user;
     }
 
+    /// <summary>
+    /// Unlinks the Spotify account for the specified user.
+    /// </summary>
+    /// <param name="userId">The ID of the user to unlink Spotify for.</param>
     public async Task UnlinkSpotifyAsync(Guid userId)
     {
-        var spotifyLink = await _dbContext.SpotifyLinks.FirstOrDefaultAsync(s => s.UserId == userId);
+        var spotifyLink = await dbContext.SpotifyLinks.FirstOrDefaultAsync(s => s.UserId == userId);
 
         if (spotifyLink != null)
         {
-            _dbContext.SpotifyLinks.Remove(spotifyLink);
-            await _dbContext.SaveChangesAsync();
+            dbContext.SpotifyLinks.Remove(spotifyLink);
+            await dbContext.SaveChangesAsync();
 
-            _logger.LogInformation("Spotify unlinked for user: {UserId}", userId);
+            logger.LogInformation("Spotify unlinked for user: {UserId}", userId);
         }
     }
 
+    /// <summary>
+    /// Refreshes the Spotify token for the specified user.
+    /// </summary>
+    /// <param name="spotifyUserId">The Spotify user ID to refresh the token for.</param>
+    /// <returns>The refreshed Spotify link, or null if the user was not found.</returns>
     public async Task<SpotifyLink?> RefreshSpotifyTokenAsync(string spotifyUserId)
     {
-        var spotifyLink = await _dbContext.SpotifyLinks.FirstOrDefaultAsync(s => s.SpotifyUserId == spotifyUserId);
+        var spotifyLink = await dbContext.SpotifyLinks.FirstOrDefaultAsync(s => s.SpotifyUserId == spotifyUserId);
         return spotifyLink;
     }
 
+    /// <summary>
+    /// Generates a verification token for the specified user.
+    /// </summary>
+    /// <param name="userId">The ID of the user to generate a token for.</param>
+    /// <returns>The generated verification token.</returns>
     private string GenerateVerificationToken(Guid userId)
     {
         var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("/", "_").Replace("+", "-");
@@ -378,12 +378,17 @@ public class AccountAuthService : IAccountAuthService
             ExpiresAt = DateTime.UtcNow.AddHours(24)
         };
 
-        _dbContext.EmailVerificationTokens.Add(verificationToken);
-        _dbContext.SaveChanges();
+        dbContext.EmailVerificationTokens.Add(verificationToken);
+        dbContext.SaveChanges();
 
         return token;
     }
 
+    /// <summary>
+    /// Generates a password reset token for the specified user.
+    /// </summary>
+    /// <param name="userId">The ID of the user to generate a token for.</param>
+    /// <returns>The generated password reset token.</returns>
     private string GenerateResetToken(Guid userId)
     {
         var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("/", "_").Replace("+", "-");
@@ -394,8 +399,8 @@ public class AccountAuthService : IAccountAuthService
             ExpiresAt = DateTime.UtcNow.AddHours(1)
         };
 
-        _dbContext.PasswordResetTokens.Add(resetToken);
-        _dbContext.SaveChanges();
+        dbContext.PasswordResetTokens.Add(resetToken);
+        dbContext.SaveChanges();
 
         return token;
     }
