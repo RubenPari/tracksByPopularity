@@ -1,5 +1,3 @@
-using tracksByPopularity.Infrastructure.Configuration;
-
 namespace tracksByPopularity.Application.Interfaces;
 
 /// <summary>
@@ -8,16 +6,19 @@ namespace tracksByPopularity.Application.Interfaces;
 /// </summary>
 public interface IConfigurationService
 {
+    // TODO: implementati ma non usati
     /// <summary>
     /// Gets the application settings.
     /// </summary>
     AppSettings AppSettings { get; }
 
+    // TODO: implementati ma non usati
     /// <summary>
     /// Gets the Spotify API settings.
     /// </summary>
     SpotifySettings SpotifySettings { get; }
 
+    // TODO: implementati ma non usati
     /// <summary>
     /// Gets the Redis cache settings.
     /// </summary>

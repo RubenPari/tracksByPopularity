@@ -6,6 +6,7 @@ namespace tracksByPopularity.Application.Interfaces;
 /// </summary>
 public interface IAuthenticationService
 {
+    // TODO: non viene usato
     /// <summary>
     /// Checks if the user is authenticated with the ClearSongs service.
     /// </summary>

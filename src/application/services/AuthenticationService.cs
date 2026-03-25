@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Options;
-using tracksByPopularity.Infrastructure.Configuration;
 
 namespace tracksByPopularity.Application.Services;
 

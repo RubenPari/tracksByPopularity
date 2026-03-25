@@ -1,10 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SpotifyAPI.Web;
-using tracksByPopularity.Application.DTOs;
-using tracksByPopularity.Infrastructure.Configuration;
-using tracksByPopularity.Infrastructure.Helpers;
-using tracksByPopularity.Infrastructure.Services;
 using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
@@ -15,25 +11,15 @@ namespace tracksByPopularity.Presentation.Controllers;
 /// </summary>
 [ApiController]
 [Route("auth")]
-public class AuthController : ControllerBase
+public class AuthController(
+    SpotifyAuthService spotifyAuthService,
+    ILogger<AuthController> logger,
+    IOptions<AppSettings> appSettings,
+    IOptions<SpotifySettings> spotifySettings)
+    : ControllerBase
 {
-    private readonly SpotifyAuthService _spotifyAuthService;
-    private readonly ILogger<AuthController> _logger;
-    private readonly AppSettings _appSettings;
-    private readonly SpotifySettings _spotifySettings;
-
-    public AuthController(
-        SpotifyAuthService spotifyAuthService,
-        ILogger<AuthController> logger,
-        IOptions<AppSettings> appSettings,
-        IOptions<SpotifySettings> spotifySettings
-    )
-    {
-        _spotifyAuthService = spotifyAuthService;
-        _logger = logger;
-        _appSettings = appSettings.Value;
-        _spotifySettings = spotifySettings.Value;
-    }
+    private readonly AppSettings _appSettings = appSettings.Value;
+    private readonly SpotifySettings _spotifySettings = spotifySettings.Value;
 
     /// <summary>
     /// Returns the Spotify authorization URL for the user to log in.
@@ -51,7 +37,7 @@ public class AuthController : ControllerBase
         };
 
         var loginUrl = loginRequest.ToUri().ToString();
-        _logger.LogInformation("Generated Spotify login URL");
+        logger.LogInformation("Generated Spotify login URL");
 
         return Ok(ApiResponse<object>.Ok(new { loginUrl }));
     }
@@ -65,13 +51,13 @@ public class AuthController : ControllerBase
     {
         if (!string.IsNullOrEmpty(error))
         {
-            _logger.LogWarning("Spotify auth denied: {Error}", error);
+            logger.LogWarning("Spotify auth denied: {Error}", error);
             return Redirect($"{_appSettings.FrontendOrigin}/?error=auth_denied");
         }
 
         if (string.IsNullOrEmpty(code))
         {
-            _logger.LogWarning("No code received in callback");
+            logger.LogWarning("No code received in callback");
             return Redirect($"{_appSettings.FrontendOrigin}/?error=no_code");
         }
 
@@ -93,7 +79,7 @@ public class AuthController : ControllerBase
             var userId = profile.Id;
 
             // Store token in Redis
-            await _spotifyAuthService.StoreTokenAsync(tokenResponse, userId);
+            await spotifyAuthService.StoreTokenAsync(tokenResponse, userId);
 
             // Set user ID cookie so subsequent requests know which user this is
             Response.Cookies.Append(SpotifyAuthFilter.UserIdCookieName, userId, new CookieOptions
@@ -105,12 +91,12 @@ public class AuthController : ControllerBase
                 Path = "/",
             });
 
-            _logger.LogInformation("Successfully authenticated user: {UserId}", userId);
+            logger.LogInformation("Successfully authenticated user: {UserId}", userId);
             return Redirect(_appSettings.FrontendOrigin);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during OAuth callback");
+            logger.LogError(ex, "Error during OAuth callback");
             return Redirect($"{_appSettings.FrontendOrigin}/?error=auth_failed");
         }
     }
@@ -131,7 +117,7 @@ public class AuthController : ControllerBase
         try
         {
             // Verify the token is still valid by attempting to create a client
-            var client = await _spotifyAuthService.GetSpotifyClientForUserAsync(userId);
+            await spotifyAuthService.GetSpotifyClientForUserAsync(userId);
             return Ok(ApiResponse<object>.Ok(new { authenticated = true, userId }));
         }
         catch (UnauthorizedAccessException)
@@ -152,11 +138,11 @@ public class AuthController : ControllerBase
 
         if (!string.IsNullOrEmpty(userId))
         {
-            await _spotifyAuthService.RemoveTokenAsync(userId);
+            await spotifyAuthService.RemoveTokenAsync(userId);
         }
 
         Response.Cookies.Delete(SpotifyAuthFilter.UserIdCookieName);
-        _logger.LogInformation("User logged out: {UserId}", userId ?? "unknown");
+        logger.LogInformation("User logged out: {UserId}", userId ?? "unknown");
 
         return Ok(ApiResponse.Ok("Logged out successfully"));
     }

@@ -1,27 +1,16 @@
 using System.Net;
 using System.Text.Json;
 using SpotifyAPI.Web;
-using tracksByPopularity.Application.DTOs;
-using tracksByPopularity.Domain.Exceptions;
 
 namespace tracksByPopularity.Presentation.Middlewares;
 
-public class ExceptionHandlingMiddleware
+public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-
-    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            await _next(context);
+            await next(context);
         }
         catch (Exception ex)
         {
@@ -39,30 +28,30 @@ public class ExceptionHandlingMiddleware
             case UnauthorizedAccessException:
                 statusCode = HttpStatusCode.Unauthorized;
                 message = "Unauthorized access attempt. Please check your Spotify session.";
-                _logger.LogWarning(exception, "Unauthorized access attempt");
+                logger.LogWarning(exception, "Unauthorized access attempt");
                 break;
             case APIUnauthorizedException:
                 statusCode = HttpStatusCode.Unauthorized;
                 message = "Spotify session expired. Please log in again.";
-                _logger.LogWarning(exception, "Spotify API unauthorized");
+                logger.LogWarning(exception, "Spotify API unauthorized");
                 break;
             case APIException apiEx:
                 statusCode = HttpStatusCode.BadGateway;
                 message = $"Spotify API error: {apiEx.Message}";
-                _logger.LogError(apiEx, "Spotify API error");
+                logger.LogError(apiEx, "Spotify API error");
                 break;
             case DomainException domainEx:
                 statusCode = HttpStatusCode.BadRequest;
                 message = domainEx.Message;
-                _logger.LogWarning(domainEx, "Domain error");
+                logger.LogWarning(domainEx, "Domain error");
                 break;
             case ArgumentException argEx:
                 statusCode = HttpStatusCode.BadRequest;
                 message = argEx.Message;
-                _logger.LogWarning(argEx, "Bad request");
+                logger.LogWarning(argEx, "Bad request");
                 break;
             default:
-                _logger.LogError(exception, "Unhandled error occurred.");
+                logger.LogError(exception, "Unhandled error occurred.");
                 break;
         }
 
@@ -80,8 +69,8 @@ public class ExceptionHandlingMiddleware
 
 public static class ExceptionHandlingMiddlewareExtensions
 {
-    public static IApplicationBuilder UseGlobalExceptionHandling(this IApplicationBuilder builder)
+    public static void UseGlobalExceptionHandling(this IApplicationBuilder builder)
     {
-        return builder.UseMiddleware<ExceptionHandlingMiddleware>();
+        builder.UseMiddleware<ExceptionHandlingMiddleware>();
     }
 }

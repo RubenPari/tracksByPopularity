@@ -1,7 +1,3 @@
-using tracksByPopularity.Domain.Services;
-using tracksByPopularity.Application.Mapping;
-using tracksByPopularity.Application.Interfaces;
-using tracksByPopularity.Application.Services;
 using SpotifyAPI.Web;
 
 namespace tracksByPopularity.Application.Services;
@@ -26,6 +22,7 @@ public class ArtistTrackOrganizationService : IArtistTrackOrganizationService
     /// <param name="trackService">Service for adding tracks to playlists.</param>
     /// <param name="playlistHelper">Helper service for managing artist playlists.</param>
     /// <param name="playlistService">Service for clearing playlists.</param>
+    /// <param name="backupService">Service for backing up playlists.</param>
     /// <param name="logger">Logger instance for recording operations.</param>
     public ArtistTrackOrganizationService(
         ITrackCategorizationService categorizationService,
