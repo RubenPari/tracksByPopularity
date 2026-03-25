@@ -1,5 +1,4 @@
 using SpotifyAPI.Web;
-using tracksByPopularity.Domain.Enums;
 
 namespace tracksByPopularity.Application.Interfaces;
 

@@ -1,5 +1,3 @@
-using tracksByPopularity.Domain.ValueObjects;
-
 namespace tracksByPopularity.Application.Interfaces;
 
 /// <summary>
@@ -13,7 +11,6 @@ public interface ITrackOrganizationService
     /// </summary>
     /// <param name="allTracks">All user tracks to categorize.</param>
     /// <param name="popularityRange">The popularity range to filter by.</param>
-    /// <param name="playlistId">The playlist ID to add tracks to.</param>
     /// <param name="spotifyClient">The authenticated Spotify client.</param>
     /// <returns>
     /// <c>true</c> if tracks were successfully added; otherwise, <c>false</c>.

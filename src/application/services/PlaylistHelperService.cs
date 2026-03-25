@@ -1,5 +1,4 @@
 using SpotifyAPI.Web;
-using tracksByPopularity.Domain.ValueObjects;
 
 namespace tracksByPopularity.Application.Services;
 
@@ -106,6 +105,9 @@ public class PlaylistHelperService : IPlaylistHelper
         return created.Id!;
     }
 
+    /// <summary>
+    /// Gets the name of the playlist based on the popularity range.
+    /// </summary>
     private static string GetPopularityPlaylistName(PopularityRange range)
     {
         return range switch

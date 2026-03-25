@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using tracksByPopularity.Application.Services;
-using tracksByPopularity.Application.DTOs;
 using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
@@ -11,21 +9,8 @@ namespace tracksByPopularity.Presentation.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/playlist")]
-[Route("playlist")] // Legacy route for backward compatibility
-public class PlaylistController : ControllerBase
+public class PlaylistController(IPlaylistService playlistService) : ControllerBase
 {
-    private readonly IPlaylistService _playlistService;
-    private readonly ILogger<PlaylistController> _logger;
-
-    public PlaylistController(
-        IPlaylistService playlistService,
-        ILogger<PlaylistController> logger
-    )
-    {
-        _playlistService = playlistService;
-        _logger = logger;
-    }
-
     /// <summary>
     /// Retrieves all playlists owned by the current user.
     /// </summary>
@@ -34,7 +19,7 @@ public class PlaylistController : ControllerBase
     public async Task<ActionResult<ApiResponse<IList<PlaylistInfo>>>> GetAllPlaylists()
     {
         var spotifyClient = HttpContext.GetSpotifyClient();
-        var playlists = await _playlistService.GetAllUserPlaylistsAsync(spotifyClient);
+        var playlists = await playlistService.GetAllUserPlaylistsAsync(spotifyClient);
 
         return Ok(ApiResponse<IList<PlaylistInfo>>.Ok(playlists));
     }
