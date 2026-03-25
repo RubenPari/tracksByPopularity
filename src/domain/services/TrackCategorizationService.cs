@@ -36,16 +36,11 @@ public class TrackCategorizationService : ITrackCategorizationService
             .Where(track => track.Artists.FirstOrDefault()?.Id == artistId)
             .ToList();
 
-        // Define artist-specific popularity ranges
-        var lessRange = new PopularityRange(0, 33);
-        var mediumRange = new PopularityRange(34, 66);
-        var moreRange = new PopularityRange(67, 100);
-
         return new Dictionary<string, List<Track>>
         {
-            ["less"] = artistTracks.Where(t => lessRange.Contains(t.Popularity)).ToList(),
-            ["medium"] = artistTracks.Where(t => mediumRange.Contains(t.Popularity)).ToList(),
-            ["more"] = artistTracks.Where(t => moreRange.Contains(t.Popularity)).ToList(),
+            ["less"] = artistTracks.Where(t => PopularityRange.ArtistLess.Contains(t.Popularity)).ToList(),
+            ["medium"] = artistTracks.Where(t => PopularityRange.ArtistMedium.Contains(t.Popularity)).ToList(),
+            ["more"] = artistTracks.Where(t => PopularityRange.ArtistMore.Contains(t.Popularity)).ToList(),
         };
     }
 }

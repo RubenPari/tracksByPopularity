@@ -73,5 +73,20 @@ public class PopularityRange
     /// Creates a range for "more" popularity tracks (81-100).
     /// </summary>
     public static PopularityRange More => new(81, 100);
+
+    /// <summary>
+    /// Creates a range for artist "less" popularity tracks (0-33).
+    /// </summary>
+    public static PopularityRange ArtistLess => new(0, 33);
+
+    /// <summary>
+    /// Creates a range for artist "medium" popularity tracks (34-66).
+    /// </summary>
+    public static PopularityRange ArtistMedium => new(34, 66);
+
+    /// <summary>
+    /// Creates a range for artist "more" popularity tracks (67-100).
+    /// </summary>
+    public static PopularityRange ArtistMore => new(67, 100);
 }
 
