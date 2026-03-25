@@ -23,9 +23,11 @@ public static class ConfigurationExtensions
         services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
 
         // Also bind from environment variables as fallback
-        services.Configure<AppSettings>(_ =>
+        services.Configure<AppSettings>(options =>
         {
-            // AppSettings can be overridden by environment variables if needed
+            options.FrontendOrigin = Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ?? options.FrontendOrigin;
+            options.ClearSongsBaseUrl = Environment.GetEnvironmentVariable("CLEAR_SONGS_BASE_URL") ?? options.ClearSongsBaseUrl;
+            options.TrackSummaryBaseUrl = Environment.GetEnvironmentVariable("TRACK_SUMMARY_BASE_URL") ?? options.TrackSummaryBaseUrl;
         });
 
         services.Configure<SpotifySettings>(options =>
@@ -40,6 +42,8 @@ public static class ConfigurationExtensions
             options.Host = Environment.GetEnvironmentVariable("REDIS_HOST") ?? options.Host;
             options.Port = Environment.GetEnvironmentVariable("REDIS_PORT") ?? options.Port;
             options.Password = Environment.GetEnvironmentVariable("REDIS_PASSWORD") ?? options.Password;
+            if (bool.TryParse(Environment.GetEnvironmentVariable("REDIS_USE_SSL"), out var useSsl))
+                options.UseSsl = useSsl;
         });
 
         services.Configure<JwtSettings>(options =>
