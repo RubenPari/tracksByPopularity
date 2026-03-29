@@ -42,9 +42,11 @@ public class TrackController(
         }
 
         var spotifyClient = HttpContext.GetSpotifyClient();
+        var spotifyUserId = HttpContext.GetSpotifyUserId();
         var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
         var added = await trackOrganizationService.OrganizeTracksByPopularityAsync(
+            spotifyUserId,
             allTracks,
             popularityRange,
             spotifyClient
@@ -108,9 +110,11 @@ public class TrackController(
     public async Task<ActionResult<ApiResponse>> Artist([FromQuery] AddTracksByArtistRequest request)
     {
         var spotifyClient = HttpContext.GetSpotifyClient();
+        var spotifyUserId = HttpContext.GetSpotifyUserId();
         var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
 
         var added = await artistTrackOrganizationService.OrganizeArtistTracksAsync(
+            spotifyUserId,
             allTracks,
             request.ArtistId,
             spotifyClient

@@ -12,4 +12,5 @@ public class User
     public SpotifyLink? SpotifyLink { get; set; }
     public ICollection<EmailVerificationToken> EmailVerificationTokens { get; set; } = new List<EmailVerificationToken>();
     public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
+    public ICollection<PlaylistSnapshot> PlaylistSnapshots { get; set; } = new List<PlaylistSnapshot>();
 }

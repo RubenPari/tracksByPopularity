@@ -113,6 +113,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(configuration);
 });
 builder.Services.AddHostedService<RedisCacheResetService>();
+builder.Services.AddHostedService<SnapshotCleanupService>();
 
 // Register services
 builder.Services.AddScoped<SpotifyAuthService>();

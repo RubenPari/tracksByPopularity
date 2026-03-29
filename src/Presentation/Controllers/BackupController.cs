@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using tracksByPopularity.Application.DTOs;
 using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
@@ -7,18 +8,14 @@ namespace tracksByPopularity.Presentation.Controllers;
 [Route("api/backup")]
 public class BackupController(IPlaylistBackupService backupService) : ControllerBase
 {
-    /// <summary>
-    /// Get a list of all snapshots for the current user
-    /// </summary>
     [HttpGet("list")]
     [SpotifyAuth]
-    public async Task<ActionResult<ApiResponse<IEnumerable<PlaylistSnapshot>>>> GetSnapshots()
+    public async Task<ActionResult<ApiResponse<IEnumerable<Application.DTOs.PlaylistSnapshot>>>> GetSnapshots()
     {
-        var userId = HttpContext.GetSpotifyUserId();
-        var snapshots = await backupService.GetSnapshotsAsync(userId);
+        var spotifyUserId = HttpContext.GetSpotifyUserId();
+        var snapshots = await backupService.GetSnapshotsAsync(spotifyUserId);
 
-        // Return without TrackUris to save bandwidth
-        var summaries = snapshots.Select(s => new PlaylistSnapshot
+        var summaries = snapshots.Select(s => new Application.DTOs.PlaylistSnapshot
         {
             Id = s.Id,
             PlaylistId = s.PlaylistId,
@@ -29,19 +26,16 @@ public class BackupController(IPlaylistBackupService backupService) : Controller
             TrackUris = []
         }).ToList();
 
-        return Ok(ApiResponse<IEnumerable<PlaylistSnapshot>>.Ok(summaries));
+        return Ok(ApiResponse<IEnumerable<Application.DTOs.PlaylistSnapshot>>.Ok(summaries));
     }
 
-    /// <summary>
-    /// Restore a snapshot to the user's library
-    /// </summary>
     [HttpPost("restore/{snapshotId}")]
     [SpotifyAuth]
     public async Task<ActionResult<ApiResponse>> RestoreSnapshot(string snapshotId)
     {
-        var userId = HttpContext.GetSpotifyUserId();
+        var spotifyUserId = HttpContext.GetSpotifyUserId();
         var spotifyClient = HttpContext.GetSpotifyClient();
-        var restored = await backupService.RestoreSnapshotAsync(snapshotId, userId, spotifyClient);
+        var restored = await backupService.RestoreSnapshotAsync(snapshotId, spotifyUserId, spotifyClient);
 
         if (restored)
         {
@@ -49,5 +43,20 @@ public class BackupController(IPlaylistBackupService backupService) : Controller
         }
 
         return BadRequest(ApiResponse.Fail("Snapshot not found or restore failed"));
+    }
+
+    [HttpDelete("{snapshotId}")]
+    [SpotifyAuth]
+    public async Task<ActionResult<ApiResponse>> DeleteSnapshot(string snapshotId)
+    {
+        var spotifyUserId = HttpContext.GetSpotifyUserId();
+        var deleted = await backupService.DeleteSnapshotAsync(snapshotId, spotifyUserId);
+
+        if (deleted)
+        {
+            return Ok(ApiResponse.Ok("Snapshot deleted successfully"));
+        }
+
+        return BadRequest(ApiResponse.Fail("Snapshot not found or delete failed"));
     }
 }

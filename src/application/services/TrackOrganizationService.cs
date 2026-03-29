@@ -19,6 +19,7 @@ public class TrackOrganizationService(
     /// Organizes tracks into playlists based on their popularity.
     /// </summary>
     public async Task<bool> OrganizeTracksByPopularityAsync(
+        string spotifyUserId,
         IList<SavedTrack> allTracks,
         PopularityRange popularityRange,
         SpotifyClient spotifyClient
@@ -35,7 +36,7 @@ public class TrackOrganizationService(
         );
 
         // Snapshot before clearing
-        await backupService.CreateSnapshotAsync(playlistId, spotifyClient, "popularity");
+        await backupService.CreateSnapshotAsync(spotifyUserId, playlistId, spotifyClient, "popularity");
 
         // Clear existing tracks first
         await playlistService.RemoveAllTracksAsync(playlistId, spotifyClient);
