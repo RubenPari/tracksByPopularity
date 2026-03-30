@@ -131,7 +131,6 @@ builder.Services.AddScoped<SpotifyAuthService>();
 builder.Services.AddScoped<ITrackService, TrackService>();
 builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 builder.Services.AddScoped<IArtistService, ArtistService>();
-builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IPlaylistHelper, PlaylistHelperService>();
 builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<ITrackCategorizationService, TrackCategorizationService>();
@@ -139,6 +138,14 @@ builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ITrackOrganizationService, TrackOrganizationService>();
 builder.Services.AddScoped<IArtistTrackOrganizationService, ArtistTrackOrganizationService>();
 builder.Services.AddScoped<IPlaylistBackupService, PlaylistBackupService>();
+
+// Register cache infrastructure (DIP: depends on abstraction ICacheRepository)
+builder.Services.AddSingleton<ICacheRepository, RedisCacheRepository>();
+
+// Register cache services (ISP: separate interfaces for each cache type)
+builder.Services.AddScoped<ITrackCacheService, TrackCacheService>();
+builder.Services.AddScoped<IPlaylistCacheService, PlaylistCacheService>();
+builder.Services.AddScoped<IArtistCacheService, ArtistCacheService>();
 
 builder.Services.AddHttpClient();
 

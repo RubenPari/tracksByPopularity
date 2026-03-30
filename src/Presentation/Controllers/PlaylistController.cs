@@ -6,11 +6,11 @@ namespace tracksByPopularity.Presentation.Controllers;
 
 /// <summary>
 /// API controller for playlist-related operations.
-/// Handles requests to create and manage specialized playlists.
+/// Uses ISP: Injects only IPlaylistCacheService, not the full ICacheService.
 /// </summary>
 [ApiController]
 [Route("api/playlist")]
-public class PlaylistController(ICacheService cacheService) : ControllerBase
+public class PlaylistController(IPlaylistCacheService playlistCacheService) : ControllerBase
 {
     /// <summary>
     /// Retrieves all playlists owned by the current user.
@@ -24,7 +24,7 @@ public class PlaylistController(ICacheService cacheService) : ControllerBase
         var spotifyClient = HttpContext.GetSpotifyClient();
         var spotifyUserId = HttpContext.GetSpotifyUserId();
 
-        var playlists = await cacheService.GetUserPlaylistsWithCacheAsync(spotifyClient, spotifyUserId);
+        var playlists = await playlistCacheService.GetPlaylistsAsync(spotifyClient, spotifyUserId);
 
         // Set cache headers for client-side caching
         Response.Headers["Cache-Control"] = "public, max-age=300";
@@ -44,8 +44,8 @@ public class PlaylistController(ICacheService cacheService) : ControllerBase
         var spotifyUserId = HttpContext.GetSpotifyUserId();
 
         // Invalidate and refetch
-        await cacheService.InvalidatePlaylistsCacheAsync(spotifyUserId);
-        var playlists = await cacheService.GetUserPlaylistsWithCacheAsync(spotifyClient, spotifyUserId);
+        await playlistCacheService.InvalidateAsync(spotifyUserId);
+        var playlists = await playlistCacheService.GetPlaylistsAsync(spotifyClient, spotifyUserId);
 
         return Ok(ApiResponse<IList<PlaylistInfo>>.Ok(playlists));
     }

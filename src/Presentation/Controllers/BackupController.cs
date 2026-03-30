@@ -5,11 +5,15 @@ using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
 
+/// <summary>
+/// API controller for playlist backup operations.
+/// Uses ISP: Injects only IPlaylistCacheService needed for cache invalidation.
+/// </summary>
 [ApiController]
 [Route("api/backup")]
 public class BackupController(
     IPlaylistBackupService backupService,
-    ICacheService cacheService) : ControllerBase
+    IPlaylistCacheService playlistCacheService) : ControllerBase
 {
     [HttpGet("list")]
     [SpotifyAuth]
@@ -43,8 +47,8 @@ public class BackupController(
 
         if (restored)
         {
-            // Invalidate playlists cache after restore
-            await cacheService.InvalidatePlaylistsCacheAsync(spotifyUserId);
+            // Invalidate playlists cache after restore (ISP: only inject what we need)
+            await playlistCacheService.InvalidateAsync(spotifyUserId);
             return Ok(ApiResponse.Ok("Playlist restored successfully"));
         }
 
