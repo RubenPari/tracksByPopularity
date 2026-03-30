@@ -18,12 +18,18 @@ DotEnv.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog for logging
-builder.Host.UseSerilog((context, services, _) =>
+builder.Host.UseSerilog((context, services, loggerConfig) =>
 {
-    SerilogConfiguration.CreateLoggerConfiguration(context.Configuration)
+    loggerConfig
+        .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
+        .MinimumLevel.Debug()
+        .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Information)
+        .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+        .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
         .Enrich.FromLogContext()
-        .WriteTo.Console()
+        .WriteTo.Console(
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
         .WriteTo.File(
             formatter: new Serilog.Formatting.Compact.CompactJsonFormatter(),
             path: "logs/tracks-by-popularity-.log",

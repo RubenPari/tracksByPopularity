@@ -43,7 +43,7 @@ public class PlaylistBackupService : IPlaylistBackupService
         var snapshot = new Domain.Entities.PlaylistSnapshot
         {
             Id = Guid.NewGuid(),
-            UserId = user?.Id ?? Guid.Empty,
+            UserId = user?.Id,
             SpotifyUserId = spotifyUserId,
             PlaylistId = playlistId,
             PlaylistName = playlistName,
