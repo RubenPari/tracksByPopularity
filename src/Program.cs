@@ -74,7 +74,7 @@ builder.Services.AddAuthentication(options =>
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING") 
     ?? "Server=localhost;Port=3306;Database=tracksbypopularity;User=root;Password=password;";
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    options.UseMySql(connectionString, new MariaDbServerVersion(new Version(11, 0))));
 
 // Register services
 builder.Services.AddSingleton<IJwtService, JwtService>();
@@ -146,11 +146,6 @@ app.UseGlobalExceptionHandling();
 // Add authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Map health check endpoint before other middlewares to avoid interference
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
-    .WithName("HealthCheck")
-    .WithTags("Health");
 
 // Add other middlewares
 app.UseMiddleware<RedirectHomeMiddleware>();

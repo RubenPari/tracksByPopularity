@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
 using tracksByPopularity.Infrastructure.Configuration;
 
 namespace tracksByPopularity.Infrastructure.Services;
@@ -18,11 +19,11 @@ public class MailtrapEmailService : IEmailService
     private readonly ILogger<MailtrapEmailService> _logger;
 
     public MailtrapEmailService(
-        MailtrapSettings settings,
+        IOptions<MailtrapSettings> settings,
         IHttpClientFactory httpClientFactory,
         ILogger<MailtrapEmailService> logger)
     {
-        _settings = settings;
+        _settings = settings.Value;
         _httpClient = httpClientFactory.CreateClient("Mailtrap");
         _httpClient.DefaultRequestHeaders.Add("Api-Key", _settings.ApiKey);
         _logger = logger;

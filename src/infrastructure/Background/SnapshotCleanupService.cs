@@ -3,7 +3,7 @@ using tracksByPopularity.Application.Interfaces;
 namespace tracksByPopularity.Infrastructure.Background;
 
 public class SnapshotCleanupService(
-    IPlaylistBackupService backupService,
+    IServiceScopeFactory scopeFactory,
     ILogger<SnapshotCleanupService> logger)
     : BackgroundService
 {
@@ -18,6 +18,8 @@ public class SnapshotCleanupService(
         {
             try
             {
+                using var scope = scopeFactory.CreateScope();
+                var backupService = scope.ServiceProvider.GetRequiredService<IPlaylistBackupService>();
                 var deletedCount = await backupService.DeleteOldSnapshotsAsync(SnapshotRetentionDays);
                 if (deletedCount > 0)
                 {

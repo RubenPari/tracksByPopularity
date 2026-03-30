@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using tracksByPopularity.Infrastructure.Configuration;
 
@@ -16,9 +17,9 @@ public class JwtService : IJwtService
 {
     private readonly JwtSettings _jwtSettings;
 
-    public JwtService(JwtSettings jwtSettings)
+    public JwtService(IOptions<JwtSettings> jwtSettings)
     {
-        _jwtSettings = jwtSettings;
+        _jwtSettings = jwtSettings.Value;
     }
 
     public string GenerateToken(Guid userId, string email)
