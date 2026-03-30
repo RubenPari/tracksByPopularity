@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using StackExchange.Redis;
 using SpotifyAPI.Web;
 
 namespace tracksByPopularity.Presentation.Middlewares;
@@ -49,6 +50,16 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
                 statusCode = HttpStatusCode.BadRequest;
                 message = argEx.Message;
                 logger.LogWarning(argEx, "Bad request");
+                break;
+            case RedisConnectionException:
+                statusCode = HttpStatusCode.ServiceUnavailable;
+                message = "Cache service temporarily unavailable. Please try again.";
+                logger.LogError(exception, "Redis connection error");
+                break;
+            case RedisTimeoutException:
+                statusCode = HttpStatusCode.GatewayTimeout;
+                message = "Cache service timed out. Please try again.";
+                logger.LogError(exception, "Redis timeout error");
                 break;
             default:
                 logger.LogError(exception, "Unhandled error occurred.");
