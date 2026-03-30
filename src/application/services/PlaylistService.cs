@@ -50,7 +50,33 @@ public class PlaylistService : IPlaylistService
         var playlistsFirstPage = await spotifyClient.Playlists.GetUsers(userId);
         var allPlaylists = await spotifyClient.PaginateAll(playlistsFirstPage);
 
-        var mapper = new PlaylistMapper();
-        return allPlaylists.Select(p => mapper.MapToPlaylistInfo(p)).ToList();
+        return allPlaylists.Select(p => new PlaylistInfo
+        {
+            Id = p.Id ?? string.Empty,
+            Name = p.Name ?? string.Empty,
+            Description = p.Description,
+            TotalTracks = p.Tracks?.Total ?? 0,
+            Uri = p.Uri,
+            Collaborative = p.Collaborative,
+            ExternalUrls = p.ExternalUrls,
+            Followers = p.Followers?.Total,
+            Href = p.Href,
+            Images = p.Images?.Select(img => new PlaylistImageInfo
+            {
+                Url = img.Url,
+                Height = img.Height,
+                Width = img.Width,
+            }).ToList(),
+            Owner = p.Owner is not null ? new PlaylistOwnerInfo
+            {
+                Id = p.Owner.Id,
+                DisplayName = p.Owner.DisplayName,
+                Uri = p.Owner.Uri,
+                Href = p.Owner.Href,
+            } : null,
+            Public = p.Public,
+            SnapshotId = p.SnapshotId,
+            Type = p.Type,
+        }).ToList();
     }
 }

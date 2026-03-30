@@ -65,9 +65,9 @@ public class PopularityRange
     public static PopularityRange Medium => new(41, 60);
 
     /// <summary>
-    /// Creates a range for "more-medium" popularity tracks (41-80).
+    /// Creates a range for "more-medium" popularity tracks (61-80).
     /// </summary>
-    public static PopularityRange MoreMedium => new(41, 80);
+    public static PopularityRange MoreMedium => new(61, 80);
 
     /// <summary>
     /// Creates a range for "more" popularity tracks (81-100).

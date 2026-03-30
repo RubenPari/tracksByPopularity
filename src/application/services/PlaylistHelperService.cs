@@ -110,15 +110,13 @@ public class PlaylistHelperService : IPlaylistHelper
     /// </summary>
     private static string GetPopularityPlaylistName(PopularityRange range)
     {
-        return range switch
-        {
-            _ when range == PopularityRange.Less => "Popularity: Less (0-20)",
-            _ when range == PopularityRange.LessMedium => "Popularity: Less Medium (21-40)",
-            _ when range == PopularityRange.Medium => "Popularity: Medium (41-60)",
-            _ when range == PopularityRange.MoreMedium => "Popularity: More Medium (61-80)",
-            _ when range == PopularityRange.More => "Popularity: More (81-100)",
-            _ => $"Popularity: {range.Min}-{range.Max}"
-        };
+        return $"Popularity: {range.Min}-{range.Max}";
     }
+
+    private static readonly string[] LegacyNamePrefixes =
+    [
+        "Popularity: Less (", "Popularity: Less Medium (", "Popularity: Medium (",
+        "Popularity: More Medium (", "Popularity: More ("
+    ];
 }
 
