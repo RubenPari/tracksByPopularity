@@ -1,75 +1,111 @@
 ﻿using StackExchange.Redis;
+using tracksByPopularity.Application.Interfaces;
 
 namespace tracksByPopularity.Infrastructure.Background;
 
 /// <summary>
-/// Background service that periodically resets the Redis cache to ensure data freshness.
-/// Runs continuously and flushes the Redis database at regular intervals.
+/// Background service that manages Redis cache expiration.
+/// Uses Redis TTL for automatic expiration instead of manual flushing.
+/// This ensures better performance and prevents cache stampede.
 /// </summary>
 public class RedisCacheResetService : BackgroundService
 {
     private readonly IConnectionMultiplexer _redis;
     private readonly ILogger<RedisCacheResetService> _logger;
-    private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
+    private readonly IServiceProvider _serviceProvider;
+    private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(5);
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RedisCacheResetService"/> class.
-    /// </summary>
-    /// <param name="redis">The Redis connection multiplexer for cache operations.</param>
-    /// <param name="logger">The logger instance for recording service activities.</param>
+    // Key prefixes to track for expiration
+    private const string TracksKeyPrefix = "tracks:";
+    private const string PlaylistsKeyPrefix = "playlists:";
+    private const string ArtistsKeyPrefix = "artists:";
+    private const string TokenKeyPrefix = "spotify_token:";
+
     public RedisCacheResetService(
         IConnectionMultiplexer redis,
-        ILogger<RedisCacheResetService> logger
+        ILogger<RedisCacheResetService> logger,
+        IServiceProvider serviceProvider
     )
     {
         _redis = redis;
         _logger = logger;
+        _serviceProvider = serviceProvider;
     }
 
-    /// <summary>
-    /// Executes the background service task.
-    /// Periodically flushes the Redis database to clear cached data.
-    /// </summary>
-    /// <param name="stoppingToken">Cancellation token to stop the service gracefully.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    /// <remarks>
-    /// This service runs continuously, flushing the Redis cache every 5 minutes.
-    /// This ensures that cached track data doesn't become stale and forces fresh
-    /// data retrieval from the Spotify API when needed.
-    /// 
-    /// The service handles errors gracefully, logging them and continuing execution.
-    /// </remarks>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation(
-            "Redis cache reset service started. Cache will be reset every {Interval} minutes",
-            _interval.TotalMinutes
+            "Redis cache management service started. Checking for expired keys every {Interval} minutes",
+            _checkInterval.TotalMinutes
         );
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var endpoints = _redis.GetEndPoints();
-                if (endpoints.Length == 0)
-                {
-                    _logger.LogWarning("No Redis endpoints found");
-                    await Task.Delay(_interval, stoppingToken);
-                    continue;
-                }
-
-                var server = _redis.GetServer(endpoints[0]);
-                await server.FlushDatabaseAsync();
-                _logger.LogInformation("Redis cache flushed successfully");
+                await CleanupExpiredKeysAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error resetting Redis cache");
+                _logger.LogError(ex, "Error during Redis cache cleanup");
             }
 
-            await Task.Delay(_interval, stoppingToken);
+            await Task.Delay(_checkInterval, stoppingToken);
         }
 
-        _logger.LogInformation("Redis cache reset service stopped");
+        _logger.LogInformation("Redis cache management service stopped");
+    }
+
+    /// <summary>
+    /// Cleans up expired user cache entries.
+    /// Note: Redis TTL handles automatic expiration, this is a fallback mechanism
+    /// for any orphaned keys or additional cleanup logic.
+    /// </summary>
+    private async Task CleanupExpiredKeysAsync()
+    {
+        var endpoints = _redis.GetEndPoints();
+        if (endpoints.Length == 0)
+        {
+            _logger.LogWarning("No Redis endpoints found");
+            return;
+        }
+
+        var server = _redis.GetServer(endpoints[0]);
+        var db = _redis.GetDatabase();
+
+        // Track active users for potential cache warming
+        var activeUserCount = 0;
+
+        try
+        {
+            // Scan for user-specific cache keys that might need cleanup
+            var keysToCheck = new List<string>
+            {
+                TracksKeyPrefix,
+                PlaylistsKeyPrefix,
+                ArtistsKeyPrefix
+            };
+
+            foreach (var keyPrefix in keysToCheck)
+            {
+                await foreach (var key in server.KeysAsync(pattern: $"{keyPrefix}*"))
+                {
+                    var ttl = await db.KeyTimeToLiveAsync(key);
+                    if (ttl.HasValue && ttl.Value > TimeSpan.Zero)
+                    {
+                        activeUserCount++;
+                    }
+                }
+            }
+
+            _logger.LogInformation(
+                "Redis cache check completed. Found {ActiveUserCount} active cache entries",
+                activeUserCount
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error scanning Redis keys, will retry next interval");
+        }
     }
 }

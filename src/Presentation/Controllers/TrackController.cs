@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SpotifyAPI.Web;
+using tracksByPopularity.Application.DTOs;
 using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
@@ -23,6 +24,7 @@ public class TrackController(
     /// </summary>
     [HttpPost("popularity/{range}")]
     [SpotifyAuth]
+    [ResponseCache(Duration = 0, VaryByQueryKeys = new[] { "range" })]
     public async Task<ActionResult<ApiResponse>> AddTracksByPopularity(string range)
     {
         var popularityRange = range.ToLowerInvariant() switch
@@ -43,7 +45,7 @@ public class TrackController(
 
         var spotifyClient = HttpContext.GetSpotifyClient();
         var spotifyUserId = HttpContext.GetSpotifyUserId();
-        var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+        var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient, spotifyUserId);
 
         var added = await trackOrganizationService.OrganizeTracksByPopularityAsync(
             spotifyUserId,
@@ -51,6 +53,9 @@ public class TrackController(
             popularityRange,
             spotifyClient
         );
+
+        // Invalidate playlists cache after adding tracks (playlists changed)
+        await cacheService.InvalidatePlaylistsCacheAsync(spotifyUserId);
 
         if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
 
@@ -60,31 +65,21 @@ public class TrackController(
 
     /// <summary>
     /// Returns a list of unique artists from the user's saved tracks, sorted by track count.
+    /// Results are cached for improved performance.
     /// </summary>
     [HttpGet("artists")]
     [SpotifyAuth]
+    [ResponseCache(Duration = 30, VaryByQueryKeys = new[] { "range" })]
     public async Task<ActionResult<ApiResponse<IEnumerable<ArtistSummary>>>> GetLibraryArtists()
     {
         var spotifyClient = HttpContext.GetSpotifyClient();
+        var spotifyUserId = HttpContext.GetSpotifyUserId();
 
-        // Fetch all followed artists (cursor-paginated)
-        var followedIds = new HashSet<string>();
-        string? after = null;
-        while (true)
-        {
-            var followedRequest = new FollowOfCurrentUserRequest { Limit = 50 };
-            if (after != null) followedRequest.After = after;
-            var response = await spotifyClient.Follow.OfCurrentUser(followedRequest);
-            var page = response.Artists;
-            foreach (var artist in page.Items!)
-            {
-                followedIds.Add(artist.Id);
-            }
-            if (page.Cursors?.After == null) break;
-            after = page.Cursors.After;
-        }
+        // Use cached followed artists
+        var followedIds = await cacheService.GetFollowedArtistsWithCacheAsync(spotifyClient, spotifyUserId);
 
-        var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+        // Use cached tracks
+        var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient, spotifyUserId);
 
         var artists = allTracks
             .SelectMany(st => st.Track.Artists.Select(a => new { a.Id, a.Name, TrackId = st.Track.Id }))
@@ -99,6 +94,10 @@ public class TrackController(
             .OrderByDescending(a => a.Count)
             .ToList();
 
+        // Set cache headers for client-side caching
+        Response.Headers["Cache-Control"] = "public, max-age=60";
+        Response.Headers["ETag"] = $"\"artists-{followedIds.Count}-{allTracks.Count}\"";
+
         return Ok(ApiResponse<IEnumerable<ArtistSummary>>.Ok(artists));
     }
 
@@ -107,11 +106,12 @@ public class TrackController(
     /// </summary>
     [HttpPost("artist")]
     [SpotifyAuth]
+    [ResponseCache(Duration = 0, VaryByQueryKeys = new[] { "artistId" })]
     public async Task<ActionResult<ApiResponse>> Artist([FromQuery] AddTracksByArtistRequest request)
     {
         var spotifyClient = HttpContext.GetSpotifyClient();
         var spotifyUserId = HttpContext.GetSpotifyUserId();
-        var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient);
+        var allTracks = await cacheService.GetAllUserTracksWithClientAsync(spotifyClient, spotifyUserId);
 
         var added = await artistTrackOrganizationService.OrganizeArtistTracksAsync(
             spotifyUserId,
@@ -119,6 +119,9 @@ public class TrackController(
             request.ArtistId,
             spotifyClient
         );
+
+        // Invalidate playlists cache after adding tracks
+        await cacheService.InvalidatePlaylistsCacheAsync(spotifyUserId);
 
         if (added) return Ok(ApiResponse.Ok("Tracks added to playlist"));
 

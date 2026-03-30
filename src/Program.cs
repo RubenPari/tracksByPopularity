@@ -108,16 +108,21 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         EndPoints = { $"{redisSettings.Host}:{redisSettings.Port}" },
         Password = redisSettings.Password,
         Ssl = redisSettings.UseSsl,
-        AllowAdmin = true,
+        AllowAdmin = false, // Disabled for security, use pattern-based deletion instead
         AbortOnConnectFail = false,
-        ConnectTimeout = 20000, // 20 seconds
-        SyncTimeout = 20000, // 20 seconds
-        AsyncTimeout = 20000, // 20 seconds
-        ReconnectRetryPolicy = new LinearRetry(10000), // 10 seconds
+        ConnectTimeout = 10000, // 10 seconds
+        SyncTimeout = 10000, // 10 seconds
+        AsyncTimeout = 10000, // 10 seconds
+        ReconnectRetryPolicy = new LinearRetry(5000), // 5 seconds retry
+        ConnectRetry = 3,
+        KeepAlive = 60, // Send keepalive every 60 seconds
     };
 
     return ConnectionMultiplexer.Connect(configuration);
 });
+
+// Add response caching for improved performance
+builder.Services.AddResponseCaching();
 builder.Services.AddHostedService<RedisCacheResetService>();
 builder.Services.AddHostedService<SnapshotCleanupService>();
 
@@ -148,6 +153,9 @@ using (var scope = app.Services.CreateScope())
 
 // Add global exception handling middleware
 app.UseGlobalExceptionHandling();
+
+// Add response caching middleware
+app.UseResponseCaching();
 
 // Add authentication and authorization
 app.UseAuthentication();

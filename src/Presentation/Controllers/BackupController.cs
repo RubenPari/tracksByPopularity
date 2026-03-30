@@ -1,15 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
 using tracksByPopularity.Application.DTOs;
+using tracksByPopularity.Application.Interfaces;
 using tracksByPopularity.Presentation.Filters;
 
 namespace tracksByPopularity.Presentation.Controllers;
 
 [ApiController]
 [Route("api/backup")]
-public class BackupController(IPlaylistBackupService backupService) : ControllerBase
+public class BackupController(
+    IPlaylistBackupService backupService,
+    ICacheService cacheService) : ControllerBase
 {
     [HttpGet("list")]
     [SpotifyAuth]
+    [ResponseCache(Duration = 60)] // Cache snapshots list for 1 minute
     public async Task<ActionResult<ApiResponse<IEnumerable<Application.DTOs.PlaylistSnapshot>>>> GetSnapshots()
     {
         var spotifyUserId = HttpContext.GetSpotifyUserId();
@@ -39,6 +43,8 @@ public class BackupController(IPlaylistBackupService backupService) : Controller
 
         if (restored)
         {
+            // Invalidate playlists cache after restore
+            await cacheService.InvalidatePlaylistsCacheAsync(spotifyUserId);
             return Ok(ApiResponse.Ok("Playlist restored successfully"));
         }
 
