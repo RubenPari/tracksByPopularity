@@ -27,8 +27,10 @@ public class SpotifyLinkController(
     [Authorize]
     public ActionResult<ApiResponse> GetLinkUrl()
     {
+        var linkCallbackUri = SpotifyRedirectUriHelper.GetLinkCallbackUri(_spotifySettings.RedirectUri);
+
         var loginRequest = new LoginRequest(
-            new Uri($"{_spotifySettings.RedirectUri}/api/spotify/callback"),
+            linkCallbackUri,
             _spotifySettings.ClientId,
             LoginRequest.ResponseType.Code
         )
@@ -68,12 +70,14 @@ public class SpotifyLinkController(
 
         try
         {
+            var linkCallbackUri = SpotifyRedirectUriHelper.GetLinkCallbackUri(_spotifySettings.RedirectUri);
+
             var tokenResponse = await new OAuthClient().RequestToken(
                 new AuthorizationCodeTokenRequest(
                     _spotifySettings.ClientId,
                     _spotifySettings.ClientSecret,
                     code,
-                    new Uri($"{_spotifySettings.RedirectUri}/api/spotify/callback")
+                    linkCallbackUri
                 )
             );
 

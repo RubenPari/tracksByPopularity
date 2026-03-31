@@ -27,8 +27,10 @@ public class AuthController(
     [HttpGet("login")]
     public ActionResult<ApiResponse<object>> Login()
     {
+        var authCallbackUri = SpotifyRedirectUriHelper.GetAuthCallbackUri(_spotifySettings.RedirectUri);
+
         var loginRequest = new LoginRequest(
-            new Uri(_spotifySettings.RedirectUri),
+            authCallbackUri,
             _spotifySettings.ClientId,
             LoginRequest.ResponseType.Code
         )
@@ -63,13 +65,15 @@ public class AuthController(
 
         try
         {
+            var authCallbackUri = SpotifyRedirectUriHelper.GetAuthCallbackUri(_spotifySettings.RedirectUri);
+
             // Exchange code for tokens
             var tokenResponse = await new OAuthClient().RequestToken(
                 new AuthorizationCodeTokenRequest(
                     _spotifySettings.ClientId,
                     _spotifySettings.ClientSecret,
                     code,
-                    new Uri(_spotifySettings.RedirectUri)
+                    authCallbackUri
                 )
             );
 
