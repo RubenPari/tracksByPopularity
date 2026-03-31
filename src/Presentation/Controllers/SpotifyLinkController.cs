@@ -115,7 +115,7 @@ public class SpotifyLinkController(
                 Path = "/"
             });
 
-            return Redirect($"{_appSettings.FrontendOrigin}/settings?success=spotify_linked");
+            return Redirect($"{_appSettings.FrontendOrigin}/settings?success=spotify_linked&spotify_user_id={Uri.EscapeDataString(spotifyUserId)}");
         }
         catch (Exception ex)
         {

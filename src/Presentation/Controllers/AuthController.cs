@@ -96,7 +96,7 @@ public class AuthController(
             });
 
             logger.LogInformation("Successfully authenticated user: {UserId}", userId);
-            return Redirect(_appSettings.FrontendOrigin);
+            return Redirect($"{_appSettings.FrontendOrigin}/auth/callback?spotify_user_id={Uri.EscapeDataString(userId)}");
         }
         catch (Exception ex)
         {
@@ -111,7 +111,7 @@ public class AuthController(
     [HttpGet("is-auth")]
     public async Task<ActionResult<ApiResponse<object>>> IsAuthenticated()
     {
-        var userId = Request.Cookies[SpotifyAuthFilter.UserIdCookieName];
+        var userId = SpotifyAuthFilter.GetUserId(Request);
 
         if (string.IsNullOrEmpty(userId))
         {
@@ -138,7 +138,7 @@ public class AuthController(
     [HttpPost("logout")]
     public async Task<ActionResult<ApiResponse>> Logout()
     {
-        var userId = Request.Cookies[SpotifyAuthFilter.UserIdCookieName];
+        var userId = SpotifyAuthFilter.GetUserId(Request);
 
         if (!string.IsNullOrEmpty(userId))
         {
