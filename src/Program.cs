@@ -70,7 +70,16 @@ builder.Services.AddAuthentication(options =>
             if (!string.IsNullOrEmpty(accessToken))
             {
                 context.Token = accessToken;
+                return Task.CompletedTask;
             }
+
+            var authorizationHeader = context.Request.Headers.Authorization.ToString();
+            if (!string.IsNullOrWhiteSpace(authorizationHeader) &&
+                authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Token = authorizationHeader["Bearer ".Length..].Trim();
+            }
+
             return Task.CompletedTask;
         }
     };
@@ -97,6 +106,31 @@ builder.Services.AddControllers()
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<AddTracksByArtistRequestValidator>();
+
+var allowedOrigins = new[]
+{
+    Environment.GetEnvironmentVariable("FRONTEND_ORIGIN"),
+    builder.Configuration["AppSettings:FrontendOrigin"],
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://ruben-tracks-popularity-frontend.fly.dev"
+}
+.OfType<string>()
+.Where(origin => !string.IsNullOrWhiteSpace(origin))
+.Distinct(StringComparer.OrdinalIgnoreCase)
+.ToArray();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
 // Service that set Redis cache
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -163,6 +197,9 @@ app.UseGlobalExceptionHandling();
 
 // Add response caching middleware
 app.UseResponseCaching();
+
+// Allow the frontend to call the API before auth challenges short-circuit the pipeline.
+app.UseCors("Frontend");
 
 // Add authentication and authorization
 app.UseAuthentication();
