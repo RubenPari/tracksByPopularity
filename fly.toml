@@ -1,0 +1,30 @@
+# fly.toml for backend deployment on Fly.io
+app = &quot;tracksbyPopularity-backend&quot;
+primary_region = &quot;iad&quot;
+
+[build]
+  dockerfile = &quot;Dockerfile&quot;
+
+[env]
+  ASPNETCORE_ENVIRONMENT = &quot;Production&quot;
+  ASPNETCORE_URLS = &quot;http://+:8080&quot;
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = [&quot;app&quot;]
+
+# Secrets to be set via `fly secrets set KEY=value`
+# e.g., CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, REDIS_PASSWORD
+
+# For Redis, attach a Fly Redis volume or use external service
+# Example: [mounts]
+#   source = &quot;redis_data&quot;
+#   destination = &quot;/data&quot;
+
+# For Database (MySQL in compose), consider migrating to Fly Postgres:
+# fly postgres create
+# Then set DATABASE_CONNECTION_STRING accordingly
