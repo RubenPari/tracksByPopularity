@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia";
 import { config } from "../config";
 import { cache, keys, TTL } from "../lib/cache";
 import { ApiResponse, AppError } from "../lib/response";
-import { cookieOptions, createSpotifySession, deleteSpotifySession, directSessionId, session } from "../plugins/session";
+import { cookieOptions, createSpotifySession, directSessionId, revokeSpotifySessions, session } from "../plugins/session";
 import { authorizeUrl, deleteToken, exchangeCode, fetchSpotifyUserId, loadToken, saveToken } from "../spotify/tokens";
 
 export type OAuthState = { purpose: "login" | "link"; userId?: string };
@@ -67,8 +67,8 @@ export const authRoutes = new Elysia({ prefix: "/auth", detail: { tags: ["Auth S
   })
   .post(
     "/logout",
-    async ({ spotifyUserId, headers, cookie }) => {
-      await deleteSpotifySession(directSessionId(headers, cookie));
+    async ({ spotifyUserId, cookie }) => {
+      await revokeSpotifySessions(spotifyUserId);
       await deleteToken(spotifyUserId);
       cookie.spotify_user_id.remove();
       return ApiResponse.Ok(null, "Logout Spotify effettuato");

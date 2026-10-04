@@ -5,7 +5,7 @@ import { db } from "../db/client";
 import { spotifyLinks } from "../db/schema";
 import { cache, keys, TTL } from "../lib/cache";
 import { ApiResponse } from "../lib/response";
-import { cookieOptions, createSpotifySession, deleteSpotifySession, directSessionId, session } from "../plugins/session";
+import { cookieOptions, createSpotifySession, revokeSpotifySessions, session } from "../plugins/session";
 import { authorizeUrl, deleteToken, linkSpotify } from "../spotify/tokens";
 import { callbackQuery, completeOAuth, createOAuthState } from "./auth";
 
@@ -47,11 +47,11 @@ export const spotifyLinkRoutes = new Elysia({ prefix: "/api/spotify", detail: { 
   )
   .post(
     "/unlink",
-    async ({ userId, headers, cookie }) => {
-      await deleteSpotifySession(directSessionId(headers, cookie));
+    async ({ userId, cookie }) => {
       const [link] = await db.delete(spotifyLinks).where(eq(spotifyLinks.userId, userId)).returning();
       if (link) {
         const id = link.spotifyUserId;
+        await revokeSpotifySessions(id);
         await deleteToken(id);
         await cache.del(keys.tracks(id), keys.playlists(id), keys.artists(id));
       }

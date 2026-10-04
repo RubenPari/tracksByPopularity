@@ -19,12 +19,19 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Opaque, revocable server-side session: `spotify_session:{uuid}` -> spotifyUserId. */
 export async function createSpotifySession(spotifyUserId: string) {
   const sessionId = crypto.randomUUID();
-  await redis.set(keys.session(sessionId), spotifyUserId, "EX", TTL.session);
+  await redis
+    .multi()
+    .set(keys.session(sessionId), spotifyUserId, "EX", TTL.session)
+    .sadd(keys.userSessions(spotifyUserId), sessionId)
+    .expire(keys.userSessions(spotifyUserId), TTL.session)
+    .exec();
   return sessionId;
 }
 
-export async function deleteSpotifySession(sessionId: string | null) {
-  if (sessionId) await cache.del(keys.session(sessionId));
+/** Revokes every session of a Spotify user (all devices), e.g. on logout or unlink. */
+export async function revokeSpotifySessions(spotifyUserId: string) {
+  const sessionIds = await redis.smembers(keys.userSessions(spotifyUserId));
+  await cache.del(keys.userSessions(spotifyUserId), ...sessionIds.map(keys.session));
 }
 
 /** Session id sent by the client: `X-Spotify-User-Id` header takes priority over the cookie. */
