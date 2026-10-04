@@ -24,7 +24,7 @@ graph TD
     Client["Frontend SPA (React + TypeScript / Vite)"] -->|"HTTPS / Eden Treaty / REST"| Presentation["Presentation Layer (ElysiaJS Routes, Hooks, Validation TypeBox, Middlewares)"]
     Presentation --> AppService["Application Layer (Services: Track, Playlist, Backup, Auth, Spotify)"]
     AppService --> Domain["Domain Layer (Entities, DTOs, Schemi di Dominio, Interfacce)"]
-    AppService --> Infra["Infrastructure Layer (Drizzle ORM, PostgreSQL, Redis, Spotify API, Mailer)"]
+    AppService --> Infra["Infrastructure Layer (Drizzle ORM, PostgreSQL, Redis, Spotify API)"]
     Infra --> Domain
     Presentation --> Infra
     
@@ -35,13 +35,11 @@ graph TD
     
     subgraph External
         SpotifyAPI["Spotify Web API"]
-        Mailtrap["Mailtrap (Email Service)"]
     end
     
     Infra --> Postgres
     Infra --> Redis
     Infra --> SpotifyAPI
-    Infra --> Mailtrap
 ```
 
 ### 2.1 Stack Tecnologico
@@ -67,7 +65,6 @@ graph TD
   - Autenticazione JWT tramite `@elysiajs/jwt` con cookie HTTP-Only (`access_token`, `SameSite=Strict`, `Secure`).
 - **Servizi Transazionali & Terze Parti**:
   - Integrazione Spotify Web API tramite client TypeScript nativo basato su `fetch` ottimizzato di Bun con gestione automatica del refresh dei token OAuth.
-  - Mailtrap / Nodemailer per l'invio di email transazionali (attivazione account e reset credenziali).
 - **Documentazione API**: Swagger/OpenAPI integrato automaticamente via `@elysiajs/swagger` accessibile su `/swagger`.
 - **Logging & Monitoraggio**: Logger strutturato JSON (Pino / log middleware) con tracciamento di request ID, tempo di risposta e rotazione file di log.
 - **Containerizzazione & Hosting**: Dockerfile multistage basato sull'immagine ufficiale `oven/bun` con supporto per deployment containerizzato (es. Fly.io, Docker Compose, VPS).
@@ -77,19 +74,17 @@ graph TD
 ## 3. Requisiti Funzionali (Functional Requirements)
 
 ### RF-01: Gestione Account Locale e Autenticazione JWT
-- **RF-01.1 Registrazione Utente**: L'utente può registrarsi fornendo email valida e password. La password viene sottoposta ad hashing sicuro tramite `Bun.password` prima del salvataggio nel database PostgreSQL.
-- **RF-01.2 Verifica Email**: Alla registrazione viene generato un token crittografico univoco salvato su PostgreSQL e inviato via email tramite Mailtrap. L'account è abilitato al login solo previa verifica positiva tramite endpoint o link dedicato.
+- **RF-01.1 Registrazione Utente**: L'utente può registrarsi fornendo email valida e password. La password viene sottoposta ad hashing sicuro tramite `Bun.password` prima del salvataggio nel database PostgreSQL. L'account è attivo immediatamente (nessuna verifica email).
 - **RF-01.3 Login con JWT**: L'utente registrato può autenticarsi ricevendo un token JWT firmato (validità 7 giorni). Il token viene trasmesso sia nel corpo della risposta sia memorizzato in un cookie sicuro `HttpOnly` (`access_token`, `SameSite=Strict`).
-- **RF-01.4 Recupero e Reset Password**: Flusso di recupero password con generazione di token monouso a scadenza temporale, notifica email e validazione della nuova credenziale.
 - **RF-01.5 Cambio Password Autenticato**: Gli utenti autenticati possono modificare la propria password fornendo la password attuale e quella nuova.
-- **RF-01.6 Informazioni Profilo (`/me`)**: Accesso alle informazioni dell'account autenticato (id, email, stato verifica email, stato collegamento Spotify).
+- **RF-01.6 Informazioni Profilo (`/me`)**: Accesso alle informazioni dell'account autenticato (id, email, stato collegamento Spotify).
 - **RF-01.7 Logout Locale**: Invalidazione e rimozione del cookie di sessione JWT.
 
 ### RF-02: Integrazione Spotify OAuth 2.0
 - **RF-02.1 Flusso Authorization Code**: Generazione dell'URL di autorizzazione verso Spotify con gli scope necessari:
   - `user-read-email`, `user-read-private`, `user-library-read`, `user-library-modify`, `user-top-read`, `playlist-modify-private`, `playlist-modify-public`, `user-follow-read`.
 - **RF-02.2 Scambio Codice e Salvataggio Token**: Ricezione del codice di autorizzazione nella callback OAuth, scambio con Access Token e Refresh Token, e archiviazione crittografata su Redis associata allo `SpotifyUserId`.
-- **RF-02.3 Tracciamento Sessione Spotify**: Gestione del contesto utente tramite cookie `spotify_user_id` e supporto all'header HTTP `X-Spotify-User-Id` (prioritario rispetto al cookie) per scenari client-side/cross-origin tra React e backend ElysiaJS.
+- **RF-02.3 Tracciamento Sessione Spotify**: Gestione del contesto utente tramite cookie `spotify_user_id` e supporto all'header HTTP `X-Spotify-User-Id` (prioritario rispetto al cookie) per scenari client-side/cross-origin tra React e backend ElysiaJS. Sia il cookie sia l'header trasportano il valore **firmato HMAC** (`{spotifyUserId}.{firma}`, restituito da `/auth/is-auth` come `sessionToken`) per impedire l'impersonificazione di altri utenti.
 - **RF-02.4 Verifica Stato Autenticazione (`/auth/is-auth`)**: Validazione in tempo reale della sessione verificando la disponibilità e validità del token memorizzato in Redis.
 - **RF-02.5 Logout Spotify**: Rimozione dei token da Redis e cancellazione del cookie associato.
 
@@ -151,7 +146,7 @@ graph TD
   - Azione di **Restore** con modale di conferma e spiegazione dell'effetto (ripristino esatto dello stato precedente).
   - Azione di eliminazione manuale dello snapshot con feedback immediato.
 - **RF-09.5 Gestione Autenticazione & Notifiche Client**:
-  - Form reattivi di Registrazione, Login, Richiesta Reset Password e Cambio Password con validazione lato client (React Hook Form / Zod).
+  - Form reattivi di Registrazione, Login e Cambio Password con validazione lato client (React Hook Form / Zod).
   - Gestione flessibile della modalità di accesso (solo Spotify o con Account Locale collegato).
   - Sistema di notifiche Toast unificato per feedback su operazioni riuscite ed errori API.
 
@@ -200,8 +195,6 @@ Il database adotta **PostgreSQL 16+** con tipi di dato nativi avanzati come `UUI
 ```mermaid
 erDiagram
     users ||--o| spotify_links : "possiede"
-    users ||--o{ email_verification_tokens : "ha"
-    users ||--o{ password_reset_tokens : "ha"
     users ||--o{ playlist_snapshots : "archivia (opzionale)"
     playlist_snapshots ||--|{ snapshot_tracks : "contiene"
 
@@ -209,7 +202,6 @@ erDiagram
         uuid id PK
         varchar email UK
         varchar password_hash
-        boolean is_email_verified
         timestamptz created_at
         timestamptz updated_at
     }
@@ -222,20 +214,6 @@ erDiagram
         text refresh_token
         timestamptz created_at
         timestamptz updated_at
-    }
-
-    email_verification_tokens {
-        uuid id PK
-        uuid user_id FK
-        varchar token UK
-        timestamptz created_at
-    }
-
-    password_reset_tokens {
-        uuid id PK
-        uuid user_id FK
-        varchar token UK
-        timestamptz created_at
     }
 
     playlist_snapshots {
@@ -261,7 +239,6 @@ erDiagram
   - `id`: `uuid` primario generato con `defaultRandom()`.
   - `email`: `varchar(255)`, non nullo, con vincolo di unicità `uniqueIndex`.
   - `password_hash`: `varchar(255)`, hash generato con `Bun.password`.
-  - `is_email_verified`: `boolean`, default `false`.
   - `created_at` / `updated_at`: `timestamptz`, default `now()`.
 
 - **`spotify_links`**:
@@ -270,12 +247,6 @@ erDiagram
   - `spotify_user_id`: `varchar(255)`, non nullo, univoco.
   - `access_token` / `refresh_token`: `text`, token crittografati per l'accesso offline.
   - `created_at` / `updated_at`: `timestamptz`.
-
-- **`email_verification_tokens` & `password_reset_tokens`**:
-  - `id`: `uuid` primario.
-  - `user_id`: `uuid` referente `users.id` (`onDelete: 'cascade'`).
-  - `token`: `varchar(255)`, univoco.
-  - `created_at`: `timestamptz`.
 
 - **`playlist_snapshots`**:
   - `id`: `uuid` primario (`defaultRandom()`).
@@ -330,9 +301,6 @@ Grazie a **ElysiaJS** ed **Eden Treaty**, ogni endpoint espone contratti stretta
 | **Auth Spotify** | `POST` | `/auth/logout` | Cookie o Header | Logout Spotify e rimozione credenziali da Redis |
 | **Account** | `POST` | `/api/account/register` | Nessuna | Registrazione nuovo utente nativo |
 | **Account** | `POST` | `/api/account/login` | Nessuna | Login utente (restituisce JWT e imposta cookie) |
-| **Account** | `GET` | `/api/account/verify/:token`| Nessuna | Verifica email utente |
-| **Account** | `POST` | `/api/account/forgot-password`| Nessuna | Richiesta link reset password |
-| **Account** | `POST` | `/api/account/reset-password` | Nessuna | Impostazione nuova password tramite token |
 | **Account** | `POST` | `/api/account/change-password`| JWT Bearer | Modifica password per utente autenticato |
 | **Account** | `POST` | `/api/account/link-spotify` | JWT Bearer | Associazione credenziali Spotify ad account locale |
 | **Account** | `GET` | `/api/account/me` | JWT Bearer | Informazioni profilo utente corrente |
@@ -387,7 +355,6 @@ Il sistema richiede la valorizzazione delle seguenti variabili d'ambiente (file 
 | `REDIS_PORT` | Porta del server Redis | `6379` |
 | `REDIS_PASSWORD` | Password di accesso Redis (opzionale) | `redis-secure-pwd` |
 | `FRONTEND_ORIGIN` | URL autorizzato nelle policy CORS per il frontend React | `http://localhost:5173` |
-| `MAILTRAP_API_KEY` | Chiave API / Credenziali per invio email transazionali | `mailtrap-secret-token` |
 
 ### 8.2 Frontend (`.env`)
 
