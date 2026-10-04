@@ -5,7 +5,14 @@ import { db } from "../db/client";
 import { spotifyLinks } from "../db/schema";
 import { cache, keys, TTL } from "../lib/cache";
 import { ApiResponse } from "../lib/response";
-import { cookieOptions, createSpotifySession, revokeSpotifySessions, session } from "../plugins/session";
+import {
+  cookieOptions,
+  createSpotifySession,
+  deleteSpotifySession,
+  directSessionId,
+  revokeSpotifySessions,
+  session,
+} from "../plugins/session";
 import { authorizeUrl, deleteToken, linkSpotify } from "../spotify/tokens";
 import { callbackQuery, completeOAuth, createOAuthState } from "./auth";
 
@@ -47,7 +54,9 @@ export const spotifyLinkRoutes = new Elysia({ prefix: "/api/spotify", detail: { 
   )
   .post(
     "/unlink",
-    async ({ userId, cookie }) => {
+    async ({ userId, headers, cookie }) => {
+      // Always drop the caller's own session, even when no link exists.
+      await deleteSpotifySession(directSessionId(headers, cookie));
       const [link] = await db.delete(spotifyLinks).where(eq(spotifyLinks.userId, userId)).returning();
       if (link) {
         const id = link.spotifyUserId;

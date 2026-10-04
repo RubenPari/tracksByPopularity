@@ -34,6 +34,10 @@ export async function revokeSpotifySessions(spotifyUserId: string) {
   await cache.del(keys.userSessions(spotifyUserId), ...sessionIds.map(keys.session));
 }
 
+export async function deleteSpotifySession(sessionId: string | null) {
+  if (sessionId) await cache.del(keys.session(sessionId));
+}
+
 /** Session id sent by the client: `X-Spotify-User-Id` header takes priority over the cookie. */
 export function directSessionId(headers: Record<string, string | undefined>, cookie: Record<string, { value?: unknown }>) {
   const id = headers["x-spotify-user-id"] ?? (cookie.spotify_user_id?.value as string | undefined);
