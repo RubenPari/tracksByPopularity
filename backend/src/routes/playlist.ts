@@ -6,7 +6,7 @@ import { getPlaylists } from "../services/library";
 
 export const playlistRoutes = new Elysia({ prefix: "/api/playlist", detail: { tags: ["Playlist"] } })
   .use(session)
-  .get("/all", async ({ request, spotifyUserId }) => withEtag(request, await getPlaylists(spotifyUserId)), {
+  .get("/all", async (ctx) => withEtag(ctx, await getPlaylists(ctx.spotifyUserId)), {
     requireSpotify: true,
   })
   .post("/refresh", async ({ spotifyUserId }) => ApiResponse.Ok(await getPlaylists(spotifyUserId, true)), {

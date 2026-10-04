@@ -64,8 +64,10 @@ export const keys = {
   tracks: (spotifyUserId: string) => `tracks:${spotifyUserId}`,
   playlists: (spotifyUserId: string) => `playlists:${spotifyUserId}`,
   artists: (spotifyUserId: string) => `artists:${spotifyUserId}`,
+  profile: (spotifyUserId: string) => `profile:${spotifyUserId}`,
   token: (spotifyUserId: string) => `spotify_token:${spotifyUserId}`,
   oauthState: (state: string) => `oauth_state:${state}`,
+  session: (sessionId: string) => `spotify_session:${sessionId}`,
 };
 
-export const TTL = { playlists: 15 * 60, tracks: 30 * 60, artists: 30 * 60, oauthState: 10 * 60 };
+export const TTL = { profile: 15 * 60, playlists: 15 * 60, tracks: 30 * 60, artists: 30 * 60, oauthState: 10 * 60, session: 30 * 86_400 };

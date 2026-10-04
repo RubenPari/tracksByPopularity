@@ -40,6 +40,20 @@ export function splitByArtistRanges(tracks: Track[]) {
   }));
 }
 
+/** Saved tracks that a sync of `range` would put in the playlist, most popular first. */
+export async function previewPopularity(spotifyUserId: string, range: PopularityRange) {
+  const tracks = (await getSavedTracks(spotifyUserId)).filter((track) => inRange(track, POPULARITY_RANGES[range]));
+  return {
+    range,
+    playlistName: popularityPlaylistName(range),
+    trackCount: tracks.length,
+    tracks: tracks.sort((a, b) => b.popularity - a.popularity),
+  };
+}
+
+const MANAGED_NAME = /^(Popularity: \d+-\d+|.+ (less|medium|more))$/;
+export const isManagedPlaylist = (name: string) => MANAGED_NAME.test(name);
+
 export async function sortByPopularity(spotifyUserId: string, range: PopularityRange) {
   const playlist = await findOrCreatePlaylist(spotifyUserId, popularityPlaylistName(range));
   await createSnapshot(spotifyUserId, playlist, "popularity_sort");

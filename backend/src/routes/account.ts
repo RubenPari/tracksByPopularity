@@ -2,9 +2,8 @@ import { eq } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { db } from "../db/client";
 import { spotifyLinks, users } from "../db/schema";
-import { unsign } from "../lib/crypto";
 import { ApiResponse, AppError } from "../lib/response";
-import { cookieOptions, session } from "../plugins/session";
+import { cookieOptions, directSpotifyUserId, session } from "../plugins/session";
 import { linkSpotify } from "../spotify/tokens";
 
 const credentials = t.Object({
@@ -66,8 +65,7 @@ export const accountRoutes = new Elysia({ prefix: "/api/account", detail: { tags
     "/link-spotify",
     async ({ userId, headers, cookie }) => {
       // Only a direct Spotify session counts here, not the account's existing link.
-      const spotifyUserId =
-        unsign(headers["x-spotify-user-id"]) ?? unsign(cookie.spotify_user_id?.value as string | undefined);
+      const spotifyUserId = await directSpotifyUserId(headers, cookie);
       if (!spotifyUserId) throw new AppError(401, "SPOTIFY_NOT_AUTHENTICATED", "Effettua prima il login Spotify");
       await linkSpotify(userId, spotifyUserId);
       return ApiResponse.Ok({ spotifyUserId }, "Account Spotify collegato");

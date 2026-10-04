@@ -6,7 +6,7 @@ import { fetchPlaylists } from "./services/library";
 import { deleteSnapshotsOlderThan } from "./services/snapshot";
 
 const SNAPSHOT_RETENTION_DAYS = 30;
-const CACHE_PATTERNS = ["tracks:*", "playlists:*", "artists:*", "oauth_state:*"];
+const CACHE_PATTERNS = ["tracks:*", "playlists:*", "artists:*", "profile:*", "oauth_state:*", "spotify_session:*"];
 
 async function scanKeys(match: string): Promise<string[]> {
   const found: string[] = [];

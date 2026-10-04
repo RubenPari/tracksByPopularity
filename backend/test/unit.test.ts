@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { decode, encode } from "../src/lib/cache";
-import { decrypt, encrypt, sign, unsign } from "../src/lib/crypto";
+import { decrypt, encrypt } from "../src/lib/crypto";
 import { chunk, type Track } from "../src/services/library";
-import { inRange, POPULARITY_RANGES, popularityPlaylistName, splitByArtistRanges } from "../src/services/organize";
+import { inRange, isManagedPlaylist, POPULARITY_RANGES, popularityPlaylistName, splitByArtistRanges } from "../src/services/organize";
 import { spotifyFetch } from "../src/spotify/client";
 
 const track = (popularity: number): Track => ({ id: `t${popularity}`, uri: `spotify:track:${popularity}`, name: "x", popularity, artists: [] });
@@ -14,6 +14,10 @@ describe("popularity ranges", () => {
     }
   });
   test("playlist naming", () => expect(popularityPlaylistName("medium")).toBe("Popularity: 41-60"));
+  test("managed playlist detection", () => {
+    expect(["Popularity: 0-20", "Daft Punk more", "Muse less"].every(isManagedPlaylist)).toBe(true);
+    expect(["Road trip", "Popularity", "less"].some(isManagedPlaylist)).toBe(false);
+  });
   test("artist split boundaries", () => {
     const bands = splitByArtistRanges([0, 33, 34, 66, 67, 100].map(track));
     expect(bands.map((b) => b.uris.length)).toEqual([2, 2, 2]);
@@ -38,13 +42,6 @@ test("encrypt/decrypt roundtrip", async () => {
   const cipher = await encrypt("refresh-token");
   expect(cipher).not.toContain("refresh-token");
   expect(await decrypt(cipher)).toBe("refresh-token");
-});
-
-test("signed session values reject tampering", () => {
-  expect(unsign(sign("user.with.dots"))).toBe("user.with.dots");
-  expect(unsign(sign("alice").replace("alice", "bob"))).toBeNull();
-  expect(unsign("alice")).toBeNull();
-  expect(unsign(undefined)).toBeNull();
 });
 
 describe("spotifyFetch", () => {

@@ -4,7 +4,7 @@ import { Elysia } from "elysia";
 import { config } from "../config";
 import { db } from "../db/client";
 import { spotifyLinks } from "../db/schema";
-import { unsign } from "../lib/crypto";
+import { cache, keys, redis, TTL } from "../lib/cache";
 import { AppError } from "../lib/response";
 
 export const cookieOptions = (sameSite: "strict" | "lax" = "strict") => ({
@@ -13,6 +13,31 @@ export const cookieOptions = (sameSite: "strict" | "lax" = "strict") => ({
   secure: config.isProduction,
   path: "/",
 });
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Opaque, revocable server-side session: `spotify_session:{uuid}` -> spotifyUserId. */
+export async function createSpotifySession(spotifyUserId: string) {
+  const sessionId = crypto.randomUUID();
+  await redis.set(keys.session(sessionId), spotifyUserId, "EX", TTL.session);
+  return sessionId;
+}
+
+export async function deleteSpotifySession(sessionId: string | null) {
+  if (sessionId) await cache.del(keys.session(sessionId));
+}
+
+/** Session id sent by the client: `X-Spotify-User-Id` header takes priority over the cookie. */
+export function directSessionId(headers: Record<string, string | undefined>, cookie: Record<string, { value?: unknown }>) {
+  const id = headers["x-spotify-user-id"] ?? (cookie.spotify_user_id?.value as string | undefined);
+  return id && UUID.test(id) ? id : null;
+}
+
+/** Spotify user of a direct (header/cookie) session, ignoring any account link. */
+export async function directSpotifyUserId(headers: Record<string, string | undefined>, cookie: Record<string, { value?: unknown }>) {
+  const sessionId = directSessionId(headers, cookie);
+  return sessionId ? redis.get(keys.session(sessionId)) : null;
+}
 
 export const session = new Elysia({ name: "session" })
   .use(jwt({ name: "jwt", secret: config.jwtSecret, exp: "7d" }))
@@ -25,9 +50,9 @@ export const session = new Elysia({ name: "session" })
       const payload = await jwt.verify(token);
       return payload && typeof payload.sub === "string" ? payload.sub : null;
     };
-    /** Spotify session: signed header > signed cookie > Spotify account linked to the JWT user. */
+    /** Spotify session: header > cookie > Spotify account linked to the JWT user. */
     const resolveSpotifyUserId = async (): Promise<string | null> => {
-      const direct = unsign(headers["x-spotify-user-id"]) ?? unsign(cookie.spotify_user_id?.value as string | undefined);
+      const direct = await directSpotifyUserId(headers, cookie);
       if (direct) return direct;
       const userId = await resolveUserId();
       if (!userId) return null;

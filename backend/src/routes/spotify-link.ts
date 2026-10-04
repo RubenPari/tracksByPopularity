@@ -3,10 +3,9 @@ import { Elysia } from "elysia";
 import { config } from "../config";
 import { db } from "../db/client";
 import { spotifyLinks } from "../db/schema";
-import { cache, keys } from "../lib/cache";
-import { sign } from "../lib/crypto";
+import { cache, keys, TTL } from "../lib/cache";
 import { ApiResponse } from "../lib/response";
-import { cookieOptions, session } from "../plugins/session";
+import { cookieOptions, createSpotifySession, deleteSpotifySession, directSessionId, session } from "../plugins/session";
 import { authorizeUrl, deleteToken, linkSpotify } from "../spotify/tokens";
 import { callbackQuery, completeOAuth, createOAuthState } from "./auth";
 
@@ -14,8 +13,8 @@ export const spotifyLinkRoutes = new Elysia({ prefix: "/api/spotify", detail: { 
   .use(session)
   .get(
     "/link-url",
-    async ({ userId }) => {
-      const state = await createOAuthState({ purpose: "link", userId });
+    async ({ userId, cookie }) => {
+      const state = await createOAuthState({ purpose: "link", userId }, cookie.oauth_state);
       return ApiResponse.Ok({ url: authorizeUrl(state, config.spotify.linkRedirectUri) });
     },
     { requireUser: true },
@@ -24,9 +23,16 @@ export const spotifyLinkRoutes = new Elysia({ prefix: "/api/spotify", detail: { 
     "/callback",
     async ({ query, cookie, redirect }) => {
       if (query.error || !query.code) return redirect(`${config.frontendOrigin}/?link=denied`);
-      const { state, spotifyUserId } = await completeOAuth(query.state, query.code, "link", config.spotify.linkRedirectUri);
+      // access_token is SameSite=Strict and not sent on Spotify's redirect; the oauth_state cookie binds the browser.
+      const { state, spotifyUserId } = await completeOAuth(
+        query.state,
+        cookie.oauth_state,
+        query.code,
+        "link",
+        config.spotify.linkRedirectUri,
+      );
       await linkSpotify(state.userId!, spotifyUserId);
-      cookie.spotify_user_id.set({ value: sign(spotifyUserId), maxAge: 30 * 86_400, ...cookieOptions("lax") });
+      cookie.spotify_user_id.set({ value: await createSpotifySession(spotifyUserId), maxAge: TTL.session, ...cookieOptions("lax") });
       return redirect(`${config.frontendOrigin}/?link=success`);
     },
     { query: callbackQuery },
@@ -41,7 +47,8 @@ export const spotifyLinkRoutes = new Elysia({ prefix: "/api/spotify", detail: { 
   )
   .post(
     "/unlink",
-    async ({ userId, cookie }) => {
+    async ({ userId, headers, cookie }) => {
+      await deleteSpotifySession(directSessionId(headers, cookie));
       const [link] = await db.delete(spotifyLinks).where(eq(spotifyLinks.userId, userId)).returning();
       if (link) {
         const id = link.spotifyUserId;

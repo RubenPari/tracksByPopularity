@@ -5,6 +5,15 @@ export type Track = { id: string; uri: string; name: string; popularity: number;
 export type Artist = { id: string; name: string; popularity: number; image: string | null };
 export type Playlist = { id: string; name: string; trackCount: number; image: string | null };
 
+export type Profile = { displayName: string; image: string | null };
+
+export function getProfile(spotifyUserId: string): Promise<Profile> {
+  return cache.wrap(keys.profile(spotifyUserId), TTL.profile, async () => {
+    const me = await spotifyFetch<any>(spotifyUserId, "/me");
+    return { displayName: me.display_name ?? me.id, image: me.images?.[0]?.url ?? null };
+  });
+}
+
 export function getSavedTracks(spotifyUserId: string): Promise<Track[]> {
   return cache.wrap(keys.tracks(spotifyUserId), TTL.tracks, () =>
     paginate<Track>(spotifyUserId, "/me/tracks?limit=50", (page) => ({

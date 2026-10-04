@@ -7,6 +7,7 @@ import { ApiResponse, AppError } from "./lib/response";
 import { accountRoutes } from "./routes/account";
 import { authRoutes } from "./routes/auth";
 import { backupRoutes } from "./routes/backup";
+import { dashboardRoutes } from "./routes/dashboard";
 import { healthRoutes } from "./routes/health";
 import { playlistRoutes } from "./routes/playlist";
 import { spotifyLinkRoutes } from "./routes/spotify-link";
@@ -56,6 +57,7 @@ export const app = new Elysia()
   .use(spotifyLinkRoutes)
   .use(trackRoutes)
   .use(playlistRoutes)
-  .use(backupRoutes);
+  .use(backupRoutes)
+  .use(dashboardRoutes);
 
 export type App = typeof app;

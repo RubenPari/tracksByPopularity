@@ -1,11 +1,22 @@
 import { ApiResponse } from "./response";
 
-/** Wraps data in ApiResponse with a weak ETag; answers 304 when the client already has it. */
-export function withEtag<T>(request: Request, data: T) {
+type EtagContext = {
+  request: Request;
+  set: { headers: Record<string, string | number>; status?: number | string };
+};
+
+/**
+ * Wraps data in ApiResponse with a weak ETag. When the client already holds it, answers 304 with no body.
+ * Returns the typed body so Eden can infer the response.
+ */
+export function withEtag<T>({ request, set }: EtagContext, data: T): ApiResponse<T> {
   const body = ApiResponse.Ok(data);
-  const json = JSON.stringify(body);
-  const etag = `W/"${Bun.hash(json).toString(36)}"`;
-  const headers = { ETag: etag, "Cache-Control": "private, no-cache", "Content-Type": "application/json" };
-  if (request.headers.get("if-none-match") === etag) return new Response(null, { status: 304, headers });
-  return new Response(json, { headers });
+  const etag = `W/"${Bun.hash(JSON.stringify(body)).toString(36)}"`;
+  set.headers.etag = etag;
+  set.headers["cache-control"] = "private, no-cache";
+  if (request.headers.get("if-none-match") === etag) {
+    set.status = 304;
+    return null as unknown as ApiResponse<T>;
+  }
+  return body;
 }

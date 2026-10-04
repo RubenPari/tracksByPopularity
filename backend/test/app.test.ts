@@ -31,3 +31,9 @@ test("forged X-Spotify-User-Id header is ignored", async () => {
   );
   expect(response.status).toBe(401);
 });
+
+test("OAuth callback without the browser-bound state cookie is rejected", async () => {
+  const response = await app.handle(new Request("http://localhost/auth/callback?code=abc&state=attacker-state"));
+  expect(response.status).toBe(400);
+  expect(await response.json()).toMatchObject({ error: "INVALID_OAUTH_STATE" });
+});

@@ -25,23 +25,3 @@ export async function decrypt(payload: string): Promise<string> {
   );
   return new TextDecoder().decode(plain);
 }
-
-function hmac(value: string): string {
-  return new Bun.CryptoHasher("sha256", `session:${config.jwtSecret}`).update(value).digest("base64url");
-}
-
-/** Signs a value as `value.signature` so clients cannot forge another user's session id. */
-export function sign(value: string): string {
-  return `${value}.${hmac(value)}`;
-}
-
-/** Returns the original value if the signature is valid, otherwise null. */
-export function unsign(signed: string | undefined | null): string | null {
-  if (!signed) return null;
-  const dot = signed.lastIndexOf(".");
-  if (dot <= 0) return null;
-  const value = signed.slice(0, dot);
-  const expected = Buffer.from(hmac(value));
-  const actual = Buffer.from(signed.slice(dot + 1));
-  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual) ? value : null;
-}
