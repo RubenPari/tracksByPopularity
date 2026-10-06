@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AudioLines } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router";
@@ -42,22 +43,31 @@ export function Login() {
     },
   });
 
-  if (loading) return <div className="grid min-h-dvh place-items-center"><Spinner /></div>;
+  if (loading)
+    return (
+      <div className="grid min-h-dvh place-items-center bg-black">
+        <Spinner />
+      </div>
+    );
   if (spotifyAuthenticated) return <Navigate to="/" replace />;
 
   const { errors } = form.formState;
+  const appName = import.meta.env.VITE_APP_NAME ?? "TracksByPopularity";
+
   return (
-    <main className="grid min-h-dvh place-items-center bg-gradient-to-b from-highlight to-black p-4">
-      <div className="w-full max-w-md rounded-2xl bg-surface p-8 shadow-2xl">
+    <main className="grid min-h-dvh place-items-center bg-[radial-gradient(ellipse_at_top,_rgb(34_197_94_/_0.18),_transparent_50%),linear-gradient(to_bottom,_#1a1a1a,_#000)] p-4">
+      <div className="motion-safe:animate-fade-up w-full max-w-md rounded-2xl border border-white/10 bg-surface p-8 shadow-2xl shadow-spotify/10">
         <div className="mb-8 text-center">
-          <span className="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-spotify text-2xl text-black">♪</span>
-          <h1 className="text-2xl font-bold">{import.meta.env.VITE_APP_NAME ?? "TracksByPopularity"}</h1>
-          <p className="mt-1 text-sm text-muted">Organizza la tua libreria Spotify per popolarità e artista</p>
+          <span className="mx-auto mb-4 grid size-16 place-items-center rounded-full bg-spotify text-black shadow-[var(--shadow-glow)]">
+            <AudioLines className="size-8" aria-hidden />
+          </span>
+          <h1 className="font-display text-3xl tracking-wide">{appName}</h1>
+          <p className="mt-2 text-sm text-muted">Organizza la tua libreria Spotify per popolarità e artista</p>
         </div>
 
         <button
           type="button"
-          className="btn-primary w-full py-3"
+          className="btn-primary w-full py-3 text-base"
           onClick={() => spotifyLogin.mutate()}
           disabled={spotifyLogin.isPending}
         >
@@ -76,7 +86,9 @@ export function Login() {
               type="button"
               aria-selected={mode === tab}
               onClick={() => setMode(tab)}
-              className={`rounded-full py-1.5 transition ${mode === tab ? "bg-white text-black" : "text-muted"}`}
+              className={`min-h-10 cursor-pointer rounded-full py-2 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                mode === tab ? "bg-white text-black shadow-sm" : "text-muted hover:text-white"
+              }`}
             >
               {tab === "login" ? "Accedi" : "Registrati"}
             </button>
@@ -85,20 +97,36 @@ export function Login() {
 
         <form className="space-y-4" noValidate onSubmit={form.handleSubmit((values) => submit.mutate(values))}>
           <label className="block text-sm">
-            <span className="mb-1 block font-semibold">Email</span>
-            <input className="input" type="email" autoComplete="email" aria-invalid={!!errors.email} {...form.register("email")} />
-            {errors.email && <span className="mt-1 block text-xs text-red-400">{errors.email.message}</span>}
+            <span className="mb-1.5 block font-semibold">Email</span>
+            <input
+              className="input"
+              type="email"
+              autoComplete="email"
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? "email-error" : undefined}
+              {...form.register("email")}
+            />
+            {errors.email && (
+              <span id="email-error" role="alert" className="mt-1 block text-xs text-red-400">
+                {errors.email.message}
+              </span>
+            )}
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-semibold">Password</span>
+            <span className="mb-1.5 block font-semibold">Password</span>
             <input
               className="input"
               type="password"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
               aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
               {...form.register("password")}
             />
-            {errors.password && <span className="mt-1 block text-xs text-red-400">{errors.password.message}</span>}
+            {errors.password && (
+              <span id="password-error" role="alert" className="mt-1 block text-xs text-red-400">
+                {errors.password.message}
+              </span>
+            )}
           </label>
           <button type="submit" className="btn-secondary w-full py-3" disabled={submit.isPending}>
             {submit.isPending ? "Attendere..." : mode === "login" ? "Accedi" : "Crea account"}

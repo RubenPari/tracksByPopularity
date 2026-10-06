@@ -3,8 +3,10 @@ import { Search, Split } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, fetchData, send } from "../api";
-import { ConfirmDialog, EmptyState, ErrorState, PageHeader, Spinner } from "../components/ui";
+import { ConfirmDialog, EmptyState, ErrorState, PageHeader, Skeleton } from "../components/ui";
 import { filterArtists, useDebounced, type ArtistSort } from "../lib";
+
+const STAGGER = ["stagger-1", "stagger-2", "stagger-3", "stagger-4", "stagger-5"] as const;
 
 export function Artists() {
   const [query, setQuery] = useState("");
@@ -34,11 +36,17 @@ export function Artists() {
         <label className="relative min-w-60 flex-1">
           <span className="sr-only">Cerca artista</span>
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" aria-hidden />
-          <input className="input pl-9" type="search" placeholder="Cerca artista..." value={query} onChange={(e) => setQuery(e.target.value)} />
+          <input
+            className="input pl-9"
+            type="search"
+            placeholder="Cerca artista..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
         </label>
         <label className="flex items-center gap-2 text-sm">
           <span className="text-muted">Ordina per</span>
-          <select className="input w-auto" value={sort} onChange={(e) => setSort(e.target.value as ArtistSort)}>
+          <select className="input w-auto min-h-11" value={sort} onChange={(e) => setSort(e.target.value as ArtistSort)}>
             <option value="tracks">Brani salvati</option>
             <option value="popularity">Popolarità</option>
           </select>
@@ -46,23 +54,44 @@ export function Artists() {
       </div>
 
       {artists.isPending ? (
-        <Spinner label="Caricamento artisti..." />
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" aria-busy="true">
+          {Array.from({ length: 10 }, (_, i) => (
+            <li key={i} className="card space-y-3 p-4">
+              <Skeleton className="aspect-square w-full rounded-full" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-9 w-full rounded-full" />
+            </li>
+          ))}
+        </ul>
       ) : artists.isError ? (
         <ErrorState onRetry={() => artists.refetch()} />
       ) : visible.length === 0 ? (
-        <EmptyState>{artists.data?.length ? "Nessun artista corrisponde alla ricerca." : "Nessun artista seguito nella tua libreria."}</EmptyState>
+        <EmptyState>
+          {artists.data?.length ? "Nessun artista corrisponde alla ricerca." : "Nessun artista seguito nella tua libreria."}
+        </EmptyState>
       ) : (
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {visible.map((artist) => (
-            <li key={artist.id} className="card group flex flex-col p-4 transition hover:bg-highlight">
+          {visible.map((artist, i) => (
+            <li
+              key={artist.id}
+              className={`card group flex flex-col p-4 transition duration-200 hover:border-spotify/30 hover:bg-highlight hover:shadow-[var(--shadow-glow)] motion-safe:animate-fade-up ${STAGGER[i % 5]}`}
+            >
               {artist.image ? (
-                <img src={artist.image} alt="" loading="lazy" className="mb-3 aspect-square w-full rounded-full object-cover shadow-lg" />
+                <img
+                  src={artist.image}
+                  alt=""
+                  loading="lazy"
+                  className="mb-3 aspect-square w-full rounded-full object-cover shadow-lg transition duration-200 motion-safe:group-hover:scale-105"
+                />
               ) : (
-                <span className="mb-3 grid aspect-square w-full place-items-center rounded-full bg-highlight text-3xl font-bold">
+                <span className="font-display mb-3 grid aspect-square w-full place-items-center rounded-full bg-highlight text-3xl transition duration-200 motion-safe:group-hover:scale-105">
                   {artist.name.slice(0, 1)}
                 </span>
               )}
-              <p className="truncate font-semibold" title={artist.name}>{artist.name}</p>
+              <p className="truncate font-semibold" title={artist.name}>
+                {artist.name}
+              </p>
               <p className="mb-3 text-xs text-muted">
                 {artist.trackCount} brani · popolarità {artist.popularity}
               </p>
@@ -83,8 +112,9 @@ export function Artists() {
         onClose={() => setSelected(null)}
       >
         <p>
-          I brani saranno divisi in <strong className="text-white">{selected?.name} less</strong> (0-33),{" "}
-          <strong className="text-white">medium</strong> (34-66) e <strong className="text-white">more</strong> (67-100).
+          I brani saranno divisi in <strong className="text-foreground">{selected?.name} less</strong> (0-33),{" "}
+          <strong className="text-foreground">medium</strong> (34-66) e <strong className="text-foreground">more</strong>{" "}
+          (67-100).
         </p>
         <p>Prima della modifica viene creato uno snapshot di ciascuna delle tre playlist.</p>
       </ConfirmDialog>

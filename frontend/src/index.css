@@ -1,38 +1,85 @@
 @import "tailwindcss";
 
 @theme {
-  --color-spotify: #1ed760;
-  --color-spotify-dark: #1db954;
+  --color-spotify: #22c55e;
+  --color-spotify-dark: #16a34a;
+  --color-accent: #ffce5c;
   --color-surface: #121212;
-  --color-elevated: #1f1f1f;
-  --color-highlight: #2a2a2a;
-  --color-muted: #a7a7a7;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-elevated: #1a1a1a;
+  --color-highlight: #242424;
+  --color-muted: #a1a1aa;
+  --color-foreground: #f8fafc;
+  --color-destructive: #ef4444;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Righteous", ui-sans-serif, system-ui, sans-serif;
+  --shadow-glow: 0 0 24px rgb(34 197 94 / 0.35);
 }
 
 body {
-  @apply bg-black text-white antialiased;
+  @apply bg-black text-foreground antialiased;
 }
 
 dialog::backdrop {
-  background: rgb(0 0 0 / 0.7);
+  background: rgb(0 0 0 / 0.75);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black;
 }
 @utility btn-primary {
-  @apply btn bg-spotify text-black hover:bg-spotify-dark;
+  @apply btn bg-spotify text-black shadow-[var(--shadow-glow)] hover:bg-spotify-dark hover:shadow-[0_0_32px_rgb(34_197_94_/_0.45)];
 }
 @utility btn-secondary {
-  @apply btn border border-white/30 text-white hover:border-white;
+  @apply btn border border-white/30 text-white hover:border-white hover:bg-white/5;
 }
 @utility btn-danger {
-  @apply btn bg-red-500 text-white hover:bg-red-600;
+  @apply btn bg-destructive text-white hover:bg-red-600;
 }
 @utility input {
-  @apply w-full rounded-md border border-white/10 bg-highlight px-3 py-2 text-sm text-white placeholder:text-muted focus:border-spotify focus:outline-none;
+  @apply w-full rounded-lg border border-white/10 bg-highlight px-3 py-2.5 text-sm text-foreground placeholder:text-muted transition duration-200 focus:border-spotify focus:outline-none focus-visible:ring-2 focus-visible:ring-spotify/60;
 }
 @utility card {
-  @apply rounded-xl bg-elevated p-5;
+  @apply rounded-2xl border border-white/10 bg-elevated p-5 transition duration-200;
+}
+@utility font-display {
+  font-family: var(--font-display);
+}
+@utility animate-fade-up {
+  animation: fade-up 0.35s ease-out both;
+}
+@utility stagger-1 {
+  animation-delay: 40ms;
+}
+@utility stagger-2 {
+  animation-delay: 80ms;
+}
+@utility stagger-3 {
+  animation-delay: 120ms;
+}
+@utility stagger-4 {
+  animation-delay: 160ms;
+}
+@utility stagger-5 {
+  animation-delay: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none !important;
+  }
+
+  .motion-safe\:group-hover\:scale-105:is(:where(.group):hover *) {
+    transform: none !important;
+  }
 }

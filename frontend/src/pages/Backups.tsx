@@ -3,7 +3,7 @@ import { RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api, fetchData, send } from "../api";
-import { ConfirmDialog, EmptyState, ErrorState, PageHeader, Spinner } from "../components/ui";
+import { ConfirmDialog, EmptyState, ErrorState, PageHeader, Skeleton } from "../components/ui";
 import { formatDate, OPERATION_LABELS } from "../lib";
 
 type Pending = { action: "restore" | "delete"; id: string; playlistName: string; trackCount: number };
@@ -28,42 +28,60 @@ export function Backups() {
       <PageHeader title="Backup" subtitle="Snapshot creati automaticamente prima di ogni modifica. Conservati per 30 giorni." />
 
       {backups.isPending ? (
-        <Spinner />
+        <div className="card space-y-3 p-5" aria-busy="true">
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
       ) : backups.isError ? (
         <ErrorState onRetry={() => backups.refetch()} />
       ) : !backups.data?.length ? (
         <EmptyState>Nessuno snapshot: verranno creati alla prima sincronizzazione.</EmptyState>
       ) : (
-        <div className="card overflow-x-auto p-0">
+        <div className="card overflow-x-auto border-white/10 p-0">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-white/10 text-xs text-muted uppercase">
               <tr>
-                <th scope="col" className="px-5 py-3 font-medium">Data</th>
-                <th scope="col" className="px-5 py-3 font-medium">Playlist</th>
-                <th scope="col" className="px-5 py-3 font-medium">Operazione</th>
-                <th scope="col" className="px-5 py-3 text-right font-medium">Brani</th>
-                <th scope="col" className="px-5 py-3"><span className="sr-only">Azioni</span></th>
+                <th scope="col" className="px-5 py-3 font-medium">
+                  Data
+                </th>
+                <th scope="col" className="px-5 py-3 font-medium">
+                  Playlist
+                </th>
+                <th scope="col" className="px-5 py-3 font-medium">
+                  Operazione
+                </th>
+                <th scope="col" className="px-5 py-3 text-right font-medium">
+                  Brani
+                </th>
+                <th scope="col" className="px-5 py-3">
+                  <span className="sr-only">Azioni</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {backups.data.map((snapshot) => (
-                <tr key={snapshot.id} className="hover:bg-highlight/50">
+                <tr key={snapshot.id} className="transition-colors duration-150 hover:bg-highlight/50">
                   <td className="px-5 py-3 whitespace-nowrap text-muted">{formatDate(snapshot.createdAt)}</td>
                   <td className="px-5 py-3 font-medium">{snapshot.playlistName}</td>
-                  <td className="px-5 py-3 text-muted">{OPERATION_LABELS[snapshot.operationType] ?? snapshot.operationType}</td>
+                  <td className="px-5 py-3">
+                    <span className="rounded-full border border-white/10 bg-highlight px-2.5 py-0.5 text-xs text-muted">
+                      {OPERATION_LABELS[snapshot.operationType] ?? snapshot.operationType}
+                    </span>
+                  </td>
                   <td className="px-5 py-3 text-right tabular-nums">{snapshot.trackCount}</td>
                   <td className="px-5 py-3">
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
-                        className="btn-secondary px-3 py-1.5 text-xs"
+                        className="btn-secondary min-h-10 px-3 py-1.5 text-xs"
                         onClick={() => setPending({ action: "restore", ...snapshot })}
                       >
                         <RotateCcw className="size-4" aria-hidden /> Ripristina
                       </button>
                       <button
                         type="button"
-                        className="btn rounded-full p-2 text-muted hover:bg-red-500/20 hover:text-red-400"
+                        className="btn min-h-10 min-w-10 rounded-full p-2 text-muted hover:bg-destructive/20 hover:text-red-400"
                         aria-label={`Elimina snapshot di ${snapshot.playlistName}`}
                         onClick={() => setPending({ action: "delete", ...snapshot })}
                       >

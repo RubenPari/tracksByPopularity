@@ -59,21 +59,36 @@ export function Account() {
 
   return (
     <>
-      <PageHeader title="Account" />
+      <PageHeader title="Account" subtitle="Gestisci profilo, collegamento Spotify e password." />
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="card space-y-4" aria-labelledby="profile-title">
-          <h2 id="profile-title" className="text-lg font-bold">Profilo</h2>
+        <section className="card space-y-4 border-white/10" aria-labelledby="profile-title">
+          <h2 id="profile-title" className="font-display text-xl tracking-wide">
+            Profilo
+          </h2>
           {account ? (
-            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-sm">
               <dt className="text-muted">Email</dt>
-              <dd>{account.email}</dd>
+              <dd className="font-medium">{account.email}</dd>
               <dt className="text-muted">Spotify</dt>
-              <dd>{account.spotifyLinked ? `Collegato (${account.spotifyUserId})` : "Non collegato"}</dd>
+              <dd>
+                {account.spotifyLinked ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-spotify/40 bg-spotify/15 px-2.5 py-0.5 text-xs font-semibold text-spotify">
+                    Collegato ({account.spotifyUserId})
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full border border-accent/40 bg-accent/15 px-2.5 py-0.5 text-xs font-semibold text-accent">
+                    Non collegato
+                  </span>
+                )}
+              </dd>
             </dl>
           ) : (
             <p className="text-sm text-muted">
               Sei connesso solo con Spotify{spotifyUserId ? ` (${spotifyUserId})` : ""}.{" "}
-              <Link to="/login" className="text-spotify underline">Crea un account locale</Link> per conservare il collegamento.
+              <Link to="/login" className="font-semibold text-spotify underline-offset-2 hover:underline">
+                Crea un account locale
+              </Link>{" "}
+              per conservare il collegamento.
             </p>
           )}
 
@@ -94,7 +109,12 @@ export function Account() {
               </button>
             )}
             {!account && spotifyAuthenticated && (
-              <button type="button" className="btn-secondary" onClick={() => logoutSpotify.mutate()} disabled={logoutSpotify.isPending}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => logoutSpotify.mutate()}
+                disabled={logoutSpotify.isPending}
+              >
                 <LogOut className="size-4" aria-hidden /> Esci da Spotify
               </button>
             )}
@@ -119,20 +139,33 @@ function ChangePassword() {
   });
   const { errors } = form.formState;
   const fields = [
-    { name: "currentPassword", label: "Password attuale", autoComplete: "current-password" },
-    { name: "newPassword", label: "Nuova password", autoComplete: "new-password" },
-    { name: "confirmPassword", label: "Conferma nuova password", autoComplete: "new-password" },
+    { name: "currentPassword", label: "Password attuale", autoComplete: "current-password", errorId: "current-password-error" },
+    { name: "newPassword", label: "Nuova password", autoComplete: "new-password", errorId: "new-password-error" },
+    { name: "confirmPassword", label: "Conferma nuova password", autoComplete: "new-password", errorId: "confirm-password-error" },
   ] as const;
 
   return (
-    <section className="card" aria-labelledby="password-title">
-      <h2 id="password-title" className="mb-4 text-lg font-bold">Cambia password</h2>
+    <section className="card border-white/10" aria-labelledby="password-title">
+      <h2 id="password-title" className="font-display mb-4 text-xl tracking-wide">
+        Cambia password
+      </h2>
       <form className="space-y-4" noValidate onSubmit={form.handleSubmit((values) => change.mutate(values))}>
-        {fields.map(({ name, label, autoComplete }) => (
+        {fields.map(({ name, label, autoComplete, errorId }) => (
           <label key={name} className="block text-sm">
-            <span className="mb-1 block font-semibold">{label}</span>
-            <input className="input" type="password" autoComplete={autoComplete} aria-invalid={!!errors[name]} {...form.register(name)} />
-            {errors[name] && <span className="mt-1 block text-xs text-red-400">{errors[name].message}</span>}
+            <span className="mb-1.5 block font-semibold">{label}</span>
+            <input
+              className="input"
+              type="password"
+              autoComplete={autoComplete}
+              aria-invalid={!!errors[name]}
+              aria-describedby={errors[name] ? errorId : undefined}
+              {...form.register(name)}
+            />
+            {errors[name] && (
+              <span id={errorId} role="alert" className="mt-1 block text-xs text-red-400">
+                {errors[name].message}
+              </span>
+            )}
           </label>
         ))}
         <button type="submit" className="btn-primary" disabled={change.isPending}>
