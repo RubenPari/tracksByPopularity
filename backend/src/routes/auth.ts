@@ -5,6 +5,7 @@ import { ApiResponse, AppError } from "../lib/response";
 import { cookieOptions, createSpotifySession, directSessionId, revokeSpotifySessions, session } from "../plugins/session";
 import { authorizeUrl, deleteToken, exchangeCode, fetchSpotifyUserId, loadToken, saveToken } from "../spotify/tokens";
 
+/** Purpose of an OAuth round-trip: login creates a Spotify session; link attaches it to a local user. */
 export type OAuthState = { purpose: "login" | "link"; userId?: string };
 
 type Cookie = { value?: unknown; set(options: Record<string, unknown>): unknown; remove(): unknown };
@@ -13,6 +14,7 @@ type Cookie = { value?: unknown; set(options: Record<string, unknown>): unknown;
 export async function createOAuthState(state: OAuthState, cookie: Cookie) {
   const id = crypto.randomUUID();
   await cache.set(keys.oauthState(id), state, TTL.oauthState);
+  // Lax so the cookie survives the cross-site redirect back from Spotify.
   cookie.set({ value: id, maxAge: TTL.oauthState, ...cookieOptions("lax") });
   return id;
 }
@@ -39,6 +41,7 @@ export const callbackQuery = t.Object({
   error: t.Optional(t.String()),
 });
 
+/** Spotify-only login: authorize URL, OAuth callback, auth check, and logout. */
 export const authRoutes = new Elysia({ prefix: "/auth", detail: { tags: ["Auth Spotify"] } })
   .use(session)
   .get("/login", async ({ cookie }) => {

@@ -13,6 +13,10 @@ const credentials = t.Object({
 
 const hashPassword = (password: string) => Bun.password.hash(password, { algorithm: "argon2id" });
 
+/**
+ * Local account API: register/login (JWT cookie), password change, link an active Spotify session, profile, logout.
+ * JWT lives in `access_token` (SameSite=Strict); Spotify linking needs a direct Spotify session, not an existing link.
+ */
 export const accountRoutes = new Elysia({ prefix: "/api/account", detail: { tags: ["Account"] } })
   .use(session)
   .post(
@@ -90,6 +94,7 @@ export const accountRoutes = new Elysia({ prefix: "/api/account", detail: { tags
   .post(
     "/logout",
     ({ cookie }) => {
+      // Clears the local JWT only; Spotify sessions are left intact.
       cookie.access_token.remove();
       return ApiResponse.Ok(null, "Logout effettuato");
     },

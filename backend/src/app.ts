@@ -13,6 +13,10 @@ import { playlistRoutes } from "./routes/playlist";
 import { spotifyLinkRoutes } from "./routes/spotify-link";
 import { trackRoutes } from "./routes/track";
 
+/**
+ * Elysia app: CORS, Swagger, request-id logging, global error envelope, and all route modules.
+ * Cron jobs are mounted in `index.ts` so tests can import `app` without starting timers.
+ */
 export const app = new Elysia()
   .use(cors({ origin: config.frontendOrigin, credentials: true }))
   .use(swagger({ path: "/swagger", documentation: { info: { title: "TracksByPopularity API", version: "1.0.0" } } }))
@@ -31,6 +35,7 @@ export const app = new Elysia()
     });
   })
   .onError({ as: "global" }, ({ code, error, set, request, path }) => {
+    // Domain errors already carry HTTP status + machine-readable code.
     if (error instanceof AppError) {
       set.status = error.status;
       return ApiResponse.Fail(error.message, error.code);

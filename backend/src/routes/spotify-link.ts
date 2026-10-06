@@ -16,6 +16,10 @@ import {
 import { authorizeUrl, deleteToken, linkSpotify } from "../spotify/tokens";
 import { callbackQuery, completeOAuth, createOAuthState } from "./auth";
 
+/**
+ * OAuth link flow for a logged-in local user: authorize URL, callback, status, and unlink.
+ * Uses a dedicated redirect URI (`linkRedirectUri`) separate from Spotify-only login.
+ */
 export const spotifyLinkRoutes = new Elysia({ prefix: "/api/spotify", detail: { tags: ["Spotify Link"] } })
   .use(session)
   .get(
@@ -62,6 +66,7 @@ export const spotifyLinkRoutes = new Elysia({ prefix: "/api/spotify", detail: { 
         const id = link.spotifyUserId;
         await revokeSpotifySessions(id);
         await deleteToken(id);
+        // Drop cached library data for the unlinked Spotify account.
         await cache.del(keys.tracks(id), keys.playlists(id), keys.artists(id));
       }
       cookie.spotify_user_id.remove();

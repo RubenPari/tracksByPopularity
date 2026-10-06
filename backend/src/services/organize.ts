@@ -8,8 +8,11 @@ import {
 } from "./library";
 import { createSnapshot } from "./snapshot";
 
+/** Domain logic: popularity-band playlists and artist-band splits (snapshot before mutate). */
+
 type Range = readonly [min: number, max: number];
 
+/** Named popularity bands used for "Popularity: min-max" managed playlists. */
 export const POPULARITY_RANGES = {
   less: [0, 20],
   "less-medium": [21, 40],
@@ -19,6 +22,7 @@ export const POPULARITY_RANGES = {
 } as const satisfies Record<string, Range>;
 export type PopularityRange = keyof typeof POPULARITY_RANGES;
 
+/** Three bands for splitting an artist's saved tracks into separate playlists. */
 export const ARTIST_RANGES = {
   less: [0, 33],
   medium: [34, 66],
@@ -27,6 +31,7 @@ export const ARTIST_RANGES = {
 
 export const inRange = (track: Track, [min, max]: Range) => track.popularity >= min && track.popularity <= max;
 
+/** Canonical name for a popularity-managed playlist. */
 export const popularityPlaylistName = (range: PopularityRange) => {
   const [min, max] = POPULARITY_RANGES[range];
   return `Popularity: ${min}-${max}`;
@@ -51,9 +56,14 @@ export async function previewPopularity(spotifyUserId: string, range: Popularity
   };
 }
 
+/** Matches names created by this app: `Popularity: N-M` or `{Artist} less|medium|more`. */
 const MANAGED_NAME = /^(Popularity: \d+-\d+|.+ (less|medium|more))$/;
 export const isManagedPlaylist = (name: string) => MANAGED_NAME.test(name);
 
+/**
+ * Creates/finds the popularity playlist for `range`, snapshots it, then replaces tracks
+ * with saved library tracks in that popularity band (order preserved from filter).
+ */
 export async function sortByPopularity(spotifyUserId: string, range: PopularityRange) {
   const playlist = await findOrCreatePlaylist(spotifyUserId, popularityPlaylistName(range));
   await createSnapshot(spotifyUserId, playlist, "popularity_sort");
@@ -75,6 +85,10 @@ export async function listLibraryArtists(spotifyUserId: string) {
     .sort((a, b) => b.trackCount - a.trackCount);
 }
 
+/**
+ * Splits saved tracks for one artist into three playlists named `{Artist} less|medium|more`.
+ * Snapshots all three playlists before any mutation.
+ */
 export async function splitArtist(spotifyUserId: string, artistId: string) {
   const tracks = (await getSavedTracks(spotifyUserId)).filter((track) => track.artists.some((a) => a.id === artistId));
   const artistName = tracks[0]?.artists.find((a) => a.id === artistId)?.name;

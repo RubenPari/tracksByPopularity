@@ -25,6 +25,7 @@ export async function spotifyFetch<T = unknown>(
     });
     if (response.ok) {
       const text = await response.text();
+      // Some Spotify endpoints return an empty body on success.
       return (text ? JSON.parse(text) : null) as T;
     }
     const retryable = response.status === 429 || response.status >= 500 || (response.status === 401 && !forceRefresh);
@@ -35,6 +36,7 @@ export async function spotifyFetch<T = unknown>(
       throw new AppError(502, "SPOTIFY_API_ERROR", `Errore API Spotify (${response.status})`);
     }
     if (response.status === 401) {
+      // One forced refresh, then retry the same request.
       forceRefresh = true;
       continue;
     }

@@ -1,3 +1,4 @@
+/** Standard JSON envelope returned by every API route. */
 export type ApiResponse<T> = {
   success: boolean;
   data: T | null;
@@ -5,6 +6,7 @@ export type ApiResponse<T> = {
   error: string | null;
 };
 
+/** Helpers for success/failure responses consumed by the frontend Eden client. */
 export const ApiResponse = {
   Ok<T>(data: T, message = "Operazione completata con successo"): ApiResponse<T> {
     return { success: true, data, message, error: null };
@@ -14,6 +16,10 @@ export const ApiResponse = {
   },
 };
 
+/**
+ * Thrown for expected domain failures; mapped by the global `onError` handler
+ * to HTTP status + `ApiResponse.Fail(message, code)`.
+ */
 export class AppError extends Error {
   status: number;
   code: string;

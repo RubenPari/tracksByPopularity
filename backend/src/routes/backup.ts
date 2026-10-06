@@ -5,6 +5,7 @@ import { deleteSnapshot, listSnapshots, restoreSnapshot } from "../services/snap
 
 const idParams = t.Object({ id: t.String({ format: "uuid" }) });
 
+/** Playlist snapshot backups: list, restore (with safety snapshot), and delete. */
 export const backupRoutes = new Elysia({ prefix: "/api/backup", detail: { tags: ["Backup"] } })
   .use(session)
   .get("/list", async ({ spotifyUserId }) => ApiResponse.Ok(await listSnapshots(spotifyUserId)), { requireSpotify: true })

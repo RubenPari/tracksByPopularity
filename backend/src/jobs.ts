@@ -5,9 +5,12 @@ import { logger, pruneLogs } from "./lib/logger";
 import { fetchPlaylists } from "./services/library";
 import { deleteSnapshotsOlderThan } from "./services/snapshot";
 
+/** Nightly snapshot retention window (days). */
 const SNAPSHOT_RETENTION_DAYS = 30;
+/** Redis key patterns that must always carry a TTL (maintenance deletes orphans). */
 const CACHE_PATTERNS = ["tracks:*", "playlists:*", "artists:*", "profile:*", "oauth_state:*", "spotify_session:*"];
 
+/** Collects all keys matching a Redis SCAN pattern. */
 async function scanKeys(match: string): Promise<string[]> {
   const found: string[] = [];
   for await (const batch of redis.scanStream({ match, count: 200 })) found.push(...(batch as string[]));
@@ -25,12 +28,14 @@ const safe = (name: string, run: () => Promise<void>) => async () => {
   }
 };
 
+/** Deletes old playlist snapshots and prunes daily log files. */
 export async function snapshotCleanup() {
   const deleted = await deleteSnapshotsOlderThan(SNAPSHOT_RETENTION_DAYS);
   await pruneLogs();
   logger.info("snapshot cleanup", { deleted });
 }
 
+/** Health-checks Redis and removes cache keys that lost their TTL. */
 export async function redisMaintenance() {
   await redis.ping();
   let orphans = 0;
@@ -47,6 +52,10 @@ export async function redisMaintenance() {
   logger.info("redis maintenance", { orphansRemoved: orphans, activeSpotifySessions: tokens });
 }
 
+/**
+ * Refreshes playlist caches that are about to expire (< 60s TTL)
+ * when the user still has a stored Spotify token.
+ */
 export async function prefetchWarming() {
   for (const key of await scanKeys("playlists:*")) {
     const ttl = await redis.ttl(key);
@@ -61,6 +70,7 @@ export async function prefetchWarming() {
   }
 }
 
+/** Cron plugin: nightly snapshot/log cleanup; Redis maintenance and playlist prefetch every 5 minutes. */
 export const jobs = new Elysia({ name: "jobs" })
   .use(cron({ name: "SnapshotCleanupCron", pattern: "0 3 * * *", timezone: "UTC", run: safe("SnapshotCleanupCron", snapshotCleanup) }))
   .use(cron({ name: "RedisCacheMaintenanceCron", pattern: "*/5 * * * *", run: safe("RedisCacheMaintenanceCron", redisMaintenance) }))

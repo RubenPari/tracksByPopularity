@@ -4,11 +4,14 @@ import { playlistSnapshots, snapshotTracks, spotifyLinks } from "../db/schema";
 import { AppError } from "../lib/response";
 import { getPlaylistTrackUris, replacePlaylistTracks, type Playlist } from "./library";
 
+/** Playlist backup/restore: snapshot-before-mutation, restore with a safety snapshot, retention cleanup. */
+
 export type OperationType = "popularity_sort" | "artist_split" | "restore";
 
 /** Persists the current playlist content. Must run before any mutation (snapshot-before-mutation). */
 export async function createSnapshot(spotifyUserId: string, playlist: Pick<Playlist, "id" | "name">, operationType: OperationType) {
   const uris = await getPlaylistTrackUris(spotifyUserId, playlist.id);
+  // Attach local userId when the Spotify account is linked (nullable for Spotify-only sessions).
   const [link] = await db.select({ userId: spotifyLinks.userId }).from(spotifyLinks).where(eq(spotifyLinks.spotifyUserId, spotifyUserId));
   return db.transaction(async (tx) => {
     const [snapshot] = await tx
@@ -20,6 +23,7 @@ export async function createSnapshot(spotifyUserId: string, playlist: Pick<Playl
   });
 }
 
+/** Lists snapshots for a Spotify user with track counts, newest first. */
 export function listSnapshots(spotifyUserId: string) {
   return db
     .select({
@@ -37,6 +41,7 @@ export function listSnapshots(spotifyUserId: string) {
     .orderBy(desc(playlistSnapshots.createdAt));
 }
 
+/** Loads a snapshot owned by `spotifyUserId` or throws 404. */
 async function getOwnedSnapshot(spotifyUserId: string, snapshotId: string) {
   const [snapshot] = await db
     .select()
@@ -46,8 +51,13 @@ async function getOwnedSnapshot(spotifyUserId: string, snapshotId: string) {
   return snapshot;
 }
 
+/**
+ * Restores playlist tracks from a snapshot.
+ * Takes a safety snapshot of the current state first so restore itself is reversible.
+ */
 export async function restoreSnapshot(spotifyUserId: string, snapshotId: string) {
   const snapshot = await getOwnedSnapshot(spotifyUserId, snapshotId);
+  // Preserve insertion order via serial snapshot_tracks.id.
   const tracks = await db
     .select({ uri: snapshotTracks.trackUri })
     .from(snapshotTracks)
@@ -59,11 +69,13 @@ export async function restoreSnapshot(spotifyUserId: string, snapshotId: string)
   return { playlistId: playlist.id, playlistName: playlist.name, trackCount: tracks.length, safetySnapshotId };
 }
 
+/** Deletes a snapshot (cascade removes its track rows). */
 export async function deleteSnapshot(spotifyUserId: string, snapshotId: string) {
   await getOwnedSnapshot(spotifyUserId, snapshotId);
   await db.delete(playlistSnapshots).where(eq(playlistSnapshots.id, snapshotId));
 }
 
+/** Retention: deletes snapshots older than `days` (used by the nightly cron). */
 export async function deleteSnapshotsOlderThan(days: number) {
   const cutoff = new Date(Date.now() - days * 86_400_000);
   const deleted = await db.delete(playlistSnapshots).where(lt(playlistSnapshots.createdAt, cutoff)).returning({ id: playlistSnapshots.id });

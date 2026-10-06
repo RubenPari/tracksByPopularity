@@ -15,6 +15,10 @@ const rangeParams = t.Object({
   range: t.UnionEnum(Object.keys(POPULARITY_RANGES) as [PopularityRange, ...PopularityRange[]]),
 });
 
+/**
+ * Track organization API (requires Spotify session):
+ * popularity sync/preview, library artists list, and artist-band split.
+ */
 export const trackRoutes = new Elysia({ prefix: "/api/track", detail: { tags: ["Tracce"] } })
   .use(session)
   .post(

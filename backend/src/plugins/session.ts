@@ -7,6 +7,7 @@ import { spotifyLinks } from "../db/schema";
 import { cache, keys, redis, TTL } from "../lib/cache";
 import { AppError } from "../lib/response";
 
+/** Shared cookie flags for JWT and Spotify session cookies. */
 export const cookieOptions = (sameSite: "strict" | "lax" = "strict") => ({
   httpOnly: true,
   sameSite,
@@ -19,6 +20,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Opaque, revocable server-side session: `spotify_session:{uuid}` -> spotifyUserId. */
 export async function createSpotifySession(spotifyUserId: string) {
   const sessionId = crypto.randomUUID();
+  // Track membership so logout/unlink can revoke every device at once.
   await redis
     .multi()
     .set(keys.session(sessionId), spotifyUserId, "EX", TTL.session)
@@ -34,6 +36,7 @@ export async function revokeSpotifySessions(spotifyUserId: string) {
   await cache.del(keys.userSessions(spotifyUserId), ...sessionIds.map(keys.session));
 }
 
+/** Deletes a single session key (does not remove it from the user's session set). */
 export async function deleteSpotifySession(sessionId: string | null) {
   if (sessionId) await cache.del(keys.session(sessionId));
 }
@@ -50,6 +53,10 @@ export async function directSpotifyUserId(headers: Record<string, string | undef
   return sessionId ? redis.get(keys.session(sessionId)) : null;
 }
 
+/**
+ * Global JWT + Spotify session plugin.
+ * Exposes `resolveUserId` / `resolveSpotifyUserId` and `requireUser` / `requireSpotify` macros.
+ */
 export const session = new Elysia({ name: "session" })
   .use(jwt({ name: "jwt", secret: config.jwtSecret, exp: "7d" }))
   .derive({ as: "global" }, ({ jwt, cookie, headers }) => {
@@ -73,6 +80,7 @@ export const session = new Elysia({ name: "session" })
     return { resolveUserId, resolveSpotifyUserId };
   })
   .macro({
+    /** Guard: requires a valid local JWT user. */
     requireUser: {
       async resolve({ resolveUserId }) {
         const userId = await resolveUserId();
@@ -80,6 +88,7 @@ export const session = new Elysia({ name: "session" })
         return { userId };
       },
     },
+    /** Guard: requires a resolvable Spotify user (direct session or linked account). */
     requireSpotify: {
       async resolve({ resolveSpotifyUserId }) {
         const spotifyUserId = await resolveSpotifyUserId();

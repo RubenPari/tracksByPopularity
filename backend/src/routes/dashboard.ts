@@ -4,6 +4,7 @@ import { session } from "../plugins/session";
 import { getPlaylists, getProfile, getSavedTracks } from "../services/library";
 import { isManagedPlaylist } from "../services/organize";
 
+/** Aggregated home stats: profile, saved track count, playlists, and managed-playlist count. */
 export const dashboardRoutes = new Elysia({ prefix: "/api/dashboard", detail: { tags: ["Dashboard"] } })
   .use(session)
   .get(

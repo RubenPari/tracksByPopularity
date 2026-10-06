@@ -1,5 +1,6 @@
 import { index, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 
+/** Shared created/updated timestamps; `updatedAt` is refreshed on row update. */
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
@@ -8,6 +9,7 @@ const timestamps = {
     .$onUpdate(() => new Date()),
 };
 
+/** Local accounts (email + argon2id password hash). */
 export const users = pgTable(
   "users",
   {
@@ -19,6 +21,11 @@ export const users = pgTable(
   (table) => [uniqueIndex("users_email_idx").on(table.email)],
 );
 
+/**
+ * One-to-one link between a local user and a Spotify account.
+ * `accessToken` / `refreshToken` are AES-GCM encrypted (durable fallback when Redis is cold).
+ * Cascades when the user is deleted.
+ */
 export const spotifyLinks = pgTable("spotify_links", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
@@ -31,6 +38,11 @@ export const spotifyLinks = pgTable("spotify_links", {
   ...timestamps,
 });
 
+/**
+ * Playlist content backup taken before mutations (sort/split/restore).
+ * `userId` is set when the Spotify account is linked; null for Spotify-only sessions.
+ * On user delete, `userId` is set null so snapshots remain keyed by `spotifyUserId`.
+ */
 export const playlistSnapshots = pgTable(
   "playlist_snapshots",
   {
@@ -48,6 +60,7 @@ export const playlistSnapshots = pgTable(
   ],
 );
 
+/** Ordered track URIs belonging to a snapshot; cascade-deleted with the parent row. */
 export const snapshotTracks = pgTable(
   "snapshot_tracks",
   {

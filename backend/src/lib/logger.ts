@@ -7,6 +7,7 @@ const ready = mkdir(LOG_DIR, { recursive: true }).catch(() => {});
 
 type Level = "debug" | "info" | "warn" | "error";
 
+/** Writes one JSON line to stdout/stderr and appends to `logs/app-YYYY-MM-DD.log` (skipped in tests). */
 function write(level: Level, message: string, meta: Record<string, unknown> = {}) {
   const timestamp = new Date().toISOString();
   const line = JSON.stringify({ timestamp, level, message, ...meta }) + "\n";
@@ -17,6 +18,7 @@ function write(level: Level, message: string, meta: Record<string, unknown> = {}
     .catch(() => {});
 }
 
+/** Structured logger: JSON to the console and daily rotating files. */
 export const logger = {
   debug: (message: string, meta?: Record<string, unknown>) => write("debug", message, meta),
   info: (message: string, meta?: Record<string, unknown>) => write("info", message, meta),
