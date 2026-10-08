@@ -5,6 +5,7 @@ import { spotifyLinks } from "../db/schema";
 import { cache, keys, redis } from "../lib/cache";
 import { decrypt, encrypt } from "../lib/crypto";
 import { AppError } from "../lib/response";
+import { getLinkBySpotifyUserId } from "../services/account";
 
 /** Spotify OAuth scopes required for library reads and playlist mutations. */
 export const SCOPES = [
@@ -85,7 +86,7 @@ export async function loadToken(spotifyUserId: string): Promise<StoredToken | nu
   const stored = await redis.get(keys.token(spotifyUserId));
   if (stored) return JSON.parse(await decrypt(stored)) as StoredToken;
   // Fallback: linked local account keeps an encrypted refresh token in Postgres.
-  const [link] = await db.select().from(spotifyLinks).where(eq(spotifyLinks.spotifyUserId, spotifyUserId));
+  const link = await getLinkBySpotifyUserId(spotifyUserId);
   if (!link) return null;
   const token = { accessToken: await decrypt(link.accessToken), refreshToken: await decrypt(link.refreshToken), expiresAt: 0 };
   await redis.set(keys.token(spotifyUserId), await encrypt(JSON.stringify(token)));
@@ -120,7 +121,7 @@ export async function getAccessToken(spotifyUserId: string, forceRefresh = false
 export async function linkSpotify(userId: string, spotifyUserId: string) {
   const token = await loadToken(spotifyUserId);
   if (!token) throw new AppError(401, "SPOTIFY_NOT_AUTHENTICATED", "Sessione Spotify assente o scaduta");
-  const [existing] = await db.select().from(spotifyLinks).where(eq(spotifyLinks.spotifyUserId, spotifyUserId));
+  const existing = await getLinkBySpotifyUserId(spotifyUserId);
   if (existing && existing.userId !== userId) {
     throw new AppError(409, "SPOTIFY_ALREADY_LINKED", "Account Spotify già collegato a un altro utente");
   }

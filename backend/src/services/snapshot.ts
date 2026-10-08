@@ -1,7 +1,8 @@
 import { and, asc, count, desc, eq, lt } from "drizzle-orm";
 import { db } from "../db/client";
-import { playlistSnapshots, snapshotTracks, spotifyLinks } from "../db/schema";
+import { playlistSnapshots, snapshotTracks } from "../db/schema";
 import { AppError } from "../lib/response";
+import { getLinkBySpotifyUserId } from "./account";
 import { getPlaylistTrackUris, replacePlaylistTracks, type Playlist } from "./library";
 
 /** Playlist backup/restore: snapshot-before-mutation, restore with a safety snapshot, retention cleanup. */
@@ -12,7 +13,7 @@ export type OperationType = "popularity_sort" | "artist_split" | "restore";
 export async function createSnapshot(spotifyUserId: string, playlist: Pick<Playlist, "id" | "name">, operationType: OperationType) {
   const uris = await getPlaylistTrackUris(spotifyUserId, playlist.id);
   // Attach local userId when the Spotify account is linked (nullable for Spotify-only sessions).
-  const [link] = await db.select({ userId: spotifyLinks.userId }).from(spotifyLinks).where(eq(spotifyLinks.spotifyUserId, spotifyUserId));
+  const link = await getLinkBySpotifyUserId(spotifyUserId);
   return db.transaction(async (tx) => {
     const [snapshot] = await tx
       .insert(playlistSnapshots)
