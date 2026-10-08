@@ -46,15 +46,15 @@ export async function spotifyFetch<T = unknown>(
 }
 
 /** Follows Spotify `next` links, collecting items. `pick` extracts the paging object from each page. */
-export async function paginate<T>(
+export async function paginate<T, P = { items: T[]; next: string | null }>(
   spotifyUserId: string,
   path: string,
-  pick: (page: any) => { items: T[]; next: string | null } = (page) => page,
+  pick: (page: P) => { items: T[]; next: string | null } = (page) => page as { items: T[]; next: string | null },
 ): Promise<T[]> {
   const items: T[] = [];
   let next: string | null = path;
   while (next) {
-    const page = pick(await spotifyFetch(spotifyUserId, next));
+    const page = pick(await spotifyFetch<P>(spotifyUserId, next));
     items.push(...page.items);
     next = page.next;
   }

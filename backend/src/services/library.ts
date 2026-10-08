@@ -1,5 +1,17 @@
+import { chunk } from "../lib/array";
 import { cache, keys, TTL } from "../lib/cache";
 import { paginate, spotifyFetch } from "../spotify/client";
+import type {
+  SpotifyFollowedArtistsPage,
+  SpotifyPaging,
+  SpotifyPlaylist,
+  SpotifyPlaylistTrackItem,
+  SpotifyProfile,
+  SpotifySavedTrackItem,
+  SpotifyTrack,
+} from "../spotify/types";
+
+export { chunk };
 
 /** Cached Spotify library reads/writes: profile, saved tracks, artists, playlists, and track replace. */
 
@@ -9,29 +21,38 @@ export type Playlist = { id: string; name: string; trackCount: number; image: st
 
 export type Profile = { displayName: string; image: string | null };
 
+/** Drops all cached library payloads for a Spotify user (tracks, playlists, artists, profile). */
+export async function invalidateUserLibraryCache(spotifyUserId: string) {
+  await cache.del(keys.tracks(spotifyUserId), keys.playlists(spotifyUserId), keys.artists(spotifyUserId), keys.profile(spotifyUserId));
+}
+
 /** Cached `/me` profile (display name + first image). */
 export function getProfile(spotifyUserId: string): Promise<Profile> {
   return cache.wrap(keys.profile(spotifyUserId), TTL.profile, async () => {
-    const me = await spotifyFetch<any>(spotifyUserId, "/me");
+    const me = await spotifyFetch<SpotifyProfile>(spotifyUserId, "/me");
     return { displayName: me.display_name ?? me.id, image: me.images?.[0]?.url ?? null };
   });
+}
+
+function mapTrack(track: SpotifyTrack): Track {
+  return {
+    id: track.id,
+    uri: track.uri,
+    name: track.name,
+    popularity: track.popularity ?? 0,
+    artists: track.artists.map((a) => ({ id: a.id, name: a.name })),
+  };
 }
 
 /** Cached saved library tracks; skips local files that lack a Spotify uri. */
 export function getSavedTracks(spotifyUserId: string): Promise<Track[]> {
   return cache.wrap(keys.tracks(spotifyUserId), TTL.tracks, () =>
-    paginate<Track>(spotifyUserId, "/me/tracks?limit=50", (page) => ({
+    paginate<Track, SpotifyPaging<SpotifySavedTrackItem>>(spotifyUserId, "/me/tracks?limit=50", (page) => ({
       next: page.next,
       items: page.items
-        .map((item: any) => item.track)
-        .filter((track: any) => track && !track.is_local)
-        .map((track: any) => ({
-          id: track.id,
-          uri: track.uri,
-          name: track.name,
-          popularity: track.popularity ?? 0,
-          artists: track.artists.map((a: any) => ({ id: a.id, name: a.name })),
-        })),
+        .map((item) => item.track)
+        .filter((track): track is SpotifyTrack => !!track && !track.is_local)
+        .map(mapTrack),
     })),
   );
 }
@@ -39,9 +60,9 @@ export function getSavedTracks(spotifyUserId: string): Promise<Track[]> {
 /** Cached followed artists with popularity and primary image. */
 export function getFollowedArtists(spotifyUserId: string): Promise<Artist[]> {
   return cache.wrap(keys.artists(spotifyUserId), TTL.artists, () =>
-    paginate<Artist>(spotifyUserId, "/me/following?type=artist&limit=50", (page) => ({
+    paginate<Artist, SpotifyFollowedArtistsPage>(spotifyUserId, "/me/following?type=artist&limit=50", (page) => ({
       next: page.artists.next,
-      items: page.artists.items.map((a: any) => ({
+      items: page.artists.items.map((a) => ({
         id: a.id,
         name: a.name,
         popularity: a.popularity ?? 0,
@@ -53,7 +74,10 @@ export function getFollowedArtists(spotifyUserId: string): Promise<Artist[]> {
 
 /** Fresh playlist list owned by the user (not cached). */
 export async function fetchPlaylists(spotifyUserId: string): Promise<Playlist[]> {
-  const playlists = await paginate<any>(spotifyUserId, "/me/playlists?limit=50");
+  const playlists = await paginate<SpotifyPlaylist, SpotifyPaging<SpotifyPlaylist>>(
+    spotifyUserId,
+    "/me/playlists?limit=50",
+  );
   // Spotify returns collaborative/followed playlists too; keep only owned ones.
   return playlists
     .filter((p) => p && p.owner?.id === spotifyUserId)
@@ -70,7 +94,7 @@ export async function getPlaylists(spotifyUserId: string, refresh = false): Prom
 export async function findOrCreatePlaylist(spotifyUserId: string, name: string): Promise<Playlist> {
   const existing = (await getPlaylists(spotifyUserId)).find((p) => p.name === name);
   if (existing) return existing;
-  const created = await spotifyFetch<any>(spotifyUserId, `/users/${encodeURIComponent(spotifyUserId)}/playlists`, {
+  const created = await spotifyFetch<SpotifyPlaylist>(spotifyUserId, `/users/${encodeURIComponent(spotifyUserId)}/playlists`, {
     method: "POST",
     body: JSON.stringify({ name, public: false, description: "Generata da TracksByPopularity" }),
   });
@@ -80,18 +104,11 @@ export async function findOrCreatePlaylist(spotifyUserId: string, name: string):
 
 /** Ordered non-local track URIs currently in a playlist. */
 export async function getPlaylistTrackUris(spotifyUserId: string, playlistId: string): Promise<string[]> {
-  const items = await paginate<any>(
+  const items = await paginate<SpotifyPlaylistTrackItem, SpotifyPaging<SpotifyPlaylistTrackItem>>(
     spotifyUserId,
     `/playlists/${playlistId}/tracks?limit=100&fields=items(track(uri,is_local)),next`,
   );
-  return items.map((item) => item.track).filter((track) => track?.uri && !track.is_local).map((track) => track.uri);
-}
-
-/** Splits an array into fixed-size batches (used for Spotify's 100-uri limit). */
-export function chunk<T>(items: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
-  return chunks;
+  return items.map((item) => item.track).filter((track) => track?.uri && !track.is_local).map((track) => track!.uri!);
 }
 
 /** Empties the playlist, then adds uris in batches of 100 (Spotify limit), preserving order. */
