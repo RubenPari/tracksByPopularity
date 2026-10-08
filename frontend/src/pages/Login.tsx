@@ -23,7 +23,7 @@ export async function startSpotifyLogin() {
 
 export function Login() {
   useOAuthReturn();
-  const { loading, spotifyAuthenticated } = useSession();
+  const { loading, spotifyAuthenticated, account } = useSession();
   const [mode, setMode] = useState<"login" | "register">("login");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -50,6 +50,7 @@ export function Login() {
       </div>
     );
   if (spotifyAuthenticated) return <Navigate to="/" replace />;
+  if (account) return <Navigate to="/account" replace />;
 
   const { errors } = form.formState;
   const appName = import.meta.env.VITE_APP_NAME ?? "TracksByPopularity";

@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, fetchData, send } from "../api";
 import { ConfirmDialog, EmptyState, ErrorState, PageHeader, Skeleton } from "../components/ui";
-import { filterArtists, useDebounced, type ArtistSort } from "../lib";
+import { ARTIST_RANGES, filterArtists, useDebounced, type ArtistSort } from "../lib";
+import { invalidateLibrary } from "../query";
 
 const STAGGER = ["stagger-1", "stagger-2", "stagger-3", "stagger-4", "stagger-5"] as const;
 
@@ -24,7 +25,7 @@ export function Artists() {
       const summary = data!.playlists.map((p) => `${p.band}: ${p.trackCount}`).join(" · ");
       toast.success(`${data!.artistName} ripartito (${summary})`);
       setSelected(null);
-      for (const key of ["dashboard", "backups", "playlists"]) queryClient.invalidateQueries({ queryKey: [key] });
+      invalidateLibrary(queryClient);
     },
   });
 
@@ -112,9 +113,10 @@ export function Artists() {
         onClose={() => setSelected(null)}
       >
         <p>
-          I brani saranno divisi in <strong className="text-foreground">{selected?.name} less</strong> (0-33),{" "}
-          <strong className="text-foreground">medium</strong> (34-66) e <strong className="text-foreground">more</strong>{" "}
-          (67-100).
+          I brani saranno divisi in{" "}
+          <strong className="text-foreground">{selected?.name} less</strong> ({ARTIST_RANGES.less[0]}-{ARTIST_RANGES.less[1]}
+          ), <strong className="text-foreground">medium</strong> ({ARTIST_RANGES.medium[0]}-{ARTIST_RANGES.medium[1]}) e{" "}
+          <strong className="text-foreground">more</strong> ({ARTIST_RANGES.more[0]}-{ARTIST_RANGES.more[1]}).
         </p>
         <p>Prima della modifica viene creato uno snapshot di ciascuna delle tre playlist.</p>
       </ConfirmDialog>

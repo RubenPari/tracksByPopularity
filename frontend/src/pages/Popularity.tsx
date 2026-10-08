@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { api, fetchData, send } from "../api";
 import { ConfirmDialog, EmptyState, ErrorState, PageHeader, Skeleton } from "../components/ui";
 import { POPULARITY_RANGES, type PopularityRange } from "../lib";
+import { invalidateLibrary } from "../query";
 
 export function Popularity() {
   const [range, setRange] = useState<PopularityRange>("medium");
@@ -20,7 +21,7 @@ export function Popularity() {
     onSuccess: ({ data }) => {
       toast.success(`"${data!.playlistName}" aggiornata con ${data!.trackCount} brani`);
       setConfirming(false);
-      for (const key of ["dashboard", "backups", "playlists"]) queryClient.invalidateQueries({ queryKey: [key] });
+      invalidateLibrary(queryClient);
     },
   });
 
@@ -47,7 +48,9 @@ export function Popularity() {
                 : "hover:border-white/20 hover:bg-highlight"
             }`}
           >
-            <p className="font-display text-xl tracking-wide">{option.label}</p>
+            <p className="font-display text-xl tracking-wide">
+              {option.min}-{option.max}
+            </p>
             <p className="mt-1 text-xs text-muted">{option.description}</p>
           </button>
         ))}

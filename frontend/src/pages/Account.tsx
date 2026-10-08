@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { api, fetchData, send } from "../api";
 import { PageHeader } from "../components/ui";
-import { useSession } from "../session";
+import { resetSession, useSession } from "../session";
 
 const passwordSchema = z
   .object({
@@ -23,12 +23,7 @@ export function Account() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const afterLogout = async (message: string) => {
-    toast.success(message);
-    queryClient.clear();
-    await queryClient.invalidateQueries();
-    navigate("/login");
-  };
+  const afterLogout = (message: string) => resetSession(queryClient, navigate, message);
 
   const link = useMutation({
     mutationFn: async () => {

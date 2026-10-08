@@ -25,7 +25,7 @@ export function Dashboard() {
       </div>
     );
   }
-  if (!dashboard.data) return <ErrorState onRetry={() => dashboard.refetch()} />;
+  if (dashboard.isError || !dashboard.data) return <ErrorState onRetry={() => dashboard.refetch()} />;
   const { profile, savedTracks, playlists, managedPlaylists } = dashboard.data;
 
   return (

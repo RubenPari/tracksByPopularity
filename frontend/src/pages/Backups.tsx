@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { api, fetchData, send } from "../api";
 import { ConfirmDialog, EmptyState, ErrorState, PageHeader, Skeleton } from "../components/ui";
 import { formatDate, OPERATION_LABELS } from "../lib";
+import { invalidateLibrary } from "../query";
 
 type Pending = { action: "restore" | "delete"; id: string; playlistName: string; trackCount: number };
 
@@ -19,7 +20,7 @@ export function Backups() {
     onSuccess: (response) => {
       toast.success(response.message);
       setPending(null);
-      for (const key of ["dashboard", "backups", "playlists"]) queryClient.invalidateQueries({ queryKey: [key] });
+      invalidateLibrary(queryClient);
     },
   });
 

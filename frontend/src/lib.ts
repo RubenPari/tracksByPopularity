@@ -20,14 +20,21 @@ export function useDebounced<T>(value: T, delayMs = 300): T {
   return debounced;
 }
 
+/** Must stay aligned with backend `POPULARITY_RANGES` / `ARTIST_RANGES`. */
 export const POPULARITY_RANGES = [
-  { key: "less", label: "0-20", description: "Gemme nascoste" },
-  { key: "less-medium", label: "21-40", description: "Poco conosciuti" },
-  { key: "medium", label: "41-60", description: "Via di mezzo" },
-  { key: "more-medium", label: "61-80", description: "Molto ascoltati" },
-  { key: "more", label: "81-100", description: "Hit globali" },
+  { key: "less", min: 0, max: 20, description: "Gemme nascoste" },
+  { key: "less-medium", min: 21, max: 40, description: "Poco conosciuti" },
+  { key: "medium", min: 41, max: 60, description: "Via di mezzo" },
+  { key: "more-medium", min: 61, max: 80, description: "Molto ascoltati" },
+  { key: "more", min: 81, max: 100, description: "Hit globali" },
 ] as const;
 export type PopularityRange = (typeof POPULARITY_RANGES)[number]["key"];
+
+export const ARTIST_RANGES = {
+  less: [0, 33],
+  medium: [34, 66],
+  more: [67, 100],
+} as const;
 
 export const OPERATION_LABELS: Record<string, string> = {
   popularity_sort: "Ordinamento popolarità",

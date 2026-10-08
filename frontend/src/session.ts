@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { api, fetchData } from "./api";
+import { ApiError, api, fetchData } from "./api";
 
 /** Spotify session (direct or via linked account) + optional local account. */
 export function useSession() {
@@ -13,9 +13,17 @@ export function useSession() {
   const account = useQuery({
     queryKey: ["me"],
     queryFn: async () => {
-      const { data, error } = await api.api.account.me.get();
-      if (error) return null; // not logged in with a local account
-      return data.data;
+      try {
+        return await fetchData(api.api.account.me.get());
+      } catch (error) {
+        // 401/403 = no local session; other failures must surface so guards do not mis-route.
+        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) return null;
+        throw error;
+      }
+    },
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) return false;
+      return failureCount < 2;
     },
   });
   return {
@@ -45,7 +53,14 @@ export function useOAuthReturn() {
       (ok ? toast.success : toast.error)(message);
       params.delete(kind);
       setParams(params, { replace: true });
-      queryClient.invalidateQueries();
+      void queryClient.invalidateQueries();
     }
   }, [params, setParams, queryClient]);
+}
+
+/** Clears client cache after logout and navigates to login. */
+export function resetSession(queryClient: ReturnType<typeof useQueryClient>, navigate: (path: string) => void, message: string) {
+  toast.success(message);
+  queryClient.clear();
+  navigate("/login");
 }
