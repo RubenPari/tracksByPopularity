@@ -1,9 +1,9 @@
 import { config } from "../config";
 
-// AES-256-GCM key for Spotify tokens at rest, derived from JWT_SECRET (not stored separately).
+// AES-256-GCM key for Spotify tokens at rest, derived from TOKEN_ENCRYPTION_KEY.
 const aesKey = crypto.subtle.importKey(
   "raw",
-  new Uint8Array(new Bun.CryptoHasher("sha256").update(`token-encryption:${config.jwtSecret}`).digest()),
+  new Uint8Array(new Bun.CryptoHasher("sha256").update(`token-encryption:${config.tokenEncryptionKey}`).digest()),
   "AES-GCM",
   false,
   ["encrypt", "decrypt"],

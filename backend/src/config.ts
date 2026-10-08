@@ -6,8 +6,10 @@ function required(name: string): string {
 }
 
 const jwtSecret = required("JWT_SECRET");
-// Also used to derive the AES-256-GCM key for Spotify tokens at rest.
 if (jwtSecret.length < 32) throw new Error("JWT_SECRET must be at least 32 characters");
+
+const tokenEncryptionKey = required("TOKEN_ENCRYPTION_KEY");
+if (tokenEncryptionKey.length < 32) throw new Error("TOKEN_ENCRYPTION_KEY must be at least 32 characters");
 
 const spotifyRedirectUri = required("SPOTIFY_REDIRECT_URI");
 
@@ -16,6 +18,8 @@ export const config = {
   port: Number(process.env.PORT ?? 3000),
   isProduction: process.env.BUN_ENV === "production",
   jwtSecret,
+  /** Separate from JWT so rotating signing keys does not invalidate Spotify tokens at rest. */
+  tokenEncryptionKey,
   databaseUrl: required("DATABASE_URL"),
   spotify: {
     clientId: required("SPOTIFY_CLIENT_ID"),
