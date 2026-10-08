@@ -1,20 +1,17 @@
-import { eq } from "drizzle-orm";
 import { Elysia } from "elysia";
 import { config } from "../config";
-import { db } from "../db/client";
-import { spotifyLinks } from "../db/schema";
-import { cache, keys, TTL } from "../lib/cache";
-import { ApiResponse } from "../lib/response";
+import { ApiResponse, AppError } from "../lib/response";
 import {
-  cookieOptions,
-  createSpotifySession,
   deleteSpotifySession,
   directSessionId,
-  revokeSpotifySessions,
   session,
+  setSpotifySessionCookie,
 } from "../plugins/session";
-import { authorizeUrl, deleteToken, linkSpotify } from "../spotify/tokens";
-import { callbackQuery, completeOAuth, createOAuthState } from "./auth";
+import { getLinkByUserId, unlinkSpotify } from "../services/account";
+import { clearSpotifyAccess } from "../services/spotify-access";
+import { completeOAuth, createOAuthState } from "../spotify/oauth";
+import { authorizeUrl, linkSpotify } from "../spotify/tokens";
+import { callbackQuery } from "./auth";
 
 /**
  * OAuth link flow for a logged-in local user: authorize URL, callback, status, and unlink.
@@ -42,8 +39,9 @@ export const spotifyLinkRoutes = new Elysia({ prefix: "/api/spotify", detail: { 
         "link",
         config.spotify.linkRedirectUri,
       );
-      await linkSpotify(state.userId!, spotifyUserId);
-      cookie.spotify_user_id.set({ value: await createSpotifySession(spotifyUserId), maxAge: TTL.session, ...cookieOptions("lax") });
+      if (!state.userId) throw new AppError(400, "INVALID_OAUTH_STATE", "Stato OAuth non valido o scaduto");
+      await linkSpotify(state.userId, spotifyUserId);
+      await setSpotifySessionCookie(cookie.spotify_session, spotifyUserId);
       return redirect(`${config.frontendOrigin}/?link=success`);
     },
     { query: callbackQuery },
@@ -51,7 +49,7 @@ export const spotifyLinkRoutes = new Elysia({ prefix: "/api/spotify", detail: { 
   .get(
     "/status",
     async ({ userId }) => {
-      const [link] = await db.select().from(spotifyLinks).where(eq(spotifyLinks.userId, userId));
+      const link = await getLinkByUserId(userId);
       return ApiResponse.Ok({ linked: !!link, spotifyUserId: link?.spotifyUserId ?? null });
     },
     { requireUser: true },
@@ -61,15 +59,9 @@ export const spotifyLinkRoutes = new Elysia({ prefix: "/api/spotify", detail: { 
     async ({ userId, headers, cookie }) => {
       // Always drop the caller's own session, even when no link exists.
       await deleteSpotifySession(directSessionId(headers, cookie));
-      const [link] = await db.delete(spotifyLinks).where(eq(spotifyLinks.userId, userId)).returning();
-      if (link) {
-        const id = link.spotifyUserId;
-        await revokeSpotifySessions(id);
-        await deleteToken(id);
-        // Drop cached library data for the unlinked Spotify account.
-        await cache.del(keys.tracks(id), keys.playlists(id), keys.artists(id));
-      }
-      cookie.spotify_user_id.remove();
+      const link = await unlinkSpotify(userId);
+      if (link) await clearSpotifyAccess(link.spotifyUserId);
+      cookie.spotify_session.remove();
       return ApiResponse.Ok(null, link ? "Account Spotify scollegato" : "Nessun account Spotify collegato");
     },
     { requireUser: true },

@@ -1,11 +1,9 @@
 import { jwt } from "@elysiajs/jwt";
-import { eq } from "drizzle-orm";
 import { Elysia } from "elysia";
 import { config } from "../config";
-import { db } from "../db/client";
-import { spotifyLinks } from "../db/schema";
 import { cache, keys, redis, TTL } from "../lib/cache";
 import { AppError } from "../lib/response";
+import { getLinkByUserId } from "../services/account";
 
 /** Shared cookie flags for JWT and Spotify session cookies. */
 export const cookieOptions = (sameSite: "strict" | "lax" = "strict") => ({
@@ -16,6 +14,8 @@ export const cookieOptions = (sameSite: "strict" | "lax" = "strict") => ({
 });
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type SessionCookie = { set(options: Record<string, unknown>): unknown; remove(): unknown };
 
 /** Opaque, revocable server-side session: `spotify_session:{uuid}` -> spotifyUserId. */
 export async function createSpotifySession(spotifyUserId: string) {
@@ -30,20 +30,33 @@ export async function createSpotifySession(spotifyUserId: string) {
   return sessionId;
 }
 
+/** Sets the `spotify_session` cookie to a freshly created opaque session id. */
+export async function setSpotifySessionCookie(cookie: SessionCookie, spotifyUserId: string) {
+  cookie.set({
+    value: await createSpotifySession(spotifyUserId),
+    maxAge: TTL.session,
+    ...cookieOptions("lax"),
+  });
+}
+
 /** Revokes every session of a Spotify user (all devices), e.g. on logout or unlink. */
 export async function revokeSpotifySessions(spotifyUserId: string) {
   const sessionIds = await redis.smembers(keys.userSessions(spotifyUserId));
   await cache.del(keys.userSessions(spotifyUserId), ...sessionIds.map(keys.session));
 }
 
-/** Deletes a single session key (does not remove it from the user's session set). */
+/** Deletes a single session key and removes it from the user's session set. */
 export async function deleteSpotifySession(sessionId: string | null) {
-  if (sessionId) await cache.del(keys.session(sessionId));
+  if (!sessionId) return;
+  const spotifyUserId = await redis.get(keys.session(sessionId));
+  const multi = redis.multi().del(keys.session(sessionId));
+  if (spotifyUserId) multi.srem(keys.userSessions(spotifyUserId), sessionId);
+  await multi.exec();
 }
 
-/** Session id sent by the client: `X-Spotify-User-Id` header takes priority over the cookie. */
+/** Session id sent by the client: `X-Spotify-Session-Id` header takes priority over the cookie. */
 export function directSessionId(headers: Record<string, string | undefined>, cookie: Record<string, { value?: unknown }>) {
-  const id = headers["x-spotify-user-id"] ?? (cookie.spotify_user_id?.value as string | undefined);
+  const id = headers["x-spotify-session-id"] ?? (cookie.spotify_session?.value as string | undefined);
   return id && UUID.test(id) ? id : null;
 }
 
@@ -74,7 +87,7 @@ export const session = new Elysia({ name: "session" })
       if (direct) return direct;
       const userId = await resolveUserId();
       if (!userId) return null;
-      const [link] = await db.select().from(spotifyLinks).where(eq(spotifyLinks.userId, userId));
+      const link = await getLinkByUserId(userId);
       return link?.spotifyUserId ?? null;
     };
     return { resolveUserId, resolveSpotifyUserId };

@@ -16,7 +16,7 @@ test("invalid body is rejected with 422 ApiResponse", async () => {
     }),
   );
   expect(response.status).toBe(422);
-  expect(await response.json()).toMatchObject({ success: false, data: null });
+  expect(await response.json()).toMatchObject({ success: false, data: null, error: "VALIDATION_ERROR" });
 });
 
 test("protected route without session returns 401", async () => {
@@ -25,9 +25,9 @@ test("protected route without session returns 401", async () => {
   expect(await response.json()).toMatchObject({ success: false, error: "SPOTIFY_NOT_AUTHENTICATED" });
 });
 
-test("forged X-Spotify-User-Id header is ignored", async () => {
+test("forged X-Spotify-Session-Id header is ignored", async () => {
   const response = await app.handle(
-    new Request("http://localhost/api/backup/list", { headers: { "X-Spotify-User-Id": "someone-else" } }),
+    new Request("http://localhost/api/backup/list", { headers: { "X-Spotify-Session-Id": "someone-else" } }),
   );
   expect(response.status).toBe(401);
 });
