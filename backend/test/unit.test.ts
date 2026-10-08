@@ -1,8 +1,17 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { decode, encode } from "../src/lib/cache";
 import { decrypt, encrypt } from "../src/lib/crypto";
+import { isUniqueViolation } from "../src/services/account";
 import { chunk, type Track } from "../src/services/library";
-import { inRange, isManagedPlaylist, POPULARITY_RANGES, popularityPlaylistName, splitByArtistRanges } from "../src/services/organize";
+import {
+  inRange,
+  isManagedPlaylist,
+  POPULARITY_RANGES,
+  popularityPlaylistName,
+  splitByArtistRanges,
+  tracksForPopularityRange,
+  urisForPopularityRange,
+} from "../src/services/organize";
 import { spotifyFetch } from "../src/spotify/client";
 
 const track = (popularity: number): Track => ({ id: `t${popularity}`, uri: `spotify:track:${popularity}`, name: "x", popularity, artists: [] });
@@ -23,6 +32,18 @@ describe("popularity ranges", () => {
     expect(bands.map((b) => b.uris.length)).toEqual([2, 2, 2]);
     expect(bands[1]!.uris).toEqual(["spotify:track:34", "spotify:track:66"]);
   });
+  test("preview and sync share the same sorted uris pipeline", () => {
+    const tracks = [track(10), track(55), track(50), track(90)];
+    const medium = tracksForPopularityRange(tracks, "medium");
+    expect(medium.map((t) => t.popularity)).toEqual([55, 50]);
+    expect(urisForPopularityRange(tracks, "medium")).toEqual(["spotify:track:55", "spotify:track:50"]);
+  });
+});
+
+test("isUniqueViolation detects Postgres 23505", () => {
+  expect(isUniqueViolation({ code: "23505" })).toBe(true);
+  expect(isUniqueViolation({ code: "23503" })).toBe(false);
+  expect(isUniqueViolation(new Error("x"))).toBe(false);
 });
 
 test("chunk splits into Spotify batches of 100", () => {
