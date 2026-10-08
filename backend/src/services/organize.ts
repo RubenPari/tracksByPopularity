@@ -37,6 +37,18 @@ export const popularityPlaylistName = (range: PopularityRange) => {
   return `Popularity: ${min}-${max}`;
 };
 
+/** Saved tracks in `range`, most popular first (shared by preview and sync). */
+export function tracksForPopularityRange(tracks: Track[], range: PopularityRange): Track[] {
+  return tracks
+    .filter((track) => inRange(track, POPULARITY_RANGES[range]))
+    .sort((a, b) => b.popularity - a.popularity);
+}
+
+/** URIs for a popularity band, sorted most popular first. */
+export function urisForPopularityRange(tracks: Track[], range: PopularityRange): string[] {
+  return tracksForPopularityRange(tracks, range).map((track) => track.uri);
+}
+
 /** Splits an artist's tracks into the three artist bands (pure, for testing). */
 export function splitByArtistRanges(tracks: Track[]) {
   return Object.entries(ARTIST_RANGES).map(([band, range]) => ({
@@ -47,12 +59,12 @@ export function splitByArtistRanges(tracks: Track[]) {
 
 /** Saved tracks that a sync of `range` would put in the playlist, most popular first. */
 export async function previewPopularity(spotifyUserId: string, range: PopularityRange) {
-  const tracks = (await getSavedTracks(spotifyUserId)).filter((track) => inRange(track, POPULARITY_RANGES[range]));
+  const tracks = tracksForPopularityRange(await getSavedTracks(spotifyUserId), range);
   return {
     range,
     playlistName: popularityPlaylistName(range),
     trackCount: tracks.length,
-    tracks: tracks.sort((a, b) => b.popularity - a.popularity),
+    tracks,
   };
 }
 
@@ -62,14 +74,12 @@ export const isManagedPlaylist = (name: string) => MANAGED_NAME.test(name);
 
 /**
  * Creates/finds the popularity playlist for `range`, snapshots it, then replaces tracks
- * with saved library tracks in that popularity band (order preserved from filter).
+ * with saved library tracks in that popularity band (most popular first).
  */
 export async function sortByPopularity(spotifyUserId: string, range: PopularityRange) {
   const playlist = await findOrCreatePlaylist(spotifyUserId, popularityPlaylistName(range));
   await createSnapshot(spotifyUserId, playlist, "popularity_sort");
-  const uris = (await getSavedTracks(spotifyUserId))
-    .filter((track) => inRange(track, POPULARITY_RANGES[range]))
-    .map((track) => track.uri);
+  const uris = urisForPopularityRange(await getSavedTracks(spotifyUserId), range);
   await replacePlaylistTracks(spotifyUserId, playlist.id, uris);
   return { playlistId: playlist.id, playlistName: playlist.name, trackCount: uris.length };
 }
