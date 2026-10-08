@@ -43,7 +43,7 @@ export const app = new Elysia()
     switch (code) {
       case "VALIDATION":
         set.status = 422;
-        return ApiResponse.Fail("Dati di input non validi", error.message);
+        return ApiResponse.Fail("Dati di input non validi", "VALIDATION_ERROR");
       case "PARSE":
         set.status = 400;
         return ApiResponse.Fail("Corpo della richiesta non valido", "PARSE_ERROR");
